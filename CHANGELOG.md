@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-10-04
+
+### Added
+
+- `devin-skill-catalog scan` — inventory of `.devin/skills/<name>/SKILL.md`
+  and `.devin/rules/*.md` across workspace and user-level dirs, with
+  sha256 per item and registry-state annotation.
+- `lint` — structural checks (frontmatter presence, `name` matches dir,
+  real `description`, `# ` titles on rules), PASS/WARN/FAIL per item.
+- `gate g1|g2` — offline evidence gates. G1: lint + injection/exfil/
+  download-exec/destructive-shell phrasing + secret-shaped strings
+  (values never printed). G2: declared files/commands must resolve;
+  `--packs-dir` verifies devin-evals rubric packs are loadable.
+  `--apply` records per-item gate results in the registry.
+- Lifecycle registry at `<config-dir>/.devin-ecosystem/skill-catalog.json`
+  tracking `proposed → quarantined → approved → active → retired`, with
+  atomic writes and per-transition history. Mutations (`quarantine`,
+  `promote`, `activate`, `retire`, `import-bundle`) are plan-first:
+  they print a plan and write nothing without `--apply`.
+- `promote` runs G1 on the quarantined copy and refuses on FAIL
+  (`--force` overrides).
+- `diff A B` — content-hash inventory diff (IDENTICAL / MODIFIED /
+  ONLY_IN_A / ONLY_IN_B).
+- `export-bundle --out DIR|.tar[.gz]` — packs `approved` items with a
+  `manifest.json` (items, per-file sha256, source profile).
+  `import-bundle PATH` verifies checksums and lands items quarantined —
+  never directly active.
+- Test suite (48 tests) on synthetic `.devin/` fixture trees; stdlib
+  only, no network.

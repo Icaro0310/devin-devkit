@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: devin-skill-catalog
+authors:
+  - family-names: Galvao
+    given-names: Icaro
+url: "https://github.com/Icaro0310/devin-skill-catalog"
+repository-code: "https://github.com/Icaro0310/devin-skill-catalog"
+license: MIT
+abstract: "Inventory, lint, quarantine and promote Devin skills and rules — lifecycle registry, per-workspace diff, offline G1/G2 evidence gates and hash-verified bundles."
+keywords:
+  - ai-agents
+  - devin
+  - skills
+  - supply-chain
+  - prompt-injection
+  - cli
