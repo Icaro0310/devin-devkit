@@ -1,4 +1,10 @@
-"""G1 and G2 gates — offline evidence, not proof.
+"""Gates — offline evidence, not proof (G1/G2) plus the G3 policy gate.
+
+G1/G2 are *produced* here and *run* via ``gate g1|g2`` or ``promote``.
+G3 is different: the measurement itself (an A/B eval run, e.g.
+devin-evals) happens elsewhere and produces a ``g3-report/0.1`` JSON
+document; this module only *consumes* that report — validating it and
+turning its ``verdict`` into a promote/refuse decision per item kind.
 
 **G1** (static hygiene): the lint checks plus prompt-injection heuristics
 (``ignore previous instructions``, system-prompt exfil phrasing,
@@ -19,9 +25,11 @@ job). G2 is documented as "evidence, not proof".
 from __future__ import annotations
 
 import base64
+import json
 import math
 import re
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 from devin_skill_catalog import lint
@@ -493,3 +501,181 @@ def gate_g2(items: list[Item], packs_dir: Path | None = None) -> list[Finding]:
     if packs_dir is not None:
         out.extend(check_packs_dir(packs_dir))
     return out
+
+
+# --------------------------------------------------------------------------
+# G3 — measured-effect report (produced elsewhere, consumed by ``promote``)
+# --------------------------------------------------------------------------
+
+G3_REPORT_SCHEMA = "g3-report/0.1"
+G3_VERDICTS = (
+    "improves",
+    "no-detectable-effect",
+    "regresses",
+    "inconclusive",
+)
+# Verdicts that allow an always-on rule to promote.
+G3_RULE_OK = ("improves", "no-detectable-effect")
+# Registry value recorded when a skill promotes without a report.
+G3_NOT_MEASURED = "not-measured"
+
+
+class G3ReportError(Exception):
+    """Unreadable, malformed or unsupported ``g3-report`` document."""
+
+
+@dataclass(frozen=True)
+class G3Decision:
+    """What the G3 policy concludes for one promote attempt."""
+
+    allowed: bool
+    verdict: str  # report verdict, or G3_NOT_MEASURED / "missing"
+    reason: str  # one-line explanation for plan output and refusals
+    hard: bool = False  # 'regresses' — a hard block; --force cannot override
+
+
+def load_g3_report(path: Path) -> dict:
+    """Parse and validate a ``g3-report/0.1`` JSON document.
+
+    Required shape::
+
+        {"verdict": "improves"|"no-detectable-effect"|"regresses"
+                    |"inconclusive",
+         "design": {...}, "results": {...},
+         "candidate": {"kind", "name", "sha256"}}
+
+    Only ``verdict`` is strictly required — the other fields are
+    evidence carried by the producer. A ``schema`` field, when present,
+    must equal :data:`G3_REPORT_SCHEMA`. Raises :class:`G3ReportError`.
+    """
+    path = Path(path)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise G3ReportError(
+            f"cannot read G3 report {path}: {exc}"
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise G3ReportError(
+            f"G3 report {path} is not valid JSON: {exc}"
+        ) from exc
+    if not isinstance(data, dict):
+        raise G3ReportError(f"G3 report {path} is not a JSON object")
+    schema = data.get("schema")
+    if schema is not None and schema != G3_REPORT_SCHEMA:
+        raise G3ReportError(
+            f"G3 report {path} declares schema {schema!r} — expected "
+            f"{G3_REPORT_SCHEMA!r}"
+        )
+    verdict = data.get("verdict")
+    if verdict not in G3_VERDICTS:
+        raise G3ReportError(
+            f"G3 report {path} has verdict {verdict!r} — expected one "
+            f"of {', '.join(G3_VERDICTS)}"
+        )
+    return data
+
+
+def evaluate_g3(
+    kind: str, report: dict | None, *, inconclusive_reason: str = ""
+) -> G3Decision:
+    """The G3 promotion policy for one item.
+
+    - ``regresses`` refuses **any** kind — a hard block that ``--force``
+      does not override: a regressed artifact must not be promoted.
+    - always-on rules (``kind == "rule"``) **require** a report whose
+      verdict is ``improves`` or ``no-detectable-effect``; a missing
+      report or an ``inconclusive`` one refuses.
+    - skills promote freely: no report records ``not-measured``; an
+      ``inconclusive`` report needs a non-empty ``inconclusive_reason``
+      (recorded in the registry).
+    """
+    verdict = report.get("verdict") if report else None
+    if verdict == "regresses":
+        return G3Decision(
+            False,
+            str(verdict),
+            "G3 verdict 'regresses' — a regressed artifact must not be "
+            "promoted (hard block; --force does not override it)",
+            hard=True,
+        )
+    if kind == KIND_RULE:
+        if report is None:
+            return G3Decision(
+                False,
+                "missing",
+                "always-on rules need a G3 report showing improves or "
+                "no-detectable-effect",
+            )
+        if verdict in G3_RULE_OK:
+            return G3Decision(
+                True,
+                str(verdict),
+                f"G3 verdict '{verdict}' — satisfies the always-on "
+                f"rule requirement",
+            )
+        return G3Decision(
+            False,
+            str(verdict),
+            f"G3 verdict '{verdict}' — always-on rules need a G3 "
+            f"report showing improves or no-detectable-effect",
+        )
+    # common skills — G3 is optional evidence
+    if report is None:
+        return G3Decision(
+            True,
+            G3_NOT_MEASURED,
+            "no G3 report — optional for skills; promotion records "
+            "g3 'not-measured'",
+        )
+    if verdict == "inconclusive" and not inconclusive_reason.strip():
+        return G3Decision(
+            False,
+            str(verdict),
+            "G3 verdict 'inconclusive' — promoting a skill on it needs "
+            '--g3-inconclusive-reason "..." (recorded in the registry)',
+        )
+    extra = (
+        " — promotion justified by --g3-inconclusive-reason"
+        if verdict == "inconclusive"
+        else ""
+    )
+    return G3Decision(True, str(verdict), f"G3 verdict '{verdict}'{extra}")
+
+
+def g3_candidate_warnings(
+    report: dict | None, item: Item | None, kind: str, name: str
+) -> list[str]:
+    """Best-effort binding between the report's ``candidate`` block and
+    the artifact being promoted. Warn-only — the report may legitimately
+    describe a pre-fix version of the item.
+
+    The stored item's sha256 is the same canonical hash the bundle code
+    uses (``scan.sha256_file`` over the item's main file, as rehydrated
+    by :func:`bundle.item_from_dir`)."""
+    if not report:
+        return []
+    cand = report.get("candidate")
+    if not isinstance(cand, dict):
+        return []
+    warns: list[str] = []
+    c_kind, c_name, c_sha = (
+        cand.get("kind"),
+        cand.get("name"),
+        cand.get("sha256"),
+    )
+    if c_kind and c_kind != kind:
+        warns.append(
+            f"G3 report candidate kind {c_kind!r} ≠ item kind {kind!r}"
+        )
+    if c_name and c_name != name:
+        warns.append(
+            f"G3 report candidate name {c_name!r} ≠ item name {name!r}"
+        )
+    if c_sha and item is not None and c_sha != item.sha256:
+        warns.append(
+            f"G3 report candidate sha256 {str(c_sha)[:12]}… ≠ stored "
+            f"item sha256 {item.sha256[:12]}… — the report may describe "
+            f"a different (e.g. pre-fix) artifact"
+        )
+    return warns

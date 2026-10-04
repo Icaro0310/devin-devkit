@@ -7,7 +7,7 @@ Subcommands::
     diff A B                        inventory diff between two dirs
     gate g1|g2 PATH                 offline gates; --apply records result
     quarantine ITEM [PATH ...]      snapshot item into the quarantine store
-    promote ITEM [PATH ...]         quarantined → approved (runs G1)
+    promote ITEM [PATH ...]         quarantined → approved (G1 + G3 policy)
     activate ITEM                   approved → active
     retire ITEM                     any state → retired
     export-bundle --out PATH        pack approved items + manifest
@@ -364,15 +364,39 @@ def _cmd_promote(args) -> int:
     store = entry.get("store") or str(
         quarantine_item_dir(config_dir, kind, name)
     )
+    # G3 — load the report up front so the plan can show the verdict's
+    # effect; an unreadable report is an error before anything prints.
+    report = None
+    if args.g3_report is not None:
+        try:
+            report = gates.load_g3_report(args.g3_report)
+        except gates.G3ReportError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+    decision = gates.evaluate_g3(
+        kind, report, inconclusive_reason=args.g3_inconclusive_reason
+    )
     lines = [
         f"promote {key} (currently {state})",
         f"run G1 on the quarantined copy at {store}",
-        f"registry: {state} → approved",
+        f"G3 policy: {decision.reason}",
     ]
     if args.force:
         lines.append("--force: G1 failures will not block promotion")
+        if decision.hard:
+            lines.append(
+                "--force does NOT override a 'regresses' G3 verdict"
+            )
+    lines.append(
+        f"registry: {state} → approved"
+        if decision.allowed
+        else f"promotion refused by G3 — registry stays {state}"
+    )
     if not _plan(lines, args.apply):
-        return 0
+        return 0 if decision.allowed else 1
+    if not decision.allowed:
+        print(f"promotion of {key} refused by G3 — {decision.reason}")
+        return 1
     if not reg.can_transition(kind, name, STATE_APPROVED):
         print(
             f"error: cannot promote {key} from {state} "
@@ -381,6 +405,8 @@ def _cmd_promote(args) -> int:
         )
         return 1
     item = _stored_item(entry, config_dir)
+    for warn in gates.g3_candidate_warnings(report, item, kind, name):
+        print(f"warning: {warn}", file=sys.stderr)
     if item is not None:
         findings = gates.g1_item(item)
         status = (
@@ -411,6 +437,17 @@ def _cmd_promote(args) -> int:
     except RegistryError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    reg.record_g3(
+        kind,
+        name,
+        decision.verdict,
+        report=args.g3_report,
+        reason=(
+            args.g3_inconclusive_reason
+            if decision.verdict == "inconclusive"
+            else None
+        ),
+    )
     reg.save()
     print(f"approved {key}")
     return 0
@@ -637,7 +674,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "promote",
-        help="quarantined → approved (runs G1 on the stored copy)",
+        help="quarantined → approved (runs G1 on the stored copy; "
+        "enforces the G3 report policy)",
     )
     p.add_argument("item", help="kind:name or bare name")
     p.add_argument(
@@ -652,7 +690,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--force",
         action="store_true",
-        help="promote even when G1 fails",
+        help="promote even when G1 fails (never overrides a "
+        "'regresses' G3 verdict)",
+    )
+    p.add_argument(
+        "--g3-report",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="a g3-report/0.1 JSON verdict — REQUIRED to promote an "
+        "always-on rule (verdict must be improves or "
+        "no-detectable-effect); optional evidence for skills",
+    )
+    p.add_argument(
+        "--g3-inconclusive-reason",
+        default="",
+        metavar="TEXT",
+        help="non-empty justification required to promote a skill "
+        "whose G3 report verdict is 'inconclusive' — recorded in "
+        "the registry",
     )
     _add_mutation_args(p)
     p.set_defaults(func=_cmd_promote)

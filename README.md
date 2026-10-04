@@ -30,8 +30,9 @@ content.
   registry state.
 - **Lint** — structural checks: frontmatter presence, `name` matching
   the directory, a real `description`, `# ` titles on rules.
-- **Gates** — two offline evidence gates (below). Heuristics, **not
-  proof**.
+- **Gates** — two offline evidence gates (G1/G2, below) plus a G3
+  promotion gate driven by `g3-report` verdicts. G1/G2 are heuristics,
+  **not proof**.
 - **Lifecycle** — a registry at
   `<config-dir>/.devin-ecosystem/skill-catalog.json` tracks every item
   through `proposed → quarantined → approved → active → retired`.
@@ -61,7 +62,9 @@ devin-skill-catalog diff A B                     # inventory diff by sha256
 devin-skill-catalog gate g1 PATH                 # static hygiene gate
 devin-skill-catalog gate g2 PATH [--packs-dir D] # grounding gate
 devin-skill-catalog quarantine ITEM [PATH ...]   # snapshot → quarantined
-devin-skill-catalog promote ITEM [--force]       # quarantined → approved (runs G1)
+devin-skill-catalog promote ITEM [--force]       # quarantined → approved (G1 + G3 policy)
+              [--g3-report PATH]
+              [--g3-inconclusive-reason "…"]
 devin-skill-catalog activate ITEM                # approved → active
 devin-skill-catalog retire ITEM                  # any state → retired
 devin-skill-catalog export-bundle --out DIR      # pack approved items
@@ -105,8 +108,10 @@ proposed → quarantined → approved → active → retired
 
 - `quarantine` — copies the item into the quarantine store (outside
   `.devin/`, so Devin never loads it) and marks it `quarantined`.
-- `promote` — runs **G1 on the stored copy**; a FAIL refuses the
-  promotion (`--force` overrides). `quarantined → approved`.
+- `promote` — runs **G1 on the stored copy** and enforces the **G3
+  promotion policy** (below); a G1 FAIL refuses the promotion
+  (`--force` overrides — but never a `regresses` verdict).
+  `quarantined → approved`.
 - `activate` — marks the item `active` in the catalog. Installing files
   into `.devin/` remains a manual step — this tool never writes there.
 - `retire` — parks an item; `retired → proposed` is the only way back.
@@ -146,6 +151,27 @@ Does what the item *claims* line up with what *exists*?
 - declared `commands`/`tools` are checked on `PATH` (missing → WARN)
 - `--packs-dir DIR` verifies devin-evals rubric packs are loadable —
   noted, **not executed** (eval runs are devin-evals' job)
+
+### G3 — measured effect (promotion policy)
+
+G3 is not a heuristic this tool runs — it is a **promotion policy**
+consuming a `g3-report/0.1` JSON produced elsewhere (an A/B eval run,
+e.g. devin-evals). Pass it with `promote --g3-report PATH`:
+
+| item | no report | `improves` / `no-detectable-effect` | `inconclusive` | `regresses` |
+|------|-----------|-------------------------------------|----------------|-------------|
+| always-on rule (`.devin/rules`) | **refused** | promoted | refused | **refused** |
+| skill (`.devin/skills`) | promoted; registry records `g3: "not-measured"` | promoted; records `g3: "<verdict>"` + report path | promoted only with `--g3-inconclusive-reason "…"` (recorded) | **refused** |
+
+- `regresses` is a **hard block for every kind** — a regressed
+  artifact must not be promoted, and `--force` does **not** override
+  it (`--force` only lifts a G1 FAIL).
+- Promotion stays an explicit human decision: `--apply` is still
+  required; without it the plan prints what the verdict would do and
+  writes nothing.
+- If the report's `candidate.sha256` does not match the stored copy,
+  promote prints a warning but proceeds — the report may legitimately
+  describe a pre-fix artifact.
 
 ## Honest limitations
 

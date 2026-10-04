@@ -19,7 +19,9 @@
 - `gates.py` — G1 (lint + injection/exfil/`curl|sh`/destructive-shell
   phrasing + secret-shaped strings, values suppressed) and G2 (declared
   files/commands grounded, body references WARN, `--packs-dir` verifies
-  devin-evals packs loadable).
+  devin-evals packs loadable); plus the G3 consumer (`load_g3_report`,
+  `evaluate_g3`, `g3_candidate_warnings`) turning a `g3-report/0.1`
+  verdict into a promote/refuse decision per kind.
 - `registry.py` — JSON registry with atomic writes, per-transition
   history, gate results. Only writes under the config dir.
 - `diffing.py` — inventory diff by content hash
@@ -28,14 +30,18 @@
   `manifest.json` (items, per-file sha256, source profile); import
   verifies checksums and lands items `quarantined`, never active.
 - `cli.py` — `scan`, `lint`, `diff`, `gate g1|g2`, `quarantine`,
-  `promote` (runs G1 on the stored copy, `--force` overrides),
-  `activate`, `retire`, `export-bundle`, `import-bundle`. Mutations are
-  plan-first: no writes without `--apply`.
-- Tests: 48, all on synthetic `.devin/` fixture trees.
+  `promote` (runs G1 on the stored copy, `--force` overrides G1;
+  enforces the G3 policy — always-on rules require a `g3-report` with
+  `improves`/`no-detectable-effect`, `regresses` hard-blocks every kind
+  even under `--force`, `inconclusive` skills need
+  `--g3-inconclusive-reason`), `activate`, `retire`, `export-bundle`,
+  `import-bundle`. Mutations are plan-first: no writes without
+  `--apply`.
+- Tests: 68, all on synthetic `.devin/` fixture trees.
 
 ## Verified
 
-- `python -m pytest` — 48 passed (Linux / Python 3.14).
+- `python -m pytest` — 68 passed (Linux / Python 3.14).
 - Manual end-to-end: scan → quarantine --apply → promote --apply
   (G1 pass) → export-bundle → import-bundle --apply lands quarantined.
 
@@ -58,6 +64,14 @@ None.
   intent in the catalog; installing is manual.
 - Imports can only land `quarantined` — even if the manifest claims
   `approved`. Promotion still requires the gates.
+- G3 promotion policy (B6): `promote --g3-report` consumes a
+  `g3-report/0.1` verdict. Always-on rules REQUIRE a report showing
+  `improves`/`no-detectable-effect`; `regresses` is a hard block for
+  any kind that `--force` cannot override (a regressed artifact must
+  not be promoted); `inconclusive` blocks rules and needs a recorded
+  `--g3-inconclusive-reason` for skills; skills without a report
+  promote with `g3: "not-measured"` in the registry. The report's
+  `candidate.sha256` is checked warn-only against the stored copy.
 - Secret findings suppress the matched value in all output modes.
 - Unregistered items on disk report as unregistered, not approved — the
   catalog never pretends to have vetted what it has not seen.

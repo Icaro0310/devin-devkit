@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- G3 promotion gate: `promote --g3-report PATH` consumes a
+  `g3-report/0.1` JSON verdict (`improves` / `no-detectable-effect` /
+  `regresses` / `inconclusive`). Always-on rules (`.devin/rules`)
+  require a report showing `improves` or `no-detectable-effect`;
+  `regresses` hard-blocks any kind — `--force` does not override it;
+  `inconclusive` skills promote only with `--g3-inconclusive-reason`
+  (recorded in the registry); skills promoted without a report record
+  `g3: "not-measured"`. The report's `candidate.sha256` is checked
+  against the stored copy as a warn-only advisory.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added

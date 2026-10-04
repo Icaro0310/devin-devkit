@@ -32,8 +32,9 @@ conteúdo.
 - **Lint** — checagens estruturais: presença de frontmatter, `name`
   igual ao nome do diretório, `description` de verdade, títulos `# `
   nas regras.
-- **Gates** — dois gates de evidência offline (abaixo). Heurísticas,
-  **não prova**.
+- **Gates** — dois gates de evidência offline (G1/G2, abaixo) mais um
+  gate de promoção G3 guiado por vereditos `g3-report`. G1/G2 são
+  heurísticas, **não prova**.
 - **Ciclo de vida** — um registro em
   `<config-dir>/.devin-ecosystem/skill-catalog.json` acompanha cada item
   por `proposed → quarantined → approved → active → retired`.
@@ -64,7 +65,9 @@ devin-skill-catalog diff A B                     # diff de inventário por sha25
 devin-skill-catalog gate g1 PATH                 # gate de higiene estática
 devin-skill-catalog gate g2 PATH [--packs-dir D] # gate de fundamentação
 devin-skill-catalog quarantine ITEM [PATH ...]   # snapshot → quarantined
-devin-skill-catalog promote ITEM [--force]       # quarantined → approved (roda G1)
+devin-skill-catalog promote ITEM [--force]       # quarantined → approved (G1 + política G3)
+              [--g3-report PATH]
+              [--g3-inconclusive-reason "…"]
 devin-skill-catalog activate ITEM                # approved → active
 devin-skill-catalog retire ITEM                  # qualquer estado → retired
 devin-skill-catalog export-bundle --out DIR      # empacota itens aprovados
@@ -110,8 +113,10 @@ proposed → quarantined → approved → active → retired
 
 - `quarantine` — copia o item para a store de quarentena (fora de
   `.devin/`, então o Devin nunca o carrega) e o marca `quarantined`.
-- `promote` — roda **G1 na cópia quarentenada**; um FAIL recusa a
-  promoção (`--force` contorna). `quarantined → approved`.
+- `promote` — roda **G1 na cópia quarentenada** e aplica a **política
+  de promoção G3** (abaixo); um FAIL recusa a promoção (`--force`
+  contorna — mas nunca um veredito `regresses`). `quarantined →
+  approved`.
 - `activate` — marca o item `active` no catálogo. Instalar os arquivos
   em `.devin/` continua sendo passo manual — esta ferramenta nunca
   escreve lá.
@@ -157,6 +162,28 @@ O que o item *declara* bate com o que *existe*?
 - `--packs-dir DIR` verifica que os rubric packs do devin-evals são
   carregáveis — anotado, **não executado** (rodar evals é trabalho do
   devin-evals)
+
+### G3 — efeito medido (política de promoção)
+
+O G3 não é uma heurística que esta ferramenta roda — é uma **política
+de promoção** que consome um JSON `g3-report/0.1` produzido em outro
+lugar (uma rodada de eval A/B, p.ex. o devin-evals). Passe com
+`promote --g3-report PATH`:
+
+| item | sem report | `improves` / `no-detectable-effect` | `inconclusive` | `regresses` |
+|------|------------|--------------------------------------|----------------|-------------|
+| regra always-on (`.devin/rules`) | **recusado** | promovido | recusado | **recusado** |
+| skill (`.devin/skills`) | promovida; registro grava `g3: "not-measured"` | promovida; grava `g3: "<verdict>"` + path do report | promovida só com `--g3-inconclusive-reason "…"` (gravado) | **recusada** |
+
+- `regresses` é um **bloqueio duro para qualquer kind** — um artefato
+  que regrediu não deve ser promovido, e `--force` **não** contorna
+  (`--force` só levanta um FAIL de G1).
+- A promoção continua sendo uma decisão humana explícita: `--apply`
+  ainda é obrigatório; sem ele o plano imprime o que o veredito faria
+  e não escreve nada.
+- Se o `candidate.sha256` do report não bate com a cópia quarentenada,
+  o promote imprime um aviso mas continua — o report pode
+  legitimamente descrever um artefato pré-correção.
 
 ## Limitações honestas
 

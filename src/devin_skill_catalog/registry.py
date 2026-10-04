@@ -16,6 +16,8 @@ Schema::
           "sha256": "…", "origin": "/abs/path/.devin",
           "store": "/abs/quarantine/skill/my-skill",   // when applicable
           "gates": {"g1": {"status": "pass", "at": "…"}},
+          "g3": "improves",              // G3 verdict, or "not-measured"
+          "g3_report": "/abs/report.json", "g3_reason": "…",
           "history": [{"at": "…", "from": "proposed",
                        "to": "quarantined", "note": "…"}]
         }
@@ -152,6 +154,27 @@ class Registry:
             "status": status,
             "at": utc_now_iso(),
         }
+
+    def record_g3(
+        self,
+        kind: str,
+        name: str,
+        verdict: str,
+        *,
+        report: object = None,
+        reason: str | None = None,
+    ) -> None:
+        """Record the G3 outcome on the entry: ``g3`` holds the verdict
+        (``"not-measured"`` when a skill promoted without a report);
+        ``g3_report`` and ``g3_reason`` carry the evidence when present
+        (report path; the ``--g3-inconclusive-reason`` justification)."""
+        entry = self._touch(kind, name)
+        entry["g3"] = verdict
+        entry["g3_at"] = utc_now_iso()
+        if report is not None:
+            entry["g3_report"] = str(report)
+        if reason:
+            entry["g3_reason"] = reason
 
     # ---- persistence ---------------------------------------------------
 
