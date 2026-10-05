@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         result = apply_plan(plan)
         print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else f"Installed: {', '.join(result['installed']) or 'nothing new'}")
         for item in result["actions"]:
-            if item["action"] in {"already_available", "manual", "unsupported"}:
+            if item["action"] in {"preexisting", "manual", "unsupported"}:
                 detail = item.get("detail", ", ".join(item.get("commands", [])))
                 print(f"- {item['tool']}: {item['action']} — {detail}")
         return 0

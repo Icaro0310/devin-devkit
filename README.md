@@ -51,7 +51,7 @@ uv run --project . python -m devin_devkit.cli install qa
 
 After a PyPI package release, the installer can also be run with `uvx devin-devkit ...`.
 
-The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; a complete existing installation is reported as already available, and a partial collision blocks the profile before any installs run.
+The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; commands already on `PATH` are reported as pre-existing but are not version-verified, and a partial collision blocks the profile before any installs run.
 
 ## Runtime requirements
 

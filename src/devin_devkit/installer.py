@@ -97,7 +97,7 @@ def build_plan(
         present = [command for command in commands if which(command) is not None]
         if present:
             if len(present) == len(commands):
-                actions.append({"tool": tool_id, "action": "already_available", "commands": present})
+                actions.append({"tool": tool_id, "action": "preexisting", "detail": "commands are on PATH; versions are not verified", "commands": present})
             else:
                 missing = [command for command in commands if command not in present]
                 errors.append(f"{tool_id} has a partial PATH collision; present={present}, missing={missing}")

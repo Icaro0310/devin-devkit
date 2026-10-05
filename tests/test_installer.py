@@ -115,7 +115,7 @@ def test_existing_commands_are_not_overwritten():
     which = lambda name: f"/tools/{name}" if name in {"uv", "devin-doctor"} else None
     plan = installer.build_plan(sample_manifest(), "qa", system="windows", which=which)
 
-    assert plan["actions"] == [{"tool": "devin-doctor", "action": "already_available", "commands": ["devin-doctor"]}]
+    assert plan["actions"] == [{"tool": "devin-doctor", "action": "preexisting", "detail": "commands are on PATH; versions are not verified", "commands": ["devin-doctor"]}]
 
 
 def test_partial_path_collision_blocks_install():

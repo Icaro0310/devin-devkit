@@ -63,7 +63,8 @@ uv pip install --python .venv/bin/python -e ../devin-internals-spec -e .
 
 ## Troubleshooting
 
-- For GitHub-sourced tools, verify Git with `git --version`.
+- The installable profiles use HTTPS archives; Git is only needed if you check out a manual source service such as `devin-office`.
 - `devin-devkit install <profile>` is a dry run. `--apply` is required to install.
-- Existing commands are never overwritten; a partial PATH collision blocks the profile before any packages are installed.
+- Existing commands are never overwritten; a complete command set on `PATH` is reported but its versions are not verified, while a partial collision blocks the profile.
+- If `devin-bridge` is installed but not found, check `npm config get prefix` and ensure npm's global executable directory is on `PATH`.
 - For a tool's usage and data-path overrides, follow its main `README.md`.
