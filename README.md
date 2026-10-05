@@ -4,6 +4,8 @@
 
 **[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
 
+Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosystem: the curated hub for the devin-* tools.
+
 `devin-devkit` turns the public `devin-powerups` registry into selectable installation profiles. It is an **installer/distribution tool**, not a meta-package: each Python app gets its own isolated `uv` environment, and the Node bridge uses npm separately.
 
 ## Source → tools → profiles
