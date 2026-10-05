@@ -13,7 +13,7 @@ def _print_plan(plan: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(plan, ensure_ascii=False, indent=2))
         return
-    print(f"Profile: {plan['profile']} ({plan['platform']})")
+    print(f"Profile: {plan['profile']} ({plan['platform']}; environment={plan['environment']}; runtime={plan['runtime']})")
     for item in plan["actions"]:
         command = " ".join(item.get("command", []))
         detail = item.get("detail", "")
@@ -35,6 +35,11 @@ def _build_parser() -> argparse.ArgumentParser:
     install.add_argument("profile")
     install.add_argument("--apply", action="store_true", help="install the selected profile")
     install.add_argument("--json", action="store_true", help="print the plan as JSON")
+    install.add_argument(
+        "--environment",
+        choices=["linux", "personal-windows", "corporate-windows"],
+        help="execution environment; defaults to linux on Linux and personal-windows on Windows",
+    )
     return parser
 
 
@@ -54,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{tool['id']}: {tool['package']} {tool['version']} [{tool['manager']}/{tool['source']}/{tool['status']}]")
             return 0
 
-        plan = build_plan(manifest, args.profile)
+        plan = build_plan(manifest, args.profile, environment=args.environment)
         if not args.apply:
             _print_plan(plan, args.json)
             return 2 if plan["errors"] else 0

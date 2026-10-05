@@ -34,6 +34,29 @@ def platform_name(system: str | None = None) -> str:
     return value
 
 
+_ENVIRONMENT_ALIASES = {
+    "linux": "linux",
+    "personal-windows": "personal_windows",
+    "personal_windows": "personal_windows",
+    "windows": "personal_windows",
+    "corporate-windows": "corporate_windows",
+    "corporate_windows": "corporate_windows",
+    "corporate": "corporate_windows",
+}
+
+
+def normalize_environment(environment: str | None, host: str) -> str:
+    if environment is None:
+        return "personal_windows" if host == "windows" else host
+    normalized = _ENVIRONMENT_ALIASES.get(environment.lower())
+    if normalized is None:
+        raise ValueError(f"unsupported environment: {environment}")
+    expected_host = "windows" if normalized.endswith("_windows") else normalized
+    if host != expected_host:
+        raise ValueError(f"environment {normalized} cannot run on host platform {host}")
+    return normalized
+
+
 def resolve_profile(manifest: dict[str, Any], name: str) -> tuple[str, dict[str, Any]]:
     profiles = manifest.get("profiles", {})
     if name not in profiles:
@@ -66,6 +89,7 @@ def build_plan(
     profile_name: str,
     *,
     system: str | None = None,
+    environment: str | None = None,
     which: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = subprocess.run,
 ) -> dict[str, Any]:
@@ -74,6 +98,12 @@ def build_plan(
     if host not in manifest.get("supported_platforms", []):
         planned = ", ".join(manifest.get("planned_platforms", [])) or "none"
         raise DevKitError(f"platform {host!r} is not supported; planned platforms: {planned}")
+    try:
+        selected_environment = normalize_environment(environment, host)
+    except ValueError as exc:
+        raise DevKitError(str(exc)) from exc
+    if selected_environment not in manifest.get("environments", {}):
+        raise DevKitError(f"manifest does not define environment {selected_environment!r}")
 
     tool_map = {tool["id"]: tool for tool in manifest.get("tools", [])}
     actions: list[dict[str, Any]] = []
@@ -84,6 +114,23 @@ def build_plan(
         tool = tool_map.get(tool_id)
         if tool is None:
             errors.append(f"profile {resolved_name!r} references unknown tool {tool_id!r}")
+            continue
+        environment_meta = tool.get("environments", {}).get(selected_environment)
+        if environment_meta is None:
+            errors.append(f"{tool_id} has no {selected_environment} environment metadata")
+            actions.append({"tool": tool_id, "action": "unsupported", "detail": f"no metadata for {selected_environment}"})
+            continue
+        if not environment_meta.get("supported"):
+            reason = environment_meta.get("reason", f"not listed for {selected_environment}")
+            errors.append(f"{tool_id} is unsupported in {selected_environment}: {reason}")
+            actions.append({"tool": tool_id, "action": "unsupported", "detail": reason})
+            continue
+        if selected_environment == "corporate_windows" and (
+            environment_meta.get("external_dependencies") or environment_meta.get("delegation") in {"optional", "supported", "required"}
+        ):
+            reason = "external runtime or delegation is disabled in corporate Windows"
+            errors.append(f"{tool_id} violates the corporate Windows local-only guarantee")
+            actions.append({"tool": tool_id, "action": "blocked", "detail": reason})
             continue
         if host not in tool.get("platforms", []):
             actions.append({"tool": tool_id, "action": "unsupported", "detail": f"not listed for {host}"})
@@ -138,6 +185,8 @@ def build_plan(
         "profile": profile_name,
         "resolved_profile": resolved_name,
         "platform": host,
+        "environment": selected_environment,
+        "runtime": manifest["environments"][selected_environment].get("runtime"),
         "dry_run": True,
         "actions": actions,
         "errors": errors,

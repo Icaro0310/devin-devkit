@@ -8,11 +8,24 @@ import pytest
 from devin_devkit import installer
 
 
+def supported_environments():
+    return {
+        "linux": {"supported": True, "runtime": "extended", "delegation": "optional", "external_dependencies": False},
+        "personal_windows": {"supported": True, "runtime": "extended", "delegation": "optional", "external_dependencies": False},
+        "corporate_windows": {"supported": True, "runtime": "local-only", "delegation": "forbidden", "external_dependencies": False},
+    }
+
+
 def sample_manifest():
     return {
         "schema": "devin-devkit-manifest/0.1",
         "supported_platforms": ["windows", "linux"],
         "planned_platforms": ["macos"],
+        "environments": {
+            "linux": {"label": "Linux", "runtime": "extended", "delegation": "optional", "local_only": False, "external_compute": True, "devkit": "linux"},
+            "personal_windows": {"label": "Personal Windows", "runtime": "extended", "delegation": "optional", "local_only": False, "external_compute": True, "devkit": "personal-windows"},
+            "corporate_windows": {"label": "Corporate Windows", "runtime": "local-only", "delegation": "forbidden", "local_only": True, "external_compute": False, "devkit": "corporate-windows"},
+        },
         "git_required_tools": ["devin-history"],
         "catalog": {"tool_count": 2, "hub_count": 1, "related_count": 0, "entry_count": 3},
         "profiles": {
@@ -26,6 +39,7 @@ def sample_manifest():
                 "package": "devin-doctor", "version": "0.1.0",
                 "commands": ["devin-doctor"], "runtime": "python>=3.10",
                 "platforms": ["windows", "linux"], "status": "published",
+                "environments": supported_environments(),
                 "install_spec": "devin-doctor==0.1.0", "manual_note": None,
             },
             {
@@ -33,6 +47,7 @@ def sample_manifest():
                 "package": "@icaro0310/devin-bridge", "version": "0.1.0",
                 "commands": ["devin-bridge"], "runtime": "node>=20",
                 "platforms": ["windows", "linux"], "status": "source",
+                "environments": supported_environments(),
                 "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/abc.tar.gz", "requires_git": False, "manual_note": None,
             },
             {
@@ -40,6 +55,7 @@ def sample_manifest():
                 "package": "devin-history", "version": "0.1.0",
                 "commands": ["devin-history"], "runtime": "python>=3.10",
                 "platforms": ["windows", "linux"], "status": "source",
+                "environments": supported_environments(),
                 "install_spec": "https://github.com/Icaro0310/devin-history/archive/def.tar.gz", "requires_git": True,
             },
             {
@@ -47,6 +63,7 @@ def sample_manifest():
                 "package": "devin-office", "version": "0.1.0",
                 "commands": ["python daemon.py"], "runtime": "python>=3.10",
                 "platforms": ["windows", "linux"], "status": "manual",
+                "environments": supported_environments(),
                 "install_spec": None, "manual_note": "source-only service",
             },
         ],
@@ -157,3 +174,53 @@ def test_load_manifest_from_file(tmp_path: Path):
     path = tmp_path / "manifest.json"
     path.write_text(__import__("json").dumps(manifest), encoding="utf-8")
     assert installer.load_manifest(path)["schema"] == "devin-devkit-manifest/0.1"
+
+
+def test_explicit_linux_environment_is_extended():
+    plan = installer.build_plan(sample_manifest(), "all", system="Linux", environment="linux", which=lambda c: "/bin/uv" if c == "uv" else None)
+    assert plan["environment"] == "linux"
+    assert plan["runtime"] == "extended"
+
+
+def test_windows_defaults_to_personal_windows_environment():
+    plan = installer.build_plan(sample_manifest(), "qa", system="Windows", which=lambda c: "C:/uv.exe" if c == "uv" else None)
+    assert plan["environment"] == "personal_windows"
+    assert plan["runtime"] == "extended"
+
+
+def test_corporate_windows_is_explicit_and_local_only():
+    plan = installer.build_plan(sample_manifest(), "qa", system="Windows", environment="corporate-windows", which=lambda c: "C:/uv.exe" if c == "uv" else None)
+    assert plan["environment"] == "corporate_windows"
+    assert plan["runtime"] == "local-only"
+
+
+def test_environment_must_match_host_platform():
+    with pytest.raises(installer.DevKitError, match="cannot run on host platform"):
+        installer.build_plan(sample_manifest(), "qa", system="Linux", environment="corporate-windows")
+
+
+def test_corporate_windows_rejects_external_dependencies():
+    manifest = sample_manifest()
+    manifest["tools"][0]["environments"]["corporate_windows"] = {
+        "supported": True,
+        "runtime": "local-only",
+        "delegation": "optional",
+        "external_dependencies": True,
+    }
+    plan = installer.build_plan(manifest, "all", system="Windows", environment="corporate-windows", which=lambda c: "C:/uv.exe" if c == "uv" else None)
+    assert plan["errors"] == ["devin-doctor violates the corporate Windows local-only guarantee"]
+    assert plan["actions"][0]["action"] == "blocked"
+
+
+def test_unsupported_environment_uses_registry_reason():
+    manifest = sample_manifest()
+    manifest["tools"][0]["environments"]["corporate_windows"] = {
+        "supported": False,
+        "runtime": "unavailable",
+        "delegation": "forbidden",
+        "external_dependencies": True,
+        "reason": "requires an external runtime",
+    }
+    plan = installer.build_plan(manifest, "all", system="Windows", environment="corporate-windows", which=lambda c: "C:/uv.exe" if c == "uv" else None)
+    assert plan["errors"] == ["devin-doctor is unsupported in corporate_windows: requires an external runtime"]
+    assert plan["actions"][0]["detail"] == "requires an external runtime"

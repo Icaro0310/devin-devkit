@@ -2,15 +2,31 @@
 
 > Unofficial community project. Not affiliated with, endorsed by, or sponsored by Cognition AI. Devin is a Cognition AI trademark.
 
-**[Windows](README.windows.md)** · **[Linux](README.linux.md)** · **[macOS status](README.macos.md)**
+**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
 
 `devin-devkit` turns the public `devin-powerups` registry into selectable installation profiles. It is an **installer/distribution tool**, not a meta-package: each Python app gets its own isolated `uv` environment, and the Node bridge uses npm separately.
 
 ## Source → tools → profiles
 
 - `devin-powerups/registry.json` is the catalog and profile source of truth: 19 first-party `devin-*` tools, this separate DevKit distribution, one maintainer hub, and three related artifacts.
-- `tools/export_devkit_manifest.py` builds this repo's bundled manifest from the registry, including artifact, interface, audience and platform metadata. The exporter rejects private or unregistered tools and verifies immutable Git commit references.
-- `src/devin_devkit/cli.py` previews and installs the selected profile. It does not edit Devin settings, inspect session databases, or install Slack/Obsidian/VM services.
+- `tools/export_devkit_manifest.py` builds this repo's bundled manifest from the registry, including artifact, interface, audience, platform and environment metadata. The exporter rejects private or unregistered tools and verifies immutable Git commit references.
+- `src/devin_devkit/cli.py` previews and installs the selected profile under an explicit execution environment. It does not edit Devin settings, inspect session databases, or install Slack/Obsidian/VM services.
+
+## Execution environments
+
+One `devin-devkit` distribution supports three environments. Linux and Personal Windows use the extended runtime: local execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Corporate Windows is intentionally self-contained: local execution only, with no VM, QwenPaw, Slack dependency, external compute, or workload delegation.
+
+The installer defaults to `linux` on Linux and `personal-windows` on Windows. Corporate Windows is never inferred from the operating system; select it explicitly so restricted machines fail closed:
+
+```bash
+devin-devkit install qa --environment linux
+devin-devkit install qa --environment personal-windows
+devin-devkit install qa --environment corporate-windows
+```
+
+Environment entry points: [Linux](environments/linux/README.md) · [Personal Windows](environments/personal-windows/README.md) · [Corporate Windows](environments/corporate-windows/README.md).
+
+The generated [compatibility matrix](COMPATIBILITY.md) is rendered from `registry.json`; unsupported entries carry an explicit registry reason rather than guessed compatibility.
 
 ## Profiles
 
@@ -51,14 +67,14 @@ uv run --project . python -m devin_devkit.cli install qa
 
 After a PyPI package release, the installer can also be run with `uvx devin-devkit ...`.
 
-The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; commands already on `PATH` are reported as pre-existing but are not version-verified, and a partial collision blocks the profile before any installs run.
+The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, registry-declared environment compatibility, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; commands already on `PATH` are reported as pre-existing but are not version-verified, and a partial collision blocks the profile before any installs run.
 
 ## Runtime requirements
 
 - Python tools: Python 3.10 or newer, installed in isolated environments managed by `uv`.
 - `devin-bridge`: Node.js 20 or newer and npm. Its pinned GitHub archive is downloaded over HTTPS.
 - Current installable profiles do not need Git. Git is needed only for manual source checkouts such as `devin-office`; package archives use HTTPS.
-- Initial supported platforms: Windows and Linux. macOS is planned but not claimed as tested.
+- Supported environments: Linux, Personal Windows and Corporate Windows. Linux and Personal Windows may use optional delegated runtime; Corporate Windows rejects registry entries that require external runtime, delegation or external integrations. macOS is planned but not claimed as tested.
 
 ## Development and synchronization
 

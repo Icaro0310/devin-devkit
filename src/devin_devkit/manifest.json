@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 9,
+  "registry_version": 10,
   "generated": "2026-10-05",
   "installer": "uv",
   "supported_platforms": [
@@ -10,6 +10,35 @@
   "planned_platforms": [
     "macos"
   ],
+  "environments": {
+    "linux": {
+      "label": "Linux",
+      "runtime": "extended",
+      "delegation": "optional",
+      "local_only": false,
+      "external_compute": true,
+      "devkit": "linux",
+      "description": "Native Linux execution plus optional Devin VM/QwenPaw workload delegation."
+    },
+    "personal_windows": {
+      "label": "Personal Windows",
+      "runtime": "extended",
+      "delegation": "optional",
+      "local_only": false,
+      "external_compute": true,
+      "devkit": "personal-windows",
+      "description": "Windows host execution plus optional Devin VM/QwenPaw workload delegation."
+    },
+    "corporate_windows": {
+      "label": "Corporate Windows",
+      "runtime": "local-only",
+      "delegation": "forbidden",
+      "local_only": true,
+      "external_compute": false,
+      "devkit": "corporate-windows",
+      "description": "Restricted Windows execution that is intentionally self-contained: no VM, QwenPaw, Slack requirement, external delegation, or external compute."
+    }
+  },
   "git_required_tools": [],
   "catalog": {
     "tool_count": 19,
@@ -171,6 +200,26 @@
         "developers",
         "maintainers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "pypi",
       "package": "devin-internals-spec",
@@ -203,6 +252,26 @@
         "security",
         "developers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "pypi",
       "package": "devin-redact",
@@ -234,6 +303,26 @@
         "operations",
         "end-users"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-history",
@@ -265,6 +354,26 @@
         "operations",
         "end-users"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-doctor",
@@ -297,6 +406,26 @@
         "operations",
         "maintainers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-pm",
@@ -328,6 +457,26 @@
         "qa",
         "developers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-qa-pack",
@@ -360,6 +509,26 @@
         "qa",
         "operations"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-metrics",
@@ -392,6 +561,26 @@
         "operations",
         "security"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-backup",
@@ -423,6 +612,26 @@
         "developers",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-search",
@@ -455,6 +664,26 @@
         "developers",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-graph",
@@ -487,6 +716,26 @@
         "qa",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-evals",
@@ -521,6 +770,26 @@
         "ai-engineers",
         "developers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "pypi",
       "package": "devin-memory",
@@ -557,6 +826,26 @@
         "operations",
         "security"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-janitor",
@@ -589,6 +878,38 @@
         "security",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false,
+          "requirements": [
+            "node>=20",
+            "devin-cli"
+          ]
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false,
+          "requirements": [
+            "node>=20",
+            "devin-cli"
+          ]
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false,
+          "requirements": [
+            "node>=20",
+            "devin-cli"
+          ]
+        }
+      },
       "manager": "npm",
       "source": "github",
       "package": "@icaro0310/devin-bridge",
@@ -621,6 +942,26 @@
         "operations",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-fanout",
@@ -653,6 +994,26 @@
         "operations",
         "end-users"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "manual",
       "source": "manual",
       "package": "devin-office",
@@ -685,6 +1046,26 @@
         "qa",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-dream",
@@ -716,6 +1097,26 @@
         "operations",
         "maintainers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-switch",
@@ -748,6 +1149,26 @@
         "maintainers",
         "ai-engineers"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "devin-skill-catalog",
@@ -782,6 +1203,26 @@
         "ai-engineers",
         "qa"
       ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
       "manager": "uv",
       "source": "github",
       "package": "poordjaevin",

@@ -1,6 +1,8 @@
 # Linux installation
 
-This guide covers Linux-specific setup. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers Linux setup. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+
+Linux uses the extended runtime: local execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
 
 ## Prerequisites
 
@@ -28,19 +30,19 @@ Then list profiles and preview an install:
 
 ```bash
 devin-devkit profiles
-devin-devkit install qa
+devin-devkit install qa --environment linux
 ```
 
 The final command previews the plan without installing. Apply it explicitly:
 
 ```bash
-devin-devkit install qa --apply
+devin-devkit install qa --environment linux --apply
 ```
 
 For the entire installable tool set:
 
 ```bash
-devin-devkit install full --apply
+devin-devkit install full --environment linux --apply
 ```
 
 If Node.js is not available, choose a profile without `devin-bridge` instead of forcing a partial installation.

@@ -1,6 +1,8 @@
-# Windows installation
+# Personal Windows installation
 
-This guide covers Windows-specific setup. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+
+Personal Windows uses the extended runtime: local Windows execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
 
 ## Prerequisites
 
@@ -28,19 +30,19 @@ Then list profiles and preview an install:
 
 ```powershell
 devin-devkit profiles
-devin-devkit install qa
+devin-devkit install qa --environment personal-windows
 ```
 
 The final command previews the plan without installing. Apply it explicitly:
 
 ```powershell
-devin-devkit install qa --apply
+devin-devkit install qa --environment personal-windows --apply
 ```
 
 For the entire installable tool set:
 
 ```powershell
-devin-devkit install full --apply
+devin-devkit install full --environment personal-windows --apply
 ```
 
 If Node.js is not available, choose a profile without `devin-bridge` instead of forcing a partial installation.
