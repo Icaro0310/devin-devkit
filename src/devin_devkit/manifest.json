@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 8,
+  "registry_version": 9,
   "generated": "2026-10-05",
   "installer": "uv",
   "supported_platforms": [
@@ -162,6 +162,15 @@
       "label": "devin-internals-spec",
       "description": "Documented internals of Devin Desktop/CLI stores + schema-version detection + fixtures + devin-inspect CLI.",
       "category": "foundation",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "developers",
+        "maintainers"
+      ],
       "manager": "uv",
       "source": "pypi",
       "package": "devin-internals-spec",
@@ -185,6 +194,15 @@
       "label": "devin-redact",
       "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
       "category": "security",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "security",
+        "developers"
+      ],
       "manager": "uv",
       "source": "pypi",
       "package": "devin-redact",
@@ -208,6 +226,14 @@
       "label": "devin-history",
       "description": "Export and audit Devin session history — markdown notes, JSON, CSV, Obsidian-ready.",
       "category": "operations",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "operations",
+        "end-users"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-history",
@@ -231,6 +257,14 @@
       "label": "devin-doctor",
       "description": "Diagnose a Devin Desktop installation: stores, schema, locks, config, disk — with fix suggestions.",
       "category": "qa",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "operations",
+        "end-users"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-doctor",
@@ -254,6 +288,15 @@
       "label": "devin-pm",
       "description": "Project manager over sessions: per-repo rollups, milestones, status reports, registry.json.",
       "category": "operations",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "registry"
+      ],
+      "audiences": [
+        "operations",
+        "maintainers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-pm",
@@ -277,6 +320,14 @@
       "label": "devin-qa-pack",
       "description": "QA pack: verifies session deliverable claims against tool-call ground truth.",
       "category": "qa",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "qa",
+        "developers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-qa-pack",
@@ -300,6 +351,15 @@
       "label": "devin-metrics",
       "description": "Local-only usage metrics: cost, tokens, sessions per project/model/day; zero telemetry. Includes an optional dashboard subpackage and command.",
       "category": "evaluation",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "dashboard"
+      ],
+      "audiences": [
+        "qa",
+        "operations"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-metrics",
@@ -324,6 +384,14 @@
       "label": "devin-backup",
       "description": "Safe snapshot/verify/restore/rotate of Devin stores with schema-version manifests.",
       "category": "operations",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "operations",
+        "security"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-backup",
@@ -347,6 +415,14 @@
       "label": "devin-search",
       "description": "FTS5 full-text search across all Devin sessions, role-tagged and project-filtered.",
       "category": "memory",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "developers",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-search",
@@ -370,6 +446,15 @@
       "label": "devin-graph",
       "description": "Knowledge graph: sessions, projects, files touched, tools used — queryable edges.",
       "category": "memory",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "developers",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-graph",
@@ -393,6 +478,15 @@
       "label": "devin-evals",
       "description": "Deterministic eval harness: replay recorded sessions against rubric graders.",
       "category": "evaluation",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "qa",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-evals",
@@ -416,6 +510,17 @@
       "label": "devin-memory",
       "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
       "category": "memory",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library",
+        "mcp",
+        "service"
+      ],
+      "audiences": [
+        "ai-engineers",
+        "developers"
+      ],
       "manager": "uv",
       "source": "pypi",
       "package": "devin-memory",
@@ -443,6 +548,15 @@
       "label": "devin-janitor",
       "description": "Session lifecycle janitor: export-then-delete pipeline, tiered classification, pluggable judge, pending-retry for locked stores.",
       "category": "security",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "automation"
+      ],
+      "audiences": [
+        "operations",
+        "security"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-janitor",
@@ -466,6 +580,15 @@
       "label": "devin-bridge",
       "description": "Policy-gated ACP client (Node.js, CI matrix Node 22 + 24): isolated sessions per repo with allow/deny/ask permission policy.",
       "category": "security",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "bridge"
+      ],
+      "audiences": [
+        "security",
+        "ai-engineers"
+      ],
       "manager": "npm",
       "source": "github",
       "package": "@icaro0310/devin-bridge",
@@ -489,6 +612,15 @@
       "label": "devin-orchestrator",
       "description": "Background-worker fan-out policy: deterministic planner enforcing worker caps (max 3), no nesting, read-only profiles for review, collect-before-report. Skill + always-on rule.",
       "category": "operations",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "automation"
+      ],
+      "audiences": [
+        "operations",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-fanout",
@@ -512,6 +644,15 @@
       "label": "devin-office",
       "description": "Local-first Devin session and subagent dashboard with standalone and optional split modes.",
       "category": "operations",
+      "artifact": "tool",
+      "interfaces": [
+        "service",
+        "dashboard"
+      ],
+      "audiences": [
+        "operations",
+        "end-users"
+      ],
       "manager": "manual",
       "source": "manual",
       "package": "devin-office",
@@ -535,6 +676,15 @@
       "label": "devin-dream",
       "description": "Synthetic Devin sessions with known verdicts — labeled defects (D01-D09), adversarial inject mode, and fleet generation. Regression/adversarial test data for the catalog.",
       "category": "evaluation",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "qa",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-dream",
@@ -558,6 +708,14 @@
       "label": "devin-switch",
       "description": "Switch between Devin configuration profiles (hooks, MCP, models) with snapshot, sha256 verify, atomic write, journal and rollback. Dry-run by default; secrets never printed.",
       "category": "governance",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "operations",
+        "maintainers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-switch",
@@ -581,6 +739,15 @@
       "label": "devin-skill-catalog",
       "description": "Lifecycle + quality gates for .devin skills/rules: scan, lint, diff, G1/G2 gates, quarantined→approved→active lifecycle, sha256-verified export/import bundles (imports land quarantined).",
       "category": "governance",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "registry"
+      ],
+      "audiences": [
+        "maintainers",
+        "ai-engineers"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "devin-skill-catalog",
@@ -604,6 +771,17 @@
       "label": "poordjaevin",
       "description": "Djævin: fork of poordjaevin adding a Devin ACP backend (uses the model Devin already runs, no extra download); local NLI backend stays as fully-offline fallback.",
       "category": "memory",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library",
+        "mcp",
+        "bridge"
+      ],
+      "audiences": [
+        "ai-engineers",
+        "qa"
+      ],
       "manager": "uv",
       "source": "github",
       "package": "poordjaevin",

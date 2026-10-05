@@ -8,8 +8,8 @@
 
 ## Source → tools → profiles
 
-- `devin-powerups/registry.json` is the catalog and profile source of truth: 19 first-party `devin-*` tools, this separate DevKit distribution, one maintainer hub, and three related projects.
-- `tools/export_devkit_manifest.py` builds this repo's bundled manifest from the registry. The exporter rejects private or unregistered tools and verifies immutable Git commit references.
+- `devin-powerups/registry.json` is the catalog and profile source of truth: 19 first-party `devin-*` tools, this separate DevKit distribution, one maintainer hub, and three related artifacts.
+- `tools/export_devkit_manifest.py` builds this repo's bundled manifest from the registry, including artifact, interface, audience and platform metadata. The exporter rejects private or unregistered tools and verifies immutable Git commit references.
 - `src/devin_devkit/cli.py` previews and installs the selected profile. It does not edit Devin settings, inspect session databases, or install Slack/Obsidian/VM services.
 
 ## Profiles
