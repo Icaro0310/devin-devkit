@@ -339,7 +339,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-history/archive/d1a3176875e23a8f7cdfb8cad87af19653271b96.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-history/archive/964e84694662fc4e6276573892013aabbf0d599b.tar.gz"
     },
     {
       "id": "devin-doctor",
@@ -390,7 +390,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/49953466354f0251ef8542a32029f162de0fc66a.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/a2388c2b43d2bbf57099558e37c73d23c8075a0c.tar.gz"
     },
     {
       "id": "devin-pm",
@@ -442,7 +442,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/aae411c4e97dad718636eab282bb1ba4bb074b3b.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/2617dcd19d7ecc4a1974222030b47e3cd0ad808f.tar.gz"
     },
     {
       "id": "devin-qa-pack",
@@ -493,7 +493,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/cfc5960aa625faf32eae3b52d07e3ab19124d55c.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/f6947f373085b44bbaaddcab9ee7934d043ccf57.tar.gz"
     },
     {
       "id": "devin-metrics",
@@ -546,7 +546,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/824d1ffa01d343db64b240113c39d9c256d6d444.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/ec43d50044046dc8af9598ac3c93baaeb5a5a83f.tar.gz"
     },
     {
       "id": "devin-backup",
@@ -597,7 +597,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/aee6a37b7c67b3c2a9bf2ad25b3dc16229e3aebe.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/59ec50d7d52523d1c616f45d087700a6dc25a3f2.tar.gz"
     },
     {
       "id": "devin-search",
@@ -648,7 +648,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-search/archive/288bbe41215be208626f64541f5864e360a9e359.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-search/archive/202cc214d3b6c04cc1e77dc62f6fec8c36f303fc.tar.gz"
     },
     {
       "id": "devin-graph",
@@ -700,7 +700,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/11c90b606f4e38f586b7ae3388c4c7e04a90907b.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/85e876ad4735f38b0388934445acb0e6cee1f6a4.tar.gz"
     },
     {
       "id": "devin-evals",
@@ -752,7 +752,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/1db5ce398a0dd5b2fcd068c86f88f1818d9000ac.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/7d14c086d865a2a37e58fa9e137ddfc32bceaef7.tar.gz"
     },
     {
       "id": "devin-memory",
@@ -862,7 +862,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/6492b3593b9f9bb623473b92ca05f852c8595718.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/053d648f120f0ead8cfe10abac74bc7e2bb12358.tar.gz"
     },
     {
       "id": "devin-bridge",
@@ -926,7 +926,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/4ad4f8a6b07160a6a266c1724e1bc87a564b4b39.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/c1615bc7a63166f126dabbcb7064d7e32e42edc0.tar.gz"
     },
     {
       "id": "devin-orchestrator",
@@ -978,7 +978,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-orchestrator/archive/a4617c7cfdb1679b8c4bb3b098b7e566175166e4.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-orchestrator/archive/e2682735eef1281cf99c165abd26e5a2fb225404.tar.gz"
     },
     {
       "id": "devin-office",
@@ -1082,7 +1082,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/c7d5fa6eb670a7e462b2032179b5eb1c04613266.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/8c454d0948c18c3357a19cc9b07bde7107eefb0a.tar.gz"
     },
     {
       "id": "devin-switch",
@@ -1133,7 +1133,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/c8f34207d39b92036cd4106e6d08aee3a08679fd.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/3eeaf127464a48ae3732b389e3e53064deb89634.tar.gz"
     },
     {
       "id": "devin-skill-catalog",
@@ -1185,7 +1185,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/351642104cc4c9dc60ef3bd304f027a52e509276.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/42b0cab1e4d39019714cfbf1901c198b76c5f4cf.tar.gz"
     },
     {
       "id": "poordjaevin",
@@ -1239,7 +1239,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/poordjaevin/archive/648be6e479a06c99494d3cbc1592f20d6d116bb0.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/poordjaevin/archive/d3ddec983f6623793e399e5ff24cf491c46626c9.tar.gz"
     }
   ]
 }
