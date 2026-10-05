@@ -11,8 +11,8 @@
 4. **Never print secrets.** Gate findings report positions, never values.
    New secret/injection patterns go in `gates.py` with tests asserting the
    value is suppressed.
-5. **Bilingual docs.** Changes to `README.md` must be mirrored in
-   `README.pt-BR.md`.
+5. **Platform docs.** Keep shared behavior in `README.md`; keep Windows and
+   Linux setup, paths, commands, and troubleshooting in their OS-specific guides.
 
 ## Setup
 
