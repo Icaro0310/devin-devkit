@@ -1,0 +1,639 @@
+{
+  "schema": "devin-devkit-manifest/0.1",
+  "registry_version": 8,
+  "generated": "2026-10-05",
+  "installer": "uv",
+  "supported_platforms": [
+    "windows",
+    "linux"
+  ],
+  "planned_platforms": [
+    "macos"
+  ],
+  "git_required_tools": [
+    "devin-backup",
+    "devin-doctor",
+    "devin-dream",
+    "devin-evals",
+    "devin-graph",
+    "devin-history",
+    "devin-janitor",
+    "devin-metrics",
+    "devin-office",
+    "devin-pm",
+    "devin-qa-pack",
+    "devin-search"
+  ],
+  "catalog": {
+    "tool_count": 19,
+    "distribution_count": 1,
+    "hub_count": 1,
+    "related_count": 3,
+    "entry_count": 24
+  },
+  "profiles": {
+    "qa": {
+      "label": "QA",
+      "description": "Verify session claims and local Devin state with deterministic evidence.",
+      "tools": [
+        "devin-internals-spec",
+        "devin-qa-pack",
+        "devin-evals",
+        "devin-metrics",
+        "devin-doctor"
+      ]
+    },
+    "evaluation": {
+      "label": "Evaluation",
+      "description": "Measure changes with synthetic fixtures, rubrics, and local metrics.",
+      "tools": [
+        "devin-internals-spec",
+        "devin-evals",
+        "devin-metrics",
+        "devin-dream"
+      ]
+    },
+    "security": {
+      "label": "Security",
+      "description": "Reduce risk around secrets, policy-gated actions, and noisy sessions.",
+      "tools": [
+        "devin-redact",
+        "devin-bridge",
+        "devin-janitor"
+      ]
+    },
+    "memory": {
+      "label": "Memory",
+      "description": "Search, connect, and preserve agent knowledge with optional ACP integrations.",
+      "tools": [
+        "devin-memory",
+        "devin-graph",
+        "devin-search",
+        "poordjaevin"
+      ]
+    },
+    "operations": {
+      "label": "Operations",
+      "description": "Inspect, back up, export, and maintain Devin data and projects.",
+      "tools": [
+        "devin-backup",
+        "devin-history",
+        "devin-doctor",
+        "devin-metrics",
+        "devin-janitor",
+        "devin-pm",
+        "devin-orchestrator",
+        "devin-switch",
+        "devin-skill-catalog"
+      ],
+      "manual": [
+        "devin-office"
+      ]
+    },
+    "agent": {
+      "label": "Agent",
+      "description": "Convenience alias for the memory and decision tools.",
+      "tools": [
+        "devin-memory",
+        "devin-graph",
+        "devin-search",
+        "poordjaevin"
+      ],
+      "alias_of": "memory"
+    },
+    "safety": {
+      "label": "Safety",
+      "description": "Convenience alias for security tooling.",
+      "tools": [
+        "devin-redact",
+        "devin-bridge",
+        "devin-janitor"
+      ],
+      "alias_of": "security"
+    },
+    "full": {
+      "label": "Full",
+      "description": "All installable public tools; source-only services are listed separately.",
+      "tools": [
+        "devin-internals-spec",
+        "devin-redact",
+        "devin-history",
+        "devin-doctor",
+        "devin-pm",
+        "devin-qa-pack",
+        "devin-metrics",
+        "devin-backup",
+        "devin-search",
+        "devin-graph",
+        "devin-evals",
+        "devin-memory",
+        "devin-janitor",
+        "devin-bridge",
+        "devin-orchestrator",
+        "devin-dream",
+        "devin-switch",
+        "devin-skill-catalog",
+        "poordjaevin"
+      ],
+      "manual": [
+        "devin-office"
+      ]
+    },
+    "all": {
+      "label": "All",
+      "description": "Alias for the full installable profile.",
+      "tools": [
+        "devin-internals-spec",
+        "devin-redact",
+        "devin-history",
+        "devin-doctor",
+        "devin-pm",
+        "devin-qa-pack",
+        "devin-metrics",
+        "devin-backup",
+        "devin-search",
+        "devin-graph",
+        "devin-evals",
+        "devin-memory",
+        "devin-janitor",
+        "devin-bridge",
+        "devin-orchestrator",
+        "devin-dream",
+        "devin-switch",
+        "devin-skill-catalog",
+        "poordjaevin"
+      ],
+      "manual": [
+        "devin-office"
+      ],
+      "alias_of": "full"
+    }
+  },
+  "tools": [
+    {
+      "id": "devin-internals-spec",
+      "label": "devin-internals-spec",
+      "description": "Documented internals of Devin Desktop/CLI stores + schema-version detection + fixtures + devin-inspect CLI.",
+      "category": "foundation",
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-internals-spec",
+      "version": "0.3.0",
+      "commands": [
+        "devin-inspect"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "devin-internals-spec==0.3.0"
+    },
+    {
+      "id": "devin-redact",
+      "label": "devin-redact",
+      "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
+      "category": "security",
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-redact",
+      "version": "0.2.0",
+      "commands": [
+        "devin-redact"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "devin-redact==0.2.0"
+    },
+    {
+      "id": "devin-history",
+      "label": "devin-history",
+      "description": "Export and audit Devin session history — markdown notes, JSON, CSV, Obsidian-ready.",
+      "category": "operations",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-history",
+      "version": "0.1.0",
+      "commands": [
+        "devin-history"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-history/archive/f9e5c314ab4fc0e2b0cfe8500bcb531237b7c94d.tar.gz"
+    },
+    {
+      "id": "devin-doctor",
+      "label": "devin-doctor",
+      "description": "Diagnose a Devin Desktop installation: stores, schema, locks, config, disk — with fix suggestions.",
+      "category": "qa",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-doctor",
+      "version": "0.1.0",
+      "commands": [
+        "devin-doctor"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/2bb5546366a125a23e6b3dadc7de827822e599ca.tar.gz"
+    },
+    {
+      "id": "devin-pm",
+      "label": "devin-pm",
+      "description": "Project manager over sessions: per-repo rollups, milestones, status reports, registry.json.",
+      "category": "operations",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-pm",
+      "version": "0.1.0",
+      "commands": [
+        "devin-pm"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/8459311bd1162107c8fd477edcb28c6e0d34dc92.tar.gz"
+    },
+    {
+      "id": "devin-qa-pack",
+      "label": "devin-qa-pack",
+      "description": "QA pack: verifies session deliverable claims against tool-call ground truth.",
+      "category": "qa",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-qa-pack",
+      "version": "0.1.0",
+      "commands": [
+        "devin-qa-pack"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/18f4aac75dee37cc952f5613d56de8a65617872d.tar.gz"
+    },
+    {
+      "id": "devin-metrics",
+      "label": "devin-metrics",
+      "description": "Local-only usage metrics: cost, tokens, sessions per project/model/day; zero telemetry. Includes an optional dashboard subpackage and command.",
+      "category": "evaluation",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-metrics",
+      "version": "0.2.0",
+      "commands": [
+        "devin-metrics",
+        "devin-dashboard"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/48cc7e231c7c3d47a103c6715471d27a1708e901.tar.gz"
+    },
+    {
+      "id": "devin-backup",
+      "label": "devin-backup",
+      "description": "Safe snapshot/verify/restore/rotate of Devin stores with schema-version manifests.",
+      "category": "operations",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-backup",
+      "version": "0.1.0",
+      "commands": [
+        "devin-backup"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/7bc11be5d268046a44e71aef5edaad833b18f520.tar.gz"
+    },
+    {
+      "id": "devin-search",
+      "label": "devin-search",
+      "description": "FTS5 full-text search across all Devin sessions, role-tagged and project-filtered.",
+      "category": "memory",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-search",
+      "version": "0.1.0",
+      "commands": [
+        "devin-search"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-search/archive/288bbe41215be208626f64541f5864e360a9e359.tar.gz"
+    },
+    {
+      "id": "devin-graph",
+      "label": "devin-graph",
+      "description": "Knowledge graph: sessions, projects, files touched, tools used — queryable edges.",
+      "category": "memory",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-graph",
+      "version": "0.1.0",
+      "commands": [
+        "devin-graph"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/9e3d4c673a8a616d095484b4eaefc1810e24c9e6.tar.gz"
+    },
+    {
+      "id": "devin-evals",
+      "label": "devin-evals",
+      "description": "Deterministic eval harness: replay recorded sessions against rubric graders.",
+      "category": "evaluation",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-evals",
+      "version": "0.1.0",
+      "commands": [
+        "devin-evals"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/1860e31dff1811a139d10b3936639ca13190b63d.tar.gz"
+    },
+    {
+      "id": "devin-memory",
+      "label": "devin-memory",
+      "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
+      "category": "memory",
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-memory",
+      "version": "0.3.0",
+      "commands": [
+        "devin-memory",
+        "devin-learning",
+        "devin-memory-mcp"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [
+        "mcp"
+      ],
+      "manual_note": null,
+      "install_spec": "devin-memory[mcp]==0.3.0"
+    },
+    {
+      "id": "devin-janitor",
+      "label": "devin-janitor",
+      "description": "Session lifecycle janitor: export-then-delete pipeline, tiered classification, pluggable judge, pending-retry for locked stores.",
+      "category": "security",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-janitor",
+      "version": "0.1.0",
+      "commands": [
+        "devin-janitor"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/71a93d469a9623d66eb6234254e92d889c44b0a4.tar.gz"
+    },
+    {
+      "id": "devin-bridge",
+      "label": "devin-bridge",
+      "description": "Policy-gated ACP client (Node.js, CI matrix Node 22 + 24): isolated sessions per repo with allow/deny/ask permission policy.",
+      "category": "security",
+      "manager": "npm",
+      "source": "github",
+      "package": "@icaro0310/devin-bridge",
+      "version": "0.1.0",
+      "commands": [
+        "devin-bridge"
+      ],
+      "runtime": "node>=20",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/4ad4f8a6b07160a6a266c1724e1bc87a564b4b39.tar.gz"
+    },
+    {
+      "id": "devin-orchestrator",
+      "label": "devin-orchestrator",
+      "description": "Background-worker fan-out policy: deterministic planner enforcing worker caps (max 3), no nesting, read-only profiles for review, collect-before-report. Skill + always-on rule.",
+      "category": "operations",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-fanout",
+      "version": "0.2.0",
+      "commands": [
+        "devin-orchestrator"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-orchestrator/archive/a4617c7cfdb1679b8c4bb3b098b7e566175166e4.tar.gz"
+    },
+    {
+      "id": "devin-office",
+      "label": "devin-office",
+      "description": "Local-first Devin session and subagent dashboard with standalone and optional split modes.",
+      "category": "operations",
+      "manager": "manual",
+      "source": "manual",
+      "package": "devin-office",
+      "version": "0.1.0",
+      "commands": [
+        "python daemon.py"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "manual",
+      "extras": [],
+      "manual_note": "Source-only dashboard service; no distributable package metadata yet.",
+      "install_spec": null
+    },
+    {
+      "id": "devin-dream",
+      "label": "devin-dream",
+      "description": "Synthetic Devin sessions with known verdicts — labeled defects (D01-D09), adversarial inject mode, and fleet generation. Regression/adversarial test data for the catalog.",
+      "category": "evaluation",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-dream",
+      "version": "0.1.0",
+      "commands": [
+        "devin-dream"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": true,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/e2413ae2cd8460aa30e58fe2292e970fe31181a3.tar.gz"
+    },
+    {
+      "id": "devin-switch",
+      "label": "devin-switch",
+      "description": "Switch between Devin configuration profiles (hooks, MCP, models) with snapshot, sha256 verify, atomic write, journal and rollback. Dry-run by default; secrets never printed.",
+      "category": "governance",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-switch",
+      "version": "0.1.0",
+      "commands": [
+        "devin-switch"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/c8f34207d39b92036cd4106e6d08aee3a08679fd.tar.gz"
+    },
+    {
+      "id": "devin-skill-catalog",
+      "label": "devin-skill-catalog",
+      "description": "Lifecycle + quality gates for .devin skills/rules: scan, lint, diff, G1/G2 gates, quarantined→approved→active lifecycle, sha256-verified export/import bundles (imports land quarantined).",
+      "category": "governance",
+      "manager": "uv",
+      "source": "github",
+      "package": "devin-skill-catalog",
+      "version": "0.1.0",
+      "commands": [
+        "devin-skill-catalog"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/351642104cc4c9dc60ef3bd304f027a52e509276.tar.gz"
+    },
+    {
+      "id": "poordjaevin",
+      "label": "poordjaevin",
+      "description": "Djævin: fork of poordjaevin adding a Devin ACP backend (uses the model Devin already runs, no extra download); local NLI backend stays as fully-offline fallback.",
+      "category": "memory",
+      "manager": "uv",
+      "source": "github",
+      "package": "poordjaevin",
+      "version": "0.1.0",
+      "commands": [
+        "poordjaevin"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "source",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "https://github.com/Icaro0310/poordjaevin/archive/648be6e479a06c99494d3cbc1592f20d6d116bb0.tar.gz"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+# Windows installation
+
+This guide covers Windows-specific setup. The v0.1.0 source archive is available from GitHub; the DevKit is not yet on PyPI.
+
+## Prerequisites
+
+- Windows 10 or newer and PowerShell.
+- `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
+- Git for Windows on `PATH` only for packages whose current dependency chain still uses Git; the manifest identifies them.
+- Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
+
+## Install the DevKit
+
+From the tagged GitHub source archive (Git is not required for this download):
+
+```powershell
+uv tool install "https://github.com/Icaro0310/devin-devkit/archive/v0.1.0.tar.gz"
+```
+
+From a local checkout:
+
+```powershell
+cd devin-devkit
+uv tool install .
+```
+
+Then list profiles and preview an install:
+
+```powershell
+devin-devkit profiles
+devin-devkit install qa
+```
+
+The final command previews the plan without installing. Apply it explicitly:
+
+```powershell
+devin-devkit install qa --apply
+```
+
+For the entire installable tool set:
+
+```powershell
+devin-devkit install full --apply
+```
+
+If Node.js is not available, choose a profile without `devin-bridge` instead of forcing a partial installation.
+
+## Devin paths and PATH
+
+Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP message databases are under `%APPDATA%\Devin\User\`. The DevKit does not change those directories or Devin settings.
+
+`uv` exposes installed commands through its tools directory. If PowerShell cannot find a command, follow `uv tool update-shell` guidance and open a new terminal.
+
+## Local development with sibling checkouts
+
+For a package such as `devin-doctor`, keep the published version constraint in its `pyproject.toml`; install sibling sources editably only in the development environment:
+
+```powershell
+cd ..\devin-doctor
+uv venv
+uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
+```
+
+## Troubleshooting
+
+- For GitHub-sourced tools, verify Git with `git --version`.
+- `devin-devkit install <profile>` is a dry run. `--apply` is required to install.
+- Existing commands are never overwritten; a partial PATH collision blocks the profile before any packages are installed.
+- For a tool's usage and data-path overrides, follow its main `README.md`.
