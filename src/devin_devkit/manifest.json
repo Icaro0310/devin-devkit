@@ -447,7 +447,7 @@
     {
       "id": "devin-qa-pack",
       "label": "devin-qa-pack",
-      "description": "QA pack: verifies session deliverable claims against tool-call ground truth.",
+      "description": "Flagship QA audit: verifies session deliverable claims against tool-call ground truth and reports PASS/PARTIAL/UNVERIFIED.",
       "category": "qa",
       "artifact": "tool",
       "interfaces": [
@@ -498,7 +498,7 @@
     {
       "id": "devin-metrics",
       "label": "devin-metrics",
-      "description": "Local-only usage metrics: cost, tokens, sessions per project/model/day; zero telemetry. Includes an optional dashboard subpackage and command.",
+      "description": "Local-only session observability: activity, context size, and token peaks per project/model/day; zero telemetry. Devin does not persist cost fields, so cost is not claimed. Includes an optional dashboard subpackage and command.",
       "category": "evaluation",
       "artifact": "tool",
       "interfaces": [
