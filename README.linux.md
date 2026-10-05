@@ -1,20 +1,20 @@
 # Linux installation
 
-This guide covers Linux-specific setup. The v0.1.0 source archive is available from GitHub; the DevKit is not yet on PyPI.
+This guide covers Linux-specific setup. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
 
 ## Prerequisites
 
 - A supported Linux distribution and Bash.
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/) or your distribution's package manager. It can manage a compatible Python interpreter.
-- Git only for packages that still have a Git dependency in their current release; the manifest checks and reports this before installing.
+- Git only for manual source checkouts such as `devin-office`; DevKit downloads installable package archives over HTTPS.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
 
 ## Install the DevKit
 
-From the tagged GitHub source archive (Git is not required for this download):
+From the current GitHub source archive (Git is not required for this download):
 
 ```bash
-uv tool install 'https://github.com/Icaro0310/devin-devkit/archive/v0.1.0.tar.gz'
+uv tool install 'https://github.com/Icaro0310/devin-devkit/archive/main.tar.gz'
 ```
 
 From a local checkout:

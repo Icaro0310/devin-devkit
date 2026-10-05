@@ -10,20 +10,7 @@
   "planned_platforms": [
     "macos"
   ],
-  "git_required_tools": [
-    "devin-backup",
-    "devin-doctor",
-    "devin-dream",
-    "devin-evals",
-    "devin-graph",
-    "devin-history",
-    "devin-janitor",
-    "devin-metrics",
-    "devin-office",
-    "devin-pm",
-    "devin-qa-pack",
-    "devin-search"
-  ],
+  "git_required_tools": [],
   "catalog": {
     "tool_count": 19,
     "distribution_count": 1,
@@ -233,11 +220,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-history/archive/f9e5c314ab4fc0e2b0cfe8500bcb531237b7c94d.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-history/archive/d1a3176875e23a8f7cdfb8cad87af19653271b96.tar.gz"
     },
     {
       "id": "devin-doctor",
@@ -256,11 +243,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/2bb5546366a125a23e6b3dadc7de827822e599ca.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/49953466354f0251ef8542a32029f162de0fc66a.tar.gz"
     },
     {
       "id": "devin-pm",
@@ -279,11 +266,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/8459311bd1162107c8fd477edcb28c6e0d34dc92.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/aae411c4e97dad718636eab282bb1ba4bb074b3b.tar.gz"
     },
     {
       "id": "devin-qa-pack",
@@ -302,11 +289,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/18f4aac75dee37cc952f5613d56de8a65617872d.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/cfc5960aa625faf32eae3b52d07e3ab19124d55c.tar.gz"
     },
     {
       "id": "devin-metrics",
@@ -326,11 +313,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/48cc7e231c7c3d47a103c6715471d27a1708e901.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/824d1ffa01d343db64b240113c39d9c256d6d444.tar.gz"
     },
     {
       "id": "devin-backup",
@@ -349,11 +336,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/7bc11be5d268046a44e71aef5edaad833b18f520.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/aee6a37b7c67b3c2a9bf2ad25b3dc16229e3aebe.tar.gz"
     },
     {
       "id": "devin-search",
@@ -372,7 +359,7 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
@@ -395,11 +382,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/9e3d4c673a8a616d095484b4eaefc1810e24c9e6.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/11c90b606f4e38f586b7ae3388c4c7e04a90907b.tar.gz"
     },
     {
       "id": "devin-evals",
@@ -418,11 +405,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/1860e31dff1811a139d10b3936639ca13190b63d.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/1db5ce398a0dd5b2fcd068c86f88f1818d9000ac.tar.gz"
     },
     {
       "id": "devin-memory",
@@ -468,11 +455,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/71a93d469a9623d66eb6234254e92d889c44b0a4.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/6492b3593b9f9bb623473b92ca05f852c8595718.tar.gz"
     },
     {
       "id": "devin-bridge",
@@ -537,7 +524,7 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "manual",
       "extras": [],
       "manual_note": "Source-only dashboard service; no distributable package metadata yet.",
@@ -560,11 +547,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
+      "requires_git": false,
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/e2413ae2cd8460aa30e58fe2292e970fe31181a3.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/c7d5fa6eb670a7e462b2032179b5eb1c04613266.tar.gz"
     },
     {
       "id": "devin-switch",

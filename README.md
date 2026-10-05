@@ -27,10 +27,10 @@ QwenPaw is an optional add-on and is not installed by these profiles. macOS is p
 
 ## Use
 
-Install the tagged source archive or use a local checkout; the package has no runtime dependencies:
+Install the current GitHub source archive or use a local checkout; the package has no runtime dependencies:
 
 ```bash
-uv tool install "https://github.com/Icaro0310/devin-devkit/archive/v0.1.0.tar.gz"
+uv tool install "https://github.com/Icaro0310/devin-devkit/archive/main.tar.gz"
 ```
 
 From a local checkout, use `uv tool install .`. Then inspect the available profiles and preview before applying:
@@ -51,13 +51,13 @@ uv run --project . python -m devin_devkit.cli install qa
 
 After a PyPI package release, the installer can also be run with `uvx devin-devkit ...`.
 
-The manifest pins PyPI versions where available and GitHub source commits otherwise. Before it starts, the installer checks platform support, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; a complete existing installation is reported as already available, and a partial collision blocks the profile before any installs run.
+The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; a complete existing installation is reported as already available, and a partial collision blocks the profile before any installs run.
 
 ## Runtime requirements
 
 - Python tools: Python 3.10 or newer, installed in isolated environments managed by `uv`.
 - `devin-bridge`: Node.js 20 or newer and npm. Its pinned GitHub archive is downloaded over HTTPS.
-- Git is required only for tools whose current dependency chain still contains a Git dependency; the manifest marks them. The pinned source archives themselves do not require Git.
+- Current installable profiles do not need Git. Git is needed only for manual source checkouts such as `devin-office`; package archives use HTTPS.
 - Initial supported platforms: Windows and Linux. macOS is planned but not claimed as tested.
 
 ## Development and synchronization
