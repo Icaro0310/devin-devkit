@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 11,
+  "registry_version": 13,
   "generated": "2026-10-06",
   "installer": "uv",
   "supported_platforms": [
@@ -339,7 +339,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-history/archive/b4ee9f0548f46742d22c7dd4dedd692e17c12af8.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-history/archive/9dbd174a189234a727553112ed68fcf6584fb4ec.tar.gz"
     },
     {
       "id": "devin-doctor",
@@ -375,7 +375,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-doctor",
       "version": "0.1.0",
       "commands": [
@@ -387,10 +387,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-doctor/archive/db5501fa3b07ec407540ec6a58d52a287e34f8be.tar.gz"
+      "install_spec": "devin-doctor==0.1.0"
     },
     {
       "id": "devin-pm",
@@ -442,7 +442,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/24276de3c363fbe32325f12e59fa2e27ff566037.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/e2acfff95332d1189c64a1dd416148b8a12005c4.tar.gz"
     },
     {
       "id": "devin-qa-pack",
@@ -478,7 +478,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-qa-pack",
       "version": "0.1.0",
       "commands": [
@@ -490,10 +490,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-qa-pack/archive/10784b79b4ddd14d4a09429f3232acaa9ce5f872.tar.gz"
+      "install_spec": "devin-qa-pack==0.1.0"
     },
     {
       "id": "devin-metrics",
@@ -546,7 +546,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/984ee4187bc4a4eba990fe0a4196215941ab7737.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/15c9ce9e337f213fd9d269694523e0b6ece199fe.tar.gz"
     },
     {
       "id": "devin-backup",
@@ -597,7 +597,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/7084e3989193f3df47a6d401bb99351ce84ae52c.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-backup/archive/c16e23e66e1b8509ea68f5ccd5c42df9665f201b.tar.gz"
     },
     {
       "id": "devin-search",
@@ -648,7 +648,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-search/archive/3b48820742c1bb6d6023d74ed285870571f1752c.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-search/archive/96b49eba2f0ba3758dd63579e64d64cd5bfe289b.tar.gz"
     },
     {
       "id": "devin-graph",
@@ -700,7 +700,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/18fc0423c9818f9af61088c2ca51b3676c017cdd.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/ebb8fc12e97dc6b1db28778c329da70767d4b502.tar.gz"
     },
     {
       "id": "devin-evals",
@@ -752,7 +752,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/fe1d50a2ad824d151e7df5da35b73513b6912d44.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/54e200bd92fdfcc5aceb6569599922ca68223a24.tar.gz"
     },
     {
       "id": "devin-memory",
@@ -862,7 +862,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/21d34489d63c2afdeb73d90f023e5771bef5fe04.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/f9aee000205b8e5c29cfb407f177217be38790e3.tar.gz"
     },
     {
       "id": "devin-bridge",
@@ -926,7 +926,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/f491d051f06dea143f3ac054894b8aba048650bb.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/3b68cfb005f1559a6014377fc33791e7ade714d7.tar.gz"
     },
     {
       "id": "devin-orchestrator",
@@ -963,7 +963,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-fanout",
       "version": "0.2.0",
       "commands": [
@@ -975,10 +975,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-orchestrator/archive/750b13d34d5140a86d89229d4c17542680d93cd7.tar.gz"
+      "install_spec": "devin-fanout==0.2.0"
     },
     {
       "id": "devin-office",
@@ -1082,7 +1082,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/4f0e6e0761d61fda33d89a4c98086bff53d9519c.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/f1dfebceee3129f78a7e3c60dad3275960e17886.tar.gz"
     },
     {
       "id": "devin-switch",
@@ -1133,7 +1133,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/16036f7d0c8004b7918a39a1b1ca4f70635127c3.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/cbae07fd0215b3c57235b2b02833a004721bec6f.tar.gz"
     },
     {
       "id": "devin-skill-catalog",
@@ -1185,7 +1185,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/5cf8aae18324ab09b3d945ef84cf01c8b7d4bf3d.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/cffb914365109fa93822c9abb1ced8bfaad01398.tar.gz"
     },
     {
       "id": "poordjaevin",
@@ -1224,7 +1224,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "poordjaevin",
       "version": "0.1.1",
       "commands": [
@@ -1236,10 +1236,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/poordjaevin/archive/6159f33872b9407be993199ce2231e98c0c3a5c7.tar.gz"
+      "install_spec": "poordjaevin==0.1.1"
     }
   ]
 }
