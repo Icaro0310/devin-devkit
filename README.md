@@ -1,3 +1,9 @@
+<div align="center">
+
+<a href="https://github.com/Icaro0310/devin-devkit/actions/workflows/ci.yml"><img src="https://github.com/Icaro0310/devin-devkit/actions/workflows/ci.yml/badge.svg" alt="ci"/></a>
+
+</div>
+
 # devin-devkit
 
 > Unofficial community project. Not affiliated with, endorsed by, or sponsored by Cognition AI. Devin is a Cognition AI trademark.
