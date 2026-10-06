@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 13,
+  "registry_version": 14,
   "generated": "2026-10-06",
   "installer": "uv",
   "supported_platforms": [
@@ -911,7 +911,7 @@
         }
       },
       "manager": "npm",
-      "source": "github",
+      "source": "npm",
       "package": "@icaro0310/devin-bridge",
       "version": "0.1.0",
       "commands": [
@@ -923,10 +923,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-bridge/archive/3b68cfb005f1559a6014377fc33791e7ade714d7.tar.gz"
+      "install_spec": "@icaro0310/devin-bridge@0.1.0"
     },
     {
       "id": "devin-orchestrator",
