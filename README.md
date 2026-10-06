@@ -21,6 +21,8 @@ Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosyste
 
 `devin-devkit` turns the public `devin-powerups` registry into selectable installation profiles. It is an **installer/distribution tool**, not a meta-package: each Python app gets its own isolated `uv` environment, and the Node bridge uses npm separately.
 
+![devin-devkit demo: list, outdated, doctor check](assets/demo.gif)
+
 ## Source → tools → profiles
 
 - `devin-powerups/registry.json` is the catalog and profile source of truth: 19 first-party `devin-*` tools, this separate DevKit distribution, one maintainer hub, and three related artifacts.
