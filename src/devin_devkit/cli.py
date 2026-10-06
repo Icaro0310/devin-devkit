@@ -7,6 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from devin_devkit.installer import DevKitError, apply_plan, build_plan, load_manifest
+from devin_devkit.updater import (
+    apply_update_plan,
+    build_update_plan,
+    fetch_remote_manifest,
+    freshness_hint,
+)
 
 
 def _print_plan(plan: dict[str, Any], as_json: bool) -> None:
@@ -40,6 +46,12 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["linux", "personal-windows", "corporate-windows"],
         help="execution environment; defaults to linux on Linux and personal-windows on Windows",
     )
+    outdated = sub.add_parser("outdated", help="list installed tools with a newer version in the remote registry")
+    outdated.add_argument("--json", action="store_true", help="print the check as JSON")
+    update = sub.add_parser("update", help="preview tool updates; pass --apply to install them")
+    update.add_argument("--apply", action="store_true", help="reinstall outdated tools")
+    update.add_argument("--force", action="store_true", help="reinstall every installed tool")
+    update.add_argument("--json", action="store_true", help="print the plan as JSON")
     return parser
 
 
@@ -48,6 +60,32 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         manifest = load_manifest(args.manifest)
+        if args.action in {"outdated", "update"}:
+            remote = fetch_remote_manifest()
+            plan = build_update_plan(remote, force=args.action == "update" and args.force)
+            if args.json:
+                print(json.dumps(plan, ensure_ascii=False, indent=2))
+            else:
+                print(f"Remote registry v{plan['registry_version']} (generated {plan['generated']})")
+                for item in plan["actions"]:
+                    if item["action"] == "update":
+                        print(f"- {item['tool']}: {item['from']} -> {item['to']}")
+                    elif item["action"] == "current":
+                        print(f"- {item['tool']}: up to date ({item['version']})")
+                    elif item["action"] == "blocked":
+                        print(f"- {item['tool']}: BLOCKED — {item['detail']}")
+            if args.action == "outdated":
+                return 0
+            pending = [a for a in plan["actions"] if a["action"] == "update"]
+            if not args.apply:
+                if pending:
+                    print("Dry run only. Re-run with --apply to update.")
+                return 0
+            result = apply_update_plan(plan)
+            print(f"Updated: {', '.join(result['updated']) or 'nothing'}")
+            for name in result["failed"]:
+                print(f"FAILED: {name}", file=sys.stderr)
+            return 1 if result["failed"] else 0
         if args.action == "profiles":
             for name, profile in manifest["profiles"].items():
                 alias = f" (alias of {profile['alias_of']})" if profile.get("alias_of") else ""
@@ -57,11 +95,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{manifest['catalog']['tool_count']} first-party Devin tools; {manifest['catalog']['distribution_count']} distribution; {manifest['catalog']['hub_count']} maintainer hub; {manifest['catalog']['related_count']} related projects")
             for tool in manifest["tools"]:
                 print(f"{tool['id']}: {tool['package']} {tool['version']} [{tool['manager']}/{tool['source']}/{tool['status']}]")
+            hint = freshness_hint(manifest)
+            if hint:
+                print(hint, file=sys.stderr)
             return 0
 
         plan = build_plan(manifest, args.profile, environment=args.environment)
         if not args.apply:
             _print_plan(plan, args.json)
+            hint = freshness_hint(manifest)
+            if hint:
+                print(hint, file=sys.stderr)
             return 2 if plan["errors"] else 0
         if plan["errors"]:
             _print_plan(plan, args.json)

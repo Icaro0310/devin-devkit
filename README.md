@@ -74,6 +74,17 @@ devin-devkit install qa --apply
 devin-devkit install full --apply
 ```
 
+Install specs are pinned (PyPI versions or GitHub archive SHAs), so an install never drifts on its own. To move forward:
+
+```bash
+devin-devkit outdated          # which installed tools have newer pins
+devin-devkit update            # preview the update plan
+devin-devkit update --apply    # reinstall outdated tools
+devin-devkit update --force --apply   # reinstall everything
+```
+
+`outdated`/`update` read the manifest published in this repository, which a weekly workflow re-exports from the maintainer registry, so the pins are never more than about a week behind upstream.
+
 To run from a checkout without installing the DevKit itself:
 
 ```bash
