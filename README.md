@@ -25,7 +25,7 @@ Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosyste
 
 ## Source → tools → profiles
 
-- `devin-powerups/registry.json` is the catalog and profile source of truth: 19 first-party `devin-*` tools, this separate DevKit distribution, one maintainer hub, and three related artifacts.
+- `devin-powerups/registry.json` is the catalog and profile source of truth for the first-party `devin-*` tools, this separate DevKit distribution, the maintainer hub, and related artifacts.
 - `tools/export_devkit_manifest.py` builds this repo's bundled manifest from the registry, including artifact, interface, audience, platform and environment metadata. The exporter rejects private or unregistered tools and verifies immutable Git commit references.
 - `src/devin_devkit/cli.py` previews and installs the selected profile under an explicit execution environment. It does not edit Devin settings, inspect session databases, or install Slack/Obsidian/VM services.
 
