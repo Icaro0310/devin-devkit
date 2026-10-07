@@ -92,7 +92,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{name}: {profile['label']}{alias} — {profile['description']}")
             return 0
         if args.action == "list":
-            print(f"{manifest['catalog']['tool_count']} first-party Devin tools; {manifest['catalog']['distribution_count']} distribution; {manifest['catalog']['hub_count']} maintainer hub; {manifest['catalog']['related_count']} related projects")
+            cat = manifest["catalog"]
+            pl = lambda n: "" if n == 1 else "s"  # noqa: E731
+            print(f"{cat['tool_count']} first-party Devin tools; {cat['distribution_count']} distribution layer{pl(cat['distribution_count'])}; {cat['hub_count']} maintainer hub{pl(cat['hub_count'])}; {cat['related_count']} related project{pl(cat['related_count'])}")
             for tool in manifest["tools"]:
                 print(f"{tool['id']}: {tool['package']} {tool['version']} [{tool['manager']}/{tool['source']}/{tool['status']}]")
             hint = freshness_hint(manifest)

@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `manifest.json` regenerated from registry v17 (semantic classification release).
+- `manifest.json` regenerated from registry v18 (taps registered as distributions).
+- `devin-devkit list` pluralizes catalog labels (`3 distribution layers`).
+
+### Added
+
+- `COMPATIBILITY.md` rows for `homebrew-tap` (Linux/macOS) and `scoop-bucket` (Windows).
 
 ### Added
 
