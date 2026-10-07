@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 15,
+  "registry_version": 16,
   "generated": "2026-10-07",
   "installer": "uv",
   "supported_platforms": [
@@ -427,7 +427,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-pm",
       "version": "0.1.0",
       "commands": [
@@ -439,10 +439,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-pm/archive/e2acfff95332d1189c64a1dd416148b8a12005c4.tar.gz"
+      "install_spec": "devin-pm==0.1.0"
     },
     {
       "id": "devin-qa-pack",
