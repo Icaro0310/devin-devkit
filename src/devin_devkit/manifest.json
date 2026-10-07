@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 16,
+  "registry_version": 17,
   "generated": "2026-10-07",
   "installer": "uv",
   "supported_platforms": [
