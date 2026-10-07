@@ -736,7 +736,7 @@
       "manager": "uv",
       "source": "github",
       "package": "devin-evals",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "commands": [
         "devin-evals"
       ],
@@ -749,7 +749,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/6b48c92cb60855ede0986cb47d0ea649f1db71c0.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-evals/archive/12f261ae5c1c46602cbfd929b4ba8e52da54c7af.tar.gz"
     },
     {
       "id": "devin-memory",
