@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 17,
+  "registry_version": 18,
   "generated": "2026-10-07",
   "installer": "uv",
   "supported_platforms": [
@@ -42,10 +42,10 @@
   "git_required_tools": [],
   "catalog": {
     "tool_count": 19,
-    "distribution_count": 1,
+    "distribution_count": 3,
     "hub_count": 1,
     "related_count": 3,
-    "entry_count": 24
+    "entry_count": 26
   },
   "profiles": {
     "qa": {
