@@ -22,7 +22,6 @@
 | [`devin-office`](https://github.com/Icaro0310/devin-office) | Extended | Extended | Local only |
 | [`qwenpaw-suite`](https://github.com/Icaro0310/qwenpaw-suite) | Extended | Extended | Unsupported |
 | [`poordjaevin`](https://github.com/Icaro0310/poordjaevin) | Extended | Extended | Local only |
-| [`devin-dream`](https://github.com/Icaro0310/devin-dream) | Extended | Extended | Local only |
 | [`devin-switch`](https://github.com/Icaro0310/devin-switch) | Extended | Extended | Local only |
 | [`devin-skill-catalog`](https://github.com/Icaro0310/devin-skill-catalog) | Extended | Extended | Local only |
 

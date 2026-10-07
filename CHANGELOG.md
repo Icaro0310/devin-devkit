@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `manifest.json` regenerated from registry v18 (taps registered as distributions).
 - `devin-devkit list` pluralizes catalog labels (`3 distribution layers`).
+- `devin-dream` removed from the manifest: the generator was absorbed
+  into `devin-evals` (`devin-evals dream`); the evals install pin now
+  points at the post-merge commit that ships the subgroup.
 
 ### Added
 
