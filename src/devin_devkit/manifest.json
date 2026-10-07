@@ -41,11 +41,11 @@
   },
   "git_required_tools": [],
   "catalog": {
-    "tool_count": 19,
+    "tool_count": 18,
     "distribution_count": 3,
     "hub_count": 1,
     "related_count": 3,
-    "entry_count": 26
+    "entry_count": 25
   },
   "profiles": {
     "qa": {
@@ -65,8 +65,7 @@
       "tools": [
         "devin-internals-spec",
         "devin-evals",
-        "devin-metrics",
-        "devin-dream"
+        "devin-metrics"
       ]
     },
     "security": {
@@ -146,7 +145,6 @@
         "devin-janitor",
         "devin-bridge",
         "devin-orchestrator",
-        "devin-dream",
         "devin-switch",
         "devin-skill-catalog",
         "poordjaevin"
@@ -174,7 +172,6 @@
         "devin-janitor",
         "devin-bridge",
         "devin-orchestrator",
-        "devin-dream",
         "devin-switch",
         "devin-skill-catalog",
         "poordjaevin"
@@ -705,7 +702,7 @@
     {
       "id": "devin-evals",
       "label": "devin-evals",
-      "description": "Deterministic eval harness: replay recorded sessions against rubric graders.",
+      "description": "Deterministic eval harness: replay recorded sessions against rubric graders; the `dream` subgroup generates synthetic sessions with known verdicts (D01-D09, absorbs devin-dream).",
       "category": "evaluation",
       "artifact": "tool",
       "interfaces": [
@@ -1031,58 +1028,6 @@
       "extras": [],
       "manual_note": "Source-only dashboard service; no distributable package metadata yet.",
       "install_spec": null
-    },
-    {
-      "id": "devin-dream",
-      "label": "devin-dream",
-      "description": "Synthetic Devin sessions with known verdicts — labeled defects (D01-D09), adversarial inject mode, and fleet generation. Regression/adversarial test data for the catalog.",
-      "category": "evaluation",
-      "artifact": "tool",
-      "interfaces": [
-        "cli",
-        "library"
-      ],
-      "audiences": [
-        "qa",
-        "ai-engineers"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "github",
-      "package": "devin-dream",
-      "version": "0.1.0",
-      "commands": [
-        "devin-dream"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "source",
-      "extras": [],
-      "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-dream/archive/f1dfebceee3129f78a7e3c60dad3275960e17886.tar.gz"
     },
     {
       "id": "devin-switch",
