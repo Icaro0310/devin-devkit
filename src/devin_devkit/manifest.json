@@ -1,6 +1,6 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 20,
+  "registry_version": 21,
   "generated": "2026-10-08",
   "installer": "uv",
   "supported_platforms": [
@@ -697,7 +697,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/ebb8fc12e97dc6b1db28778c329da70767d4b502.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/0832cd735d6e6a98fcef5d68bb25656ccdf7fea8.tar.gz"
     },
     {
       "id": "devin-evals",
@@ -859,7 +859,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/f9aee000205b8e5c29cfb407f177217be38790e3.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/0d61031c581c3dc04e5915f4cc46073c133417df.tar.gz"
     },
     {
       "id": "devin-bridge",
@@ -1078,7 +1078,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/cbae07fd0215b3c57235b2b02833a004721bec6f.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-switch/archive/b51ad45ec7fc845a4568781c2f0b196d7183c96e.tar.gz"
     },
     {
       "id": "devin-skill-catalog",
@@ -1130,7 +1130,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/cffb914365109fa93822c9abb1ced8bfaad01398.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/75c7dc0b921ae68374773a108c6a028b75916f81.tar.gz"
     },
     {
       "id": "poordjaevin",
