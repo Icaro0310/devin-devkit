@@ -1135,8 +1135,8 @@
     {
       "id": "poordjaevin",
       "label": "poordjaevin",
-      "description": "Djævin: fork of poordjaevin adding a Devin ACP backend (uses the model Devin already runs, no extra download); local NLI backend stays as fully-offline fallback.",
-      "category": "memory",
+      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback.",
+      "category": "governance",
       "artifact": "tool",
       "interfaces": [
         "cli",
