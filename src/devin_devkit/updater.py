@@ -66,41 +66,10 @@ def installed_uv_tools(
     return installed
 
 
-# TOML inline tables can carry fields in any order (extras, markers, …),
-# so extract the requirements array first, then read keys per {…} block —
-# matching a fixed field sequence would silently drop the url, and other
-# arrays (entrypoints) also carry a `name` key that would collide.
-_UV_REQUIREMENTS_START_RE = re.compile(r"requirements\s*=\s*\[")
-_UV_INLINE_TABLE_RE = re.compile(r"\{[^{}]*\}")
-_UV_FIELD_RE = re.compile(r'(name|url|specifier)\s*=\s*"([^"]*)"')
-
-
-def _uv_requirements_body(text: str) -> str | None:
-    """Return the contents of ``requirements = [ … ]`` with brace depth
-    tracking — nested lists (``extras = []``) must not end the scan."""
-    start = _UV_REQUIREMENTS_START_RE.search(text)
-    if start is None:
-        return None
-    depth = 0
-    i = start.end()
-    body_start = i
-    while i < len(text):
-        char = text[i]
-        if char == "{":
-            depth += 1
-        elif char == "}":
-            depth -= 1
-        elif char == "]" and depth == 0:
-            return text[body_start:i]
-        i += 1
-    return None
-
-
-def _uv_requirement_spec(fields: dict[str, str]) -> str | None:
-    name = fields.get("name")
-    if not name:
-        return None
-    return fields.get("url") or f"{name}{fields.get('specifier', '')}"
+try:
+    import tomllib
+except ImportError:  # Python 3.10 — declared as a conditional dependency
+    import tomli as tomllib
 
 
 def _uv_tools_dir() -> Path:
@@ -129,17 +98,16 @@ def installed_uv_specs(
         return specs
     for receipt in root.glob("*/uv-receipt.toml"):
         try:
-            text = receipt.read_text(encoding="utf-8")
-        except OSError:
+            data = tomllib.loads(receipt.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
             continue
-        body = _uv_requirements_body(text)
-        if body is None:
-            continue
-        for table in _UV_INLINE_TABLE_RE.finditer(body):
-            fields = dict(_UV_FIELD_RE.findall(table.group(0)))
-            spec = _uv_requirement_spec(fields)
-            if spec is not None and fields.get("name"):
-                specs[fields["name"]] = spec
+        for req in data.get("tool", {}).get("requirements", []):
+            if not isinstance(req, dict):
+                continue
+            name = req.get("name")
+            if not name:
+                continue
+            specs[name] = req.get("url") or f"{name}{req.get('specifier', '')}"
     return specs
 
 
