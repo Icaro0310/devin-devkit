@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 18,
-  "generated": "2026-10-07",
+  "registry_version": 19,
+  "generated": "2026-10-08",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -527,7 +527,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-metrics",
       "version": "0.2.0",
       "commands": [
@@ -540,10 +540,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-metrics/archive/15c9ce9e337f213fd9d269694523e0b6ece199fe.tar.gz"
+      "install_spec": "devin-metrics==0.2.0"
     },
     {
       "id": "devin-backup",
