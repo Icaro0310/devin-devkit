@@ -66,11 +66,20 @@ def installed_uv_tools(
     return installed
 
 
-_UV_REQ_RE = re.compile(
-    r'\{\s*name\s*=\s*"(?P<name>[^"]+)"'
-    r'(?:\s*,\s*url\s*=\s*"(?P<url>[^"]+)")?'
-    r'(?:\s*,\s*specifier\s*=\s*"(?P<specifier>[^"]+)")?'
-)
+# TOML inline tables can carry fields in any order (extras, markers, …),
+# so extract the requirements array first, then read keys per {…} block —
+# matching a fixed field sequence would silently drop the url, and other
+# arrays (entrypoints) also carry a `name` key that would collide.
+_UV_REQUIREMENTS_RE = re.compile(r"requirements\s*=\s*\[(?P<body>.*?)\]", re.S)
+_UV_INLINE_TABLE_RE = re.compile(r"\{[^{}]*\}")
+_UV_FIELD_RE = re.compile(r'(name|url|specifier)\s*=\s*"([^"]*)"')
+
+
+def _uv_requirement_spec(fields: dict[str, str]) -> str | None:
+    name = fields.get("name")
+    if not name:
+        return None
+    return fields.get("url") or f"{name}{fields.get('specifier', '')}"
 
 
 def _uv_tools_dir() -> Path:
@@ -102,11 +111,14 @@ def installed_uv_specs(
             text = receipt.read_text(encoding="utf-8")
         except OSError:
             continue
-        for match in _UV_REQ_RE.finditer(text):
-            name = match.group("name")
-            specs[name] = match.group("url") or (
-                f"{name}{match.group('specifier') or ''}"
-            )
+        requirements = _UV_REQUIREMENTS_RE.search(text)
+        if requirements is None:
+            continue
+        for table in _UV_INLINE_TABLE_RE.finditer(requirements.group("body")):
+            fields = dict(_UV_FIELD_RE.findall(table.group(0)))
+            spec = _uv_requirement_spec(fields)
+            if spec is not None and fields.get("name"):
+                specs[fields["name"]] = spec
     return specs
 
 
