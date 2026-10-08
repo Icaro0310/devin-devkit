@@ -2,8 +2,6 @@
 |---|---|---|---|
 | [`devin-powerups`](https://github.com/Icaro0310/devin-powerups) | Extended | Extended | Local only |
 | [`devin-devkit`](https://github.com/Icaro0310/devin-devkit) | Extended | Extended | Local only |
-| [`homebrew-tap`](https://github.com/Icaro0310/homebrew-tap) | Local only | Unsupported | Unsupported |
-| [`scoop-bucket`](https://github.com/Icaro0310/scoop-bucket) | Unsupported | Local only | Local only |
 | [`devin-internals-spec`](https://github.com/Icaro0310/devin-internals-spec) | Extended | Extended | Local only |
 | [`devin-redact`](https://github.com/Icaro0310/devin-redact) | Extended | Extended | Local only |
 | [`devin-history`](https://github.com/Icaro0310/devin-history) | Extended | Extended | Local only |
