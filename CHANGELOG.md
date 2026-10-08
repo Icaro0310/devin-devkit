@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `devin-metrics` now installs from PyPI (`devin-metrics==0.2.0`); the git pin is dropped after publication.
+
 - `labeler.yml` is now a thin caller of the shared reusable workflow in `devin-powerups` (`@v1`); PR labeling behavior is unchanged.
 
 - `manifest.json` regenerated from registry v18 (taps registered as distributions).
