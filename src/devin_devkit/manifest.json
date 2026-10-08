@@ -186,8 +186,8 @@
     {
       "id": "devin-internals-spec",
       "label": "devin-internals-spec",
-      "description": "Documented internals of Devin Desktop/CLI stores + schema-version detection + fixtures + devin-inspect CLI.",
-      "category": "foundation",
+      "description": "Documents Devin's local stores (sessions DB, ACP, state) with schema-version detection and the devin-inspect CLI.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -238,8 +238,8 @@
     {
       "id": "devin-redact",
       "label": "devin-redact",
-      "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
-      "category": "security",
+      "description": "Scrubs secrets and PII from Devin stores in place, aware of tool-call semantics, with a verification pass.",
+      "category": "protect",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -290,8 +290,8 @@
     {
       "id": "devin-history",
       "label": "devin-history",
-      "description": "Export and audit Devin session history — markdown notes, JSON, CSV, Obsidian-ready.",
-      "category": "operations",
+      "description": "Exports Devin session history to Markdown, JSON or CSV; audit-ready and Obsidian-ready.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -341,8 +341,8 @@
     {
       "id": "devin-doctor",
       "label": "devin-doctor",
-      "description": "Diagnose a Devin Desktop installation: stores, schema, locks, config, disk — with fix suggestions.",
-      "category": "qa",
+      "description": "Verifies a Devin install end to end (stores, schema, locks, config, disk) and suggests fixes.",
+      "category": "verify",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -392,8 +392,8 @@
     {
       "id": "devin-pm",
       "label": "devin-pm",
-      "description": "Project manager over sessions: per-repo rollups, milestones, status reports, registry.json.",
-      "category": "operations",
+      "description": "Rolls sessions up into per-repo projects with milestones and status reports.",
+      "category": "control",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -444,8 +444,8 @@
     {
       "id": "devin-qa-pack",
       "label": "devin-qa-pack",
-      "description": "Flagship QA audit: verifies session deliverable claims against tool-call ground truth and reports PASS/PARTIAL/UNVERIFIED.",
-      "category": "qa",
+      "description": "Audits a session's delivery claims against recorded tool-call evidence; verdict PASS, PARTIAL or UNVERIFIED.",
+      "category": "verify",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -495,8 +495,8 @@
     {
       "id": "devin-metrics",
       "label": "devin-metrics",
-      "description": "Local-only session observability: activity, context size, and token peaks per project/model/day; zero telemetry. Devin does not persist cost fields, so cost is not claimed. Includes an optional dashboard subpackage and command.",
-      "category": "evaluation",
+      "description": "Measures local session activity, context size and token peaks per project, model and day; no telemetry, no cost claims.",
+      "category": "measure",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -548,8 +548,8 @@
     {
       "id": "devin-backup",
       "label": "devin-backup",
-      "description": "Safe snapshot/verify/restore/rotate of Devin stores with schema-version manifests.",
-      "category": "operations",
+      "description": "Snapshots, verifies, restores and rotates Devin stores with schema-version manifests.",
+      "category": "protect",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -599,8 +599,8 @@
     {
       "id": "devin-search",
       "label": "devin-search",
-      "description": "FTS5 full-text search across all Devin sessions, role-tagged and project-filtered.",
-      "category": "memory",
+      "description": "Full-text search (FTS5) over all Devin sessions, tagged by role and filterable by project.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -650,8 +650,8 @@
     {
       "id": "devin-graph",
       "label": "devin-graph",
-      "description": "Knowledge graph: sessions, projects, files touched, tools used — queryable edges.",
-      "category": "memory",
+      "description": "Builds a queryable graph linking sessions, projects, files touched and tools used.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -702,8 +702,8 @@
     {
       "id": "devin-evals",
       "label": "devin-evals",
-      "description": "Deterministic eval harness: replay recorded sessions against rubric graders; the `dream` subgroup generates synthetic sessions with known verdicts (D01-D09, absorbs devin-dream).",
-      "category": "evaluation",
+      "description": "Replays recorded sessions against deterministic rubric graders; `dream` generates synthetic sessions with known verdicts.",
+      "category": "measure",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -754,8 +754,8 @@
     {
       "id": "devin-memory",
       "label": "devin-memory",
-      "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
-      "category": "memory",
+      "description": "Persistent memory store for sessions, with provenance, versioning and a quarantine gate against poisoning.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -812,8 +812,8 @@
     {
       "id": "devin-janitor",
       "label": "devin-janitor",
-      "description": "Session lifecycle janitor: export-then-delete pipeline, tiered classification, pluggable judge, pending-retry for locked stores.",
-      "category": "security",
+      "description": "Deletes stale sessions safely: exports before deleting, classifies by tier, consults the judge, retries locked stores.",
+      "category": "protect",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -864,8 +864,8 @@
     {
       "id": "devin-bridge",
       "label": "devin-bridge",
-      "description": "Policy-gated ACP client (Node.js, CI matrix Node 22 + 24): isolated sessions per repo with allow/deny/ask permission policy.",
-      "category": "security",
+      "description": "Runs per-repo ACP sessions behind an allow/deny/ask permission policy (Node.js).",
+      "category": "control",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -928,8 +928,8 @@
     {
       "id": "devin-orchestrator",
       "label": "devin-orchestrator",
-      "description": "Background-worker fan-out policy: deterministic planner enforcing worker caps (max 3), no nesting, read-only profiles for review, collect-before-report. Skill + always-on rule.",
-      "category": "operations",
+      "description": "Fans out background workers under a deterministic cap (max 3, no nesting) with collect-before-report.",
+      "category": "control",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -980,8 +980,8 @@
     {
       "id": "devin-office",
       "label": "devin-office",
-      "description": "Local-first Devin session and subagent dashboard with standalone and optional split modes.",
-      "category": "operations",
+      "description": "Renders live Devin sessions and subagents on a local SVG dashboard; standalone or probe-to-hub split mode.",
+      "category": "understand",
       "artifact": "tool",
       "interfaces": [
         "service",
@@ -1032,8 +1032,8 @@
     {
       "id": "devin-switch",
       "label": "devin-switch",
-      "description": "Switch between Devin configuration profiles (hooks, MCP, models) with snapshot, sha256 verify, atomic write, journal and rollback. Dry-run by default; secrets never printed.",
-      "category": "governance",
+      "description": "Swaps Devin config profiles (hooks, MCP, models) atomically with snapshot and rollback; dry-run by default.",
+      "category": "control",
       "artifact": "tool",
       "interfaces": [
         "cli"
@@ -1083,8 +1083,8 @@
     {
       "id": "devin-skill-catalog",
       "label": "devin-skill-catalog",
-      "description": "Lifecycle + quality gates for .devin skills/rules: scan, lint, diff, G1/G2 gates, quarantined→approved→active lifecycle, sha256-verified export/import bundles (imports land quarantined).",
-      "category": "governance",
+      "description": "Controls the .devin skills/rules lifecycle: scan, lint, G1/G2 gates, quarantine, signed export/import bundles.",
+      "category": "control",
       "artifact": "tool",
       "interfaces": [
         "cli",
@@ -1135,8 +1135,8 @@
     {
       "id": "poordjaevin",
       "label": "poordjaevin",
-      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback.",
-      "category": "governance",
+      "description": "Djævin: calibrated decision layer. Typed questions get answers with measured confidence via Devin's own model (ACP) or a fully-offline NLI backend.",
+      "category": "judge",
       "artifact": "tool",
       "interfaces": [
         "cli",
