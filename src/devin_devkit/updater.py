@@ -9,10 +9,13 @@ installed tools up to date.
 from __future__ import annotations
 
 import json
+import os
+import re
 import shutil
 import subprocess
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any, Callable
 
 from devin_devkit.installer import DevKitError
@@ -63,6 +66,58 @@ def installed_uv_tools(
     return installed
 
 
+_UV_REQ_RE = re.compile(
+    r'\{\s*name\s*=\s*"(?P<name>[^"]+)"'
+    r'(?:\s*,\s*url\s*=\s*"(?P<url>[^"]+)")?'
+    r'(?:\s*,\s*specifier\s*=\s*"(?P<specifier>[^"]+)")?'
+)
+
+
+def _uv_tools_dir() -> Path:
+    override = os.environ.get("UV_TOOL_DIR")
+    return (
+        Path(override)
+        if override
+        else Path.home() / ".local" / "share" / "uv" / "tools"
+    )
+
+
+def installed_uv_specs(
+    tools_dir: str | Path | None = None,
+) -> dict[str, str]:
+    """Return {package: installed requirement} parsed from uv receipts.
+
+    ``uv tool list`` reports only name and version; the per-tool
+    ``uv-receipt.toml`` also records the requirement, including the
+    source URL for non-PyPI installs. That lets the updater detect a
+    channel migration (git archive -> PyPI) even when the version number
+    did not change.
+    """
+    root = Path(tools_dir) if tools_dir else _uv_tools_dir()
+    specs: dict[str, str] = {}
+    if not root.is_dir():
+        return specs
+    for receipt in root.glob("*/uv-receipt.toml"):
+        try:
+            text = receipt.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for match in _UV_REQ_RE.finditer(text):
+            name = match.group("name")
+            specs[name] = match.group("url") or (
+                f"{name}{match.group('specifier') or ''}"
+            )
+    return specs
+
+
+def _spec_channel(spec: str) -> str:
+    """Compare-key for install specs: PyPI installs collapse to 'pypi',
+    URL installs compare by exact URL."""
+    if re.match(r"(https?://|git\+)", spec):
+        return f"url:{spec}"
+    return "pypi"
+
+
 def installed_npm_tools(
     runner: Callable[..., Any] = subprocess.run,
 ) -> dict[str, str]:
@@ -89,6 +144,7 @@ def build_update_plan(
     remote: dict[str, Any],
     *,
     installed: dict[str, str] | None = None,
+    installed_specs: dict[str, str] | None = None,
     which: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = subprocess.run,
     force: bool = False,
@@ -97,10 +153,16 @@ def build_update_plan(
 
     ``installed`` maps package name to installed version; when None it is
     discovered via ``uv tool list`` and ``npm ls -g``.
+    ``installed_specs`` maps package name to the requirement it was
+    installed from (uv receipts); when None it is discovered via
+    ``installed_uv_specs``. A same-version channel change (git archive
+    -> PyPI pin) plans a reinstall rather than reporting ``current``.
     """
     if installed is None:
         installed = installed_uv_tools(runner)
         installed.update(installed_npm_tools(runner))
+    if installed_specs is None:
+        installed_specs = installed_uv_specs()
 
     actions: list[dict[str, Any]] = []
     for tool in remote.get("tools", []):
@@ -120,7 +182,22 @@ def build_update_plan(
         local_version = installed.get(tool["package"], "?")
         remote_version = tool.get("version", "?")
         if not force and local_version == remote_version:
-            actions.append({"tool": tool_id, "action": "current", "version": local_version})
+            installed_spec = installed_specs.get(tool["package"])
+            if (
+                manager == "uv"
+                and installed_spec is not None
+                and _spec_channel(installed_spec) != _spec_channel(spec)
+            ):
+                actions.append({
+                    "tool": tool_id,
+                    "action": "update",
+                    "from": local_version,
+                    "to": remote_version,
+                    "reason": "install source changed",
+                    "command": ["uv", "tool", "install", "--force", spec],
+                })
+            else:
+                actions.append({"tool": tool_id, "action": "current", "version": local_version})
             continue
         command = (
             ["uv", "tool", "install", "--force", spec]
