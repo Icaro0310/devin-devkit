@@ -195,3 +195,39 @@ def test_installed_uv_specs_parses_receipts(tmp_path):
     specs = updater.installed_uv_specs(tmp_path)
     assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
     assert specs["devin-doctor"] == "devin-doctor==0.2.0"
+
+
+def test_installed_uv_specs_handles_field_order_and_extras(tmp_path):
+    """Receipt fields may appear in any order with extra keys; the url
+    must still be found so archive installs aren't mislabeled PyPI."""
+    receipt = (
+        '[tool]\nrequirements = [\n'
+        '  { name = "devin-evals", extras = [], '
+        'url = "https://example.com/evals.tar.gz" },\n'
+        ']\nentrypoints = [\n'
+        '  { name = "devin-evals", install-path = "/x/devin-evals", '
+        'from = "devin-evals" },\n]\n'
+    )
+    (tmp_path / "devin-evals").mkdir()
+    (tmp_path / "devin-evals" / "uv-receipt.toml").write_text(receipt)
+    specs = updater.installed_uv_specs(tmp_path)
+    assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
+
+
+def test_installed_uv_specs_nested_table_and_index_url(tmp_path):
+    """A requirement with an inline metadata table or an index-url field
+    must not hide the real install source."""
+    (tmp_path / "devin-evals").mkdir()
+    (tmp_path / "devin-evals" / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "devin-evals", '
+        'metadata = { note = "x" }, '
+        'url = "https://example.com/evals.tar.gz" }]\n'
+    )
+    (tmp_path / "devin-doctor").mkdir()
+    (tmp_path / "devin-doctor" / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "devin-doctor", '
+        'specifier = "==0.2.0", index-url = "https://pypi.example/simple" }]\n'
+    )
+    specs = updater.installed_uv_specs(tmp_path)
+    assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
+    assert specs["devin-doctor"] == "devin-doctor==0.2.0"

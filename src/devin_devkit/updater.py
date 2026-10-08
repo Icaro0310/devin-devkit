@@ -66,11 +66,10 @@ def installed_uv_tools(
     return installed
 
 
-_UV_REQ_RE = re.compile(
-    r'\{\s*name\s*=\s*"(?P<name>[^"]+)"'
-    r'(?:\s*,\s*url\s*=\s*"(?P<url>[^"]+)")?'
-    r'(?:\s*,\s*specifier\s*=\s*"(?P<specifier>[^"]+)")?'
-)
+try:
+    import tomllib
+except ImportError:  # Python 3.10 — declared as a conditional dependency
+    import tomli as tomllib
 
 
 def _uv_tools_dir() -> Path:
@@ -99,14 +98,16 @@ def installed_uv_specs(
         return specs
     for receipt in root.glob("*/uv-receipt.toml"):
         try:
-            text = receipt.read_text(encoding="utf-8")
-        except OSError:
+            data = tomllib.loads(receipt.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
             continue
-        for match in _UV_REQ_RE.finditer(text):
-            name = match.group("name")
-            specs[name] = match.group("url") or (
-                f"{name}{match.group('specifier') or ''}"
-            )
+        for req in data.get("tool", {}).get("requirements", []):
+            if not isinstance(req, dict):
+                continue
+            name = req.get("name")
+            if not name:
+                continue
+            specs[name] = req.get("url") or f"{name}{req.get('specifier', '')}"
     return specs
 
 
