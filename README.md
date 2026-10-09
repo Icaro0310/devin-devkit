@@ -7,6 +7,16 @@
 > Interface: CLI  
 <!-- DEVIN-ECO:END -->
 
+<!-- DEVIN-WHERE:BEGIN -->
+## Where this fits
+
+- **Job:** Build
+- **Product:** [`devin-devkit`](https://github.com/Icaro0310/devin-devkit)
+- **Packages:** `devkit` · `skill-catalog`
+- **Mode:** mixed
+- **Ecosystem:** [`awesome-devin`](https://github.com/Icaro0310/awesome-devin) · registry: [`devin-powerups`](https://github.com/Icaro0310/devin-powerups)
+<!-- DEVIN-WHERE:END -->
+
 Build on the ecosystem: install curated tool profiles through uv, and
 inventory, lint, quarantine and promote Devin skills and rules.
 
