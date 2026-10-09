@@ -1,31 +1,22 @@
-[build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
+# Workspace root — not itself a published package. Members live in
+# packages/* (devkit, skill-catalog).
 
 [project]
-name = "devin-devkit"
-version = "0.1.0"
-description = "Install public Devin CLI profiles through uv"
-readme = "README.md"
-license = "MIT"
+name = "devin-devkit-workspace"
+version = "0.0.0"
+description = "Monorepo workspace for the devin-devkit product: devkit, skill-catalog."
 requires-python = ">=3.10"
-authors = [{ name = "Icaro0310" }]
-dependencies = [
-  "tomli>=2.0; python_version < '3.11'",
-]
+dependencies = []
 
-[project.optional-dependencies]
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
 dev = ["pytest>=8"]
 
-[project.scripts]
-devin-devkit = "devin_devkit.cli:main"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-devin_devkit = ["manifest.json"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

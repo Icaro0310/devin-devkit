@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [src/devin_devkit/manifest.json]
+    paths: ['packages/devkit/src/devin_devkit/manifest.json', '.github/workflows/manifest-sync.yml']
 
 permissions:
   contents: write
@@ -38,17 +38,17 @@ jobs:
         run: |
           python3 devin-powerups/tools/export_devkit_manifest.py \
             --registry devin-powerups/registry.json \
-            --out devin-devkit/src/devin_devkit/manifest.json
+            --out devin-devkit/packages/devkit/src/devin_devkit/manifest.json
 
       - name: Commit manifest when it changed
         working-directory: devin-devkit
         run: |
-          if git diff --quiet src/devin_devkit/manifest.json; then
+          if git diff --quiet packages/devkit/src/devin_devkit/manifest.json; then
             echo "manifest already current"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/devin_devkit/manifest.json
+          git add packages/devkit/src/devin_devkit/manifest.json
           git commit -m "chore: sync devkit manifest from registry"
           git push
