@@ -927,7 +927,7 @@
       "status": "source",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/75c7dc0b921ae68374773a108c6a028b75916f81.tar.gz"
+      "install_spec": "https://github.com/Icaro0310/devin-devkit/archive/75c7dc0b921ae68374773a108c6a028b75916f81.tar.gz"
     },
     {
       "id": "devin-brain",
