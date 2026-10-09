@@ -81,7 +81,7 @@
       "label": "Memory",
       "description": "Search, connect, and preserve agent knowledge with optional ACP integrations.",
       "tools": [
-        "devin-memory",
+        "devin-brain",
         "devin-graph",
         "devin-search",
         "poordjaevin"
@@ -118,7 +118,7 @@
       "label": "Agent",
       "description": "Convenience alias for the memory and decision tools.",
       "tools": [
-        "devin-memory",
+        "devin-brain",
         "devin-graph",
         "devin-search",
         "poordjaevin"
@@ -150,7 +150,7 @@
         "devin-search",
         "devin-graph",
         "devin-evals",
-        "devin-memory",
+        "devin-brain",
         "devin-janitor",
         "devin-bridge",
         "devin-orchestrator",
@@ -177,7 +177,7 @@
         "devin-search",
         "devin-graph",
         "devin-evals",
-        "devin-memory",
+        "devin-brain",
         "devin-janitor",
         "devin-bridge",
         "devin-orchestrator",
@@ -761,64 +761,6 @@
       "install_spec": "devin-evals==0.2.0"
     },
     {
-      "id": "devin-memory",
-      "label": "devin-memory",
-      "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
-      "category": "memory",
-      "artifact": "tool",
-      "interfaces": [
-        "cli",
-        "library",
-        "mcp",
-        "service"
-      ],
-      "audiences": [
-        "ai-engineers",
-        "developers"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "pypi",
-      "package": "devin-memory",
-      "version": "0.3.0",
-      "commands": [
-        "devin-memory",
-        "devin-learning",
-        "devin-memory-mcp"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "published",
-      "extras": [
-        "mcp"
-      ],
-      "manual_note": null,
-      "install_spec": "devin-memory[mcp]==0.3.0"
-    },
-    {
       "id": "devin-janitor",
       "label": "devin-janitor",
       "description": "Session lifecycle janitor: export-then-delete pipeline, tiered classification, pluggable judge, pending-retry for locked stores.",
@@ -1194,6 +1136,64 @@
       "extras": [],
       "manual_note": null,
       "install_spec": "poordjaevin==0.1.1"
+    },
+    {
+      "id": "devin-brain",
+      "label": "devin-brain",
+      "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
+      "category": "memory",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library",
+        "mcp",
+        "service"
+      ],
+      "audiences": [
+        "ai-engineers",
+        "developers"
+      ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-memory",
+      "version": "0.3.0",
+      "commands": [
+        "devin-memory",
+        "devin-learning",
+        "devin-memory-mcp"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [
+        "mcp"
+      ],
+      "manual_note": null,
+      "install_spec": "devin-memory[mcp]==0.3.0"
     }
   ]
 }
