@@ -13,7 +13,7 @@
 | [`devin-search`](https://github.com/Icaro0310/devin-search) | Extended | Extended | Local only |
 | [`devin-graph`](https://github.com/Icaro0310/devin-graph) | Extended | Extended | Local only |
 | [`devin-evals`](https://github.com/Icaro0310/devin-evals) | Extended | Extended | Local only |
-| [`devin-memory`](https://github.com/Icaro0310/devin-memory) | Extended | Extended | Local only |
+| [`devin-brain`](https://github.com/Icaro0310/devin-brain) | Extended | Extended | Local only |
 | [`devin-janitor`](https://github.com/Icaro0310/devin-janitor) | Extended | Extended | Local only |
 | [`devin-bridge`](https://github.com/Icaro0310/devin-bridge) | Extended | Extended | Local only |
 | [`devin-orchestrator`](https://github.com/Icaro0310/devin-orchestrator) | Extended | Extended | Local only |
