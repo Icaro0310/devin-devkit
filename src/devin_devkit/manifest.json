@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 21,
-  "generated": "2026-10-08",
+  "registry_version": 23,
+  "generated": "2026-10-09",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -691,7 +691,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-graph",
       "version": "0.1.0",
       "commands": [
@@ -703,10 +703,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-graph/archive/0832cd735d6e6a98fcef5d68bb25656ccdf7fea8.tar.gz"
+      "install_spec": "devin-graph==0.1.0"
     },
     {
       "id": "devin-evals",
@@ -853,7 +853,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-janitor",
       "version": "0.1.0",
       "commands": [
@@ -865,10 +865,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "source",
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "https://github.com/Icaro0310/devin-janitor/archive/0d61031c581c3dc04e5915f4cc46073c133417df.tar.gz"
+      "install_spec": "devin-janitor==0.1.0"
     },
     {
       "id": "devin-bridge",
