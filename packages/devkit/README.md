@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://github.com/Icaro0310/devin-devkit/actions/workflows/ci.yml"><img src="https://github.com/Icaro0310/devin-devkit/actions/workflows/ci.yml/badge.svg" alt="ci"/></a>
+<a href="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-devkit.yml"><img src="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-devkit.yml/badge.svg" alt="ci"/></a>
 
 <a href="https://scorecard.dev/viewer/?uri=github.com/Icaro0310/devin-devkit"><img src="https://api.scorecard.dev/projects/github.com/Icaro0310/devin-devkit/badge" alt="OpenSSF Scorecard"/></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"/></a>
@@ -63,7 +63,7 @@ QwenPaw is an optional add-on and is not installed by these profiles. macOS is p
 Install the current GitHub source archive or use a local checkout; the package has no runtime dependencies:
 
 ```bash
-uv tool install "https://github.com/Icaro0310/devin-devkit/archive/main.tar.gz"
+uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
 ```
 
 From a local checkout, use `uv tool install .`. Then inspect the available profiles and preview before applying:

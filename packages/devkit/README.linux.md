@@ -16,7 +16,7 @@ Linux uses the extended runtime: local execution plus optional delegated workloa
 From the current GitHub source archive (Git is not required for this download):
 
 ```bash
-uv tool install 'https://github.com/Icaro0310/devin-devkit/archive/main.tar.gz'
+uv tool install 'git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit'
 ```
 
 From a local checkout:

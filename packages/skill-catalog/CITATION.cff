@@ -5,8 +5,8 @@ title: devin-skill-catalog
 authors:
   - family-names: Galvao
     given-names: Icaro
-url: "https://github.com/Icaro0310/devin-skill-catalog"
-repository-code: "https://github.com/Icaro0310/devin-skill-catalog"
+url: "https://github.com/Icaro0310/devin-devkit"
+repository-code: "https://github.com/Icaro0310/devin-devkit"
 license: MIT
 abstract: "Inventory, lint, quarantine and promote Devin skills and rules — lifecycle registry, per-workspace diff, offline G1/G2 evidence gates and hash-verified bundles."
 keywords:

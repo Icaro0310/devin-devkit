@@ -26,7 +26,7 @@ The mode is explicit because the operating system cannot distinguish a personal 
 ## Install the DevKit
 
 ```powershell
-uv tool install "https://github.com/Icaro0310/devin-devkit/archive/main.tar.gz"
+uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
 ```
 
 Preview and apply a local-only profile:

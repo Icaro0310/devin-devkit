@@ -5,7 +5,7 @@
 `.devin/skills/` and `.devin/rules/` accumulate unvetted content. This tool inventories both scopes (workspace + user dirs), lints SKILL.md frontmatter and rule titles, runs heuristic gates — G1 static hygiene (injection/exfil/`curl|sh`/secret-shaped strings, values never printed) and G2 grounding (declared files/commands must resolve, rubric packs verified loadable) — and gates promotion behind quarantine. Bundles export only `approved` items; imports always land quarantined, never active. Python ≥3.10, stdlib only, no network.
 
 ## Docs
-- [README](https://github.com/Icaro0310/devin-skill-catalog/blob/main/README.md): full documentation
+- [README](https://github.com/Icaro0310/devin-devkit/blob/main/packages/skill-catalog/README.md): full documentation
 - [devin-evals](https://github.com/Icaro0310/devin-assure/tree/main/packages/evals): rubric packs G2 verifies (does not execute)
 
 ## Key commands
@@ -14,7 +14,7 @@
 - `devin-skill-catalog quarantine|promote|activate|retire ITEM --apply`: lifecycle mutations (plan printed without `--apply`)
 - `devin-skill-catalog diff A B`: inventory diff by content hash
 - `devin-skill-catalog export-bundle --out DIR` / `import-bundle PATH --apply`: move approved items, import lands quarantined
-- `pipx install "devin-skill-catalog @ git+https://github.com/Icaro0310/devin-skill-catalog.git"`: install the CLI
+- `pipx install "devin-skill-catalog @ git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog"`: install the CLI
 - `python -m pytest`: run the test suite (synthetic fixtures only)
 
 ## When to use / when not
