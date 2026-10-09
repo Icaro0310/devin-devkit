@@ -1096,7 +1096,7 @@
     {
       "id": "devin-assure",
       "label": "devin-assure",
-      "description": "Flagship QA audit: verifies session deliverable claims against tool-call ground truth and reports PASS/PARTIAL/UNVERIFIED.",
+      "description": "Verification monorepo: session-claim audit (devin-qa-pack), deterministic eval harness with dream corpus generator (devin-evals), and local session observability (devin-metrics).",
       "category": "qa",
       "artifact": "tool",
       "interfaces": [
