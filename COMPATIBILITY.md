@@ -9,12 +9,12 @@
 | [`devin-pm`](https://github.com/Icaro0310/devin-pm) | Extended | Extended | Local only |
 | [`devin-assure`](https://github.com/Icaro0310/devin-assure) | Extended | Extended | Local only |
 | [`devin-metrics`](https://github.com/Icaro0310/devin-metrics) | Extended | Extended | Local only |
-| [`devin-backup`](https://github.com/Icaro0310/devin-backup) | Extended | Extended | Local only |
+| [`devin-backup`](https://github.com/Icaro0310/devin-state) | Extended | Extended | Local only |
 | [`devin-search`](https://github.com/Icaro0310/devin-search) | Extended | Extended | Local only |
 | [`devin-graph`](https://github.com/Icaro0310/devin-graph) | Extended | Extended | Local only |
 | [`devin-evals`](https://github.com/Icaro0310/devin-evals) | Extended | Extended | Local only |
 | [`devin-brain`](https://github.com/Icaro0310/devin-brain) | Extended | Extended | Local only |
-| [`devin-janitor`](https://github.com/Icaro0310/devin-janitor) | Extended | Extended | Local only |
+| [`devin-janitor`](https://github.com/Icaro0310/devin-state) | Extended | Extended | Local only |
 | [`devin-bridge`](https://github.com/Icaro0310/devin-bridge) | Extended | Extended | Local only |
 | [`devin-orchestrator`](https://github.com/Icaro0310/devin-orchestrator) | Extended | Extended | Local only |
 | [`devin-office`](https://github.com/Icaro0310/devin-office) | Extended | Extended | Local only |
