@@ -1044,7 +1044,7 @@
     {
       "id": "devin-state",
       "label": "devin-state",
-      "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
+      "description": "Devin state lifecycle monorepo: secret/PII redaction (devin-redact), store snapshot backup/restore (devin-backup) and session janitor (devin-janitor), sharing the devin-install-scheduler package.",
       "category": "security",
       "artifact": "tool",
       "interfaces": [
