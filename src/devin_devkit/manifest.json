@@ -41,10 +41,10 @@
   },
   "git_required_tools": [],
   "catalog": {
-    "tool_count": 18,
+    "tool_count": 19,
     "distribution_count": 1,
     "hub_count": 1,
-    "related_count": 3,
+    "related_count": 2,
     "entry_count": 23
   },
   "profiles": {
@@ -84,7 +84,7 @@
         "devin-brain",
         "devin-graph",
         "devin-search",
-        "poordjaevin"
+        "devin-judge"
       ]
     },
     "explore": {
@@ -121,7 +121,7 @@
         "devin-brain",
         "devin-graph",
         "devin-search",
-        "poordjaevin"
+        "devin-judge"
       ],
       "alias_of": "memory"
     },
@@ -156,7 +156,7 @@
         "devin-orchestrator",
         "devin-switch",
         "devin-skill-catalog",
-        "poordjaevin"
+        "devin-judge"
       ],
       "manual": [
         "devin-office"
@@ -183,7 +183,7 @@
         "devin-orchestrator",
         "devin-switch",
         "devin-skill-catalog",
-        "poordjaevin"
+        "devin-judge"
       ],
       "manual": [
         "devin-office"
@@ -1084,60 +1084,6 @@
       "install_spec": "https://github.com/Icaro0310/devin-skill-catalog/archive/75c7dc0b921ae68374773a108c6a028b75916f81.tar.gz"
     },
     {
-      "id": "poordjaevin",
-      "label": "poordjaevin",
-      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback.",
-      "category": "governance",
-      "artifact": "tool",
-      "interfaces": [
-        "cli",
-        "library",
-        "mcp",
-        "bridge"
-      ],
-      "audiences": [
-        "ai-engineers",
-        "qa"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "pypi",
-      "package": "poordjaevin",
-      "version": "0.1.1",
-      "commands": [
-        "poordjaevin"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "published",
-      "extras": [],
-      "manual_note": null,
-      "install_spec": "poordjaevin==0.1.1"
-    },
-    {
       "id": "devin-brain",
       "label": "devin-brain",
       "description": "Anti-poisoning memory store: provenance, versioning, quarantine gate, and session-learning utilities.",
@@ -1194,6 +1140,60 @@
       ],
       "manual_note": null,
       "install_spec": "devin-memory[mcp]==0.3.0"
+    },
+    {
+      "id": "devin-judge",
+      "label": "devin-judge",
+      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback.",
+      "category": "governance",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library",
+        "mcp",
+        "bridge"
+      ],
+      "audiences": [
+        "ai-engineers",
+        "qa"
+      ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
+      "manager": "uv",
+      "source": "pypi",
+      "package": "poordjaevin",
+      "version": "0.1.1",
+      "commands": [
+        "poordjaevin"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "poordjaevin==0.1.1"
     }
   ]
 }
