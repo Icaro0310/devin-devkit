@@ -7,13 +7,14 @@ Linux uses the extended runtime: local execution plus optional Devin VM/QwenPaw 
 ## Prerequisites
 
 - `uv` and Python 3.10 or newer; `uv` can manage Python.
+- Git on `PATH` for a Git dependency in this package's current release.
 
 ## Install
 
 Install the isolated Python CLI:
 
 ```bash
-uv tool install 'https://github.com/Icaro0310/devin-devkit/archive/refs/heads/main.tar.gz'
+uv tool install 'git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog'
 ```
 
 ## Devin paths
@@ -39,3 +40,4 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 ## Troubleshooting
 
 - If a command is not found, ensure the `uv` tools directory is on `PATH` and run `uv tool update-shell`.
+- This release has a Git dependency; verify Git is installed and on `PATH` with `git --version`.

@@ -39,7 +39,9 @@
       "description": "Restricted Windows execution that is intentionally self-contained: no VM, QwenPaw, Slack requirement, external delegation, or external compute."
     }
   },
-  "git_required_tools": [],
+  "git_required_tools": [
+    "devin-skill-catalog"
+  ],
   "catalog": {
     "tool_count": 19,
     "distribution_count": 1,
@@ -923,7 +925,7 @@
         "windows",
         "linux"
       ],
-      "requires_git": false,
+      "requires_git": true,
       "status": "source",
       "extras": [],
       "manual_note": null,
