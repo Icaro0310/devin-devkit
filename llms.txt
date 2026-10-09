@@ -6,7 +6,7 @@
 
 ## Docs
 - [README](https://github.com/Icaro0310/devin-skill-catalog/blob/main/README.md): full documentation
-- [devin-evals](https://github.com/Icaro0310/devin-evals): rubric packs G2 verifies (does not execute)
+- [devin-evals](https://github.com/Icaro0310/devin-assure/tree/main/packages/evals): rubric packs G2 verifies (does not execute)
 
 ## Key commands
 - `devin-skill-catalog scan [PATH ...]`: inventory skills/rules (read-only)

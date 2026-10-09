@@ -243,7 +243,7 @@ is scanned.
 - You want the tool to modify `.devin/` — it is deliberately read-only
   there; only the registry dir is writable.
 - You want rubric evals executed — that is
-  [devin-evals](https://github.com/Icaro0310/devin-evals)' job; G2 only
+  [devin-evals](https://github.com/Icaro0310/devin-assure/tree/main/packages/evals)' job; G2 only
   verifies packs are loadable.
 
 ## License
