@@ -7,6 +7,7 @@ Corporate Windows is a local-only environment: no Devin VM, QwenPaw, Slack depen
 ## Prerequisites
 
 - `uv` and Python 3.10 or newer; `uv` can manage Python.
+- Git on `PATH` for a Git dependency in this package's current release.
 
 ## Install
 
@@ -42,3 +43,4 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.
+- This release has a Git dependency; verify Git is installed and on `PATH` with `git --version`.
