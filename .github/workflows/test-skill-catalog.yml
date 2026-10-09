@@ -1,0 +1,23 @@
+name: test-skill-catalog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/skill-catalog/**'
+      - '.github/workflows/test-skill-catalog.yml'
+  pull_request:
+    paths:
+      - 'packages/skill-catalog/**'
+      - '.github/workflows/test-skill-catalog.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    uses: Icaro0310/devin-powerups/.github/workflows/python-test.yml@v1
+    with:
+      package-dir: packages/skill-catalog

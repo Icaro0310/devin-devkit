@@ -1,0 +1,23 @@
+name: test-devkit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/devkit/**'
+      - '.github/workflows/test-devkit.yml'
+  pull_request:
+    paths:
+      - 'packages/devkit/**'
+      - '.github/workflows/test-devkit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    uses: Icaro0310/devin-powerups/.github/workflows/python-test.yml@v1
+    with:
+      package-dir: packages/devkit
