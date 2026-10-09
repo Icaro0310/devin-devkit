@@ -3,11 +3,11 @@
 | [`devin-powerups`](https://github.com/Icaro0310/devin-powerups) | Extended | Extended | Local only |
 | [`devin-devkit`](https://github.com/Icaro0310/devin-devkit) | Extended | Extended | Local only |
 | [`devin-internals-spec`](https://github.com/Icaro0310/devin-internals-spec) | Extended | Extended | Local only |
-| [`devin-redact`](https://github.com/Icaro0310/devin-redact) | Extended | Extended | Local only |
+| [`devin-state`](https://github.com/Icaro0310/devin-state) | Extended | Extended | Local only |
 | [`devin-history`](https://github.com/Icaro0310/devin-history) | Extended | Extended | Local only |
-| [`devin-doctor`](https://github.com/Icaro0310/devin-doctor) | Extended | Extended | Local only |
+| [`devin-explore`](https://github.com/Icaro0310/devin-explore) | Extended | Extended | Local only |
 | [`devin-pm`](https://github.com/Icaro0310/devin-pm) | Extended | Extended | Local only |
-| [`devin-qa-pack`](https://github.com/Icaro0310/devin-qa-pack) | Extended | Extended | Local only |
+| [`devin-assure`](https://github.com/Icaro0310/devin-assure) | Extended | Extended | Local only |
 | [`devin-metrics`](https://github.com/Icaro0310/devin-metrics) | Extended | Extended | Local only |
 | [`devin-backup`](https://github.com/Icaro0310/devin-backup) | Extended | Extended | Local only |
 | [`devin-search`](https://github.com/Icaro0310/devin-search) | Extended | Extended | Local only |

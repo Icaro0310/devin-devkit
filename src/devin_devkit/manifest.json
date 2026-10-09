@@ -53,10 +53,10 @@
       "description": "Verify session claims and local Devin state with deterministic evidence.",
       "tools": [
         "devin-internals-spec",
-        "devin-qa-pack",
+        "devin-assure",
         "devin-evals",
         "devin-metrics",
-        "devin-doctor"
+        "devin-explore"
       ]
     },
     "evaluation": {
@@ -72,7 +72,7 @@
       "label": "Security",
       "description": "Reduce risk around secrets, policy-gated actions, and noisy sessions.",
       "tools": [
-        "devin-redact",
+        "devin-state",
         "devin-bridge",
         "devin-janitor"
       ]
@@ -102,7 +102,7 @@
       "tools": [
         "devin-backup",
         "devin-history",
-        "devin-doctor",
+        "devin-explore",
         "devin-metrics",
         "devin-janitor",
         "devin-pm",
@@ -129,7 +129,7 @@
       "label": "Safety",
       "description": "Convenience alias for security tooling.",
       "tools": [
-        "devin-redact",
+        "devin-state",
         "devin-bridge",
         "devin-janitor"
       ],
@@ -140,11 +140,11 @@
       "description": "All installable public tools; source-only services are listed separately.",
       "tools": [
         "devin-internals-spec",
-        "devin-redact",
+        "devin-state",
         "devin-history",
-        "devin-doctor",
+        "devin-explore",
         "devin-pm",
-        "devin-qa-pack",
+        "devin-assure",
         "devin-metrics",
         "devin-backup",
         "devin-search",
@@ -167,11 +167,11 @@
       "description": "Alias for the full installable profile.",
       "tools": [
         "devin-internals-spec",
-        "devin-redact",
+        "devin-state",
         "devin-history",
-        "devin-doctor",
+        "devin-explore",
         "devin-pm",
-        "devin-qa-pack",
+        "devin-assure",
         "devin-metrics",
         "devin-backup",
         "devin-search",
@@ -245,58 +245,6 @@
       "install_spec": "devin-internals-spec==0.3.0"
     },
     {
-      "id": "devin-redact",
-      "label": "devin-redact",
-      "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
-      "category": "security",
-      "artifact": "tool",
-      "interfaces": [
-        "cli",
-        "library"
-      ],
-      "audiences": [
-        "security",
-        "developers"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "pypi",
-      "package": "devin-redact",
-      "version": "0.2.0",
-      "commands": [
-        "devin-redact"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "published",
-      "extras": [],
-      "manual_note": null,
-      "install_spec": "devin-redact==0.2.0"
-    },
-    {
       "id": "devin-history",
       "label": "devin-history",
       "description": "Export and audit Devin session history — markdown notes, JSON, CSV, Obsidian-ready.",
@@ -346,57 +294,6 @@
       "extras": [],
       "manual_note": null,
       "install_spec": "devin-history==0.1.0"
-    },
-    {
-      "id": "devin-doctor",
-      "label": "devin-doctor",
-      "description": "Diagnose a Devin Desktop installation: stores, schema, locks, config, disk — with fix suggestions.",
-      "category": "qa",
-      "artifact": "tool",
-      "interfaces": [
-        "cli"
-      ],
-      "audiences": [
-        "operations",
-        "end-users"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "pypi",
-      "package": "devin-doctor",
-      "version": "0.1.0",
-      "commands": [
-        "devin-doctor"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "published",
-      "extras": [],
-      "manual_note": null,
-      "install_spec": "devin-doctor==0.1.0"
     },
     {
       "id": "devin-pm",
@@ -449,57 +346,6 @@
       "extras": [],
       "manual_note": null,
       "install_spec": "devin-pm==0.1.0"
-    },
-    {
-      "id": "devin-qa-pack",
-      "label": "devin-qa-pack",
-      "description": "Flagship QA audit: verifies session deliverable claims against tool-call ground truth and reports PASS/PARTIAL/UNVERIFIED.",
-      "category": "qa",
-      "artifact": "tool",
-      "interfaces": [
-        "cli"
-      ],
-      "audiences": [
-        "qa",
-        "developers"
-      ],
-      "environments": {
-        "linux": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "personal_windows": {
-          "supported": true,
-          "runtime": "extended",
-          "delegation": "optional",
-          "external_dependencies": false
-        },
-        "corporate_windows": {
-          "supported": true,
-          "runtime": "local-only",
-          "delegation": "forbidden",
-          "external_dependencies": false
-        }
-      },
-      "manager": "uv",
-      "source": "pypi",
-      "package": "devin-qa-pack",
-      "version": "0.1.0",
-      "commands": [
-        "devin-qa-pack"
-      ],
-      "runtime": "python>=3.10",
-      "platforms": [
-        "windows",
-        "linux"
-      ],
-      "requires_git": false,
-      "status": "published",
-      "extras": [],
-      "manual_note": null,
-      "install_spec": "devin-qa-pack==0.1.0"
     },
     {
       "id": "devin-metrics",
@@ -1194,6 +1040,160 @@
       "extras": [],
       "manual_note": null,
       "install_spec": "poordjaevin==0.1.1"
+    },
+    {
+      "id": "devin-state",
+      "label": "devin-state",
+      "description": "Secret/PII redaction that understands Devin tool-call semantics, in-place in SQLite, with a verification gate.",
+      "category": "security",
+      "artifact": "tool",
+      "interfaces": [
+        "cli",
+        "library"
+      ],
+      "audiences": [
+        "security",
+        "developers"
+      ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-redact",
+      "version": "0.2.0",
+      "commands": [
+        "devin-redact"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "devin-redact==0.2.0"
+    },
+    {
+      "id": "devin-assure",
+      "label": "devin-assure",
+      "description": "Flagship QA audit: verifies session deliverable claims against tool-call ground truth and reports PASS/PARTIAL/UNVERIFIED.",
+      "category": "qa",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "qa",
+        "developers"
+      ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-qa-pack",
+      "version": "0.1.0",
+      "commands": [
+        "devin-qa-pack"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "devin-qa-pack==0.1.0"
+    },
+    {
+      "id": "devin-explore",
+      "label": "devin-explore",
+      "description": "Diagnose a Devin Desktop installation: stores, schema, locks, config, disk — with fix suggestions.",
+      "category": "qa",
+      "artifact": "tool",
+      "interfaces": [
+        "cli"
+      ],
+      "audiences": [
+        "operations",
+        "end-users"
+      ],
+      "environments": {
+        "linux": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "personal_windows": {
+          "supported": true,
+          "runtime": "extended",
+          "delegation": "optional",
+          "external_dependencies": false
+        },
+        "corporate_windows": {
+          "supported": true,
+          "runtime": "local-only",
+          "delegation": "forbidden",
+          "external_dependencies": false
+        }
+      },
+      "manager": "uv",
+      "source": "pypi",
+      "package": "devin-doctor",
+      "version": "0.1.0",
+      "commands": [
+        "devin-doctor"
+      ],
+      "runtime": "python>=3.10",
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "requires_git": false,
+      "status": "published",
+      "extras": [],
+      "manual_note": null,
+      "install_spec": "devin-doctor==0.1.0"
     }
   ]
 }
