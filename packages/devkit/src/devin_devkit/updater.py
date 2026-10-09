@@ -22,7 +22,7 @@ from devin_devkit.installer import DevKitError
 
 REMOTE_MANIFEST_URL = (
     "https://raw.githubusercontent.com/Icaro0310/devin-devkit/main/"
-    "src/devin_devkit/manifest.json"
+    "packages/devkit/src/devin_devkit/manifest.json"
 )
 FETCH_TIMEOUT = 15
 

@@ -1,0 +1,25 @@
+# devin-skill-catalog
+
+> Inventory, lint, quarantine and promote Devin `SKILL.md` skills and `rules/*.md` — a lifecycle registry (`proposed → quarantined → approved → active → retired`), per-workspace inventory diff, two offline evidence gates, and a hash-verified bundle format. Read-only on `.devin/`; mutations are plan-first and require `--apply`.
+
+`.devin/skills/` and `.devin/rules/` accumulate unvetted content. This tool inventories both scopes (workspace + user dirs), lints SKILL.md frontmatter and rule titles, runs heuristic gates — G1 static hygiene (injection/exfil/`curl|sh`/secret-shaped strings, values never printed) and G2 grounding (declared files/commands must resolve, rubric packs verified loadable) — and gates promotion behind quarantine. Bundles export only `approved` items; imports always land quarantined, never active. Python ≥3.10, stdlib only, no network.
+
+## Docs
+- [README](https://github.com/Icaro0310/devin-skill-catalog/blob/main/README.md): full documentation
+- [devin-evals](https://github.com/Icaro0310/devin-assure/tree/main/packages/evals): rubric packs G2 verifies (does not execute)
+
+## Key commands
+- `devin-skill-catalog scan [PATH ...]`: inventory skills/rules (read-only)
+- `devin-skill-catalog lint|gate g1|gate g2 PATH`: findings, exit 1 on FAIL
+- `devin-skill-catalog quarantine|promote|activate|retire ITEM --apply`: lifecycle mutations (plan printed without `--apply`)
+- `devin-skill-catalog diff A B`: inventory diff by content hash
+- `devin-skill-catalog export-bundle --out DIR` / `import-bundle PATH --apply`: move approved items, import lands quarantined
+- `pipx install "devin-skill-catalog @ git+https://github.com/Icaro0310/devin-skill-catalog.git"`: install the CLI
+- `python -m pytest`: run the test suite (synthetic fixtures only)
+
+## When to use / when not
+- Use when: you want to know what skills/rules are installed where; you want a quarantine → gate → approve path for adopted content; you want to move reviewed items between machines with checksum verification.
+- Not when: you want security guarantees (heuristic gates are evidence, not proof); you want the tool to modify `.devin/` (deliberately read-only there); you want rubric evals executed (that is devin-evals' job).
+
+## Related
+- [devin-ecosystem](https://icaro0310.github.io/): the tool ecosystem this belongs to
