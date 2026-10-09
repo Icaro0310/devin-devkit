@@ -14,7 +14,7 @@ def test_profiles_and_list_use_bundled_registry(capsys):
 
     assert cli.main(["list"]) == 0
     catalog = capsys.readouterr().out
-    assert "18 first-party Devin tools" in catalog
+    assert "19 first-party Devin tools" in catalog
     assert "devin-office" in catalog
 
 

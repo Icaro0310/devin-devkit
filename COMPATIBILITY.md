@@ -19,7 +19,7 @@
 | [`devin-orchestrator`](https://github.com/Icaro0310/devin-orchestrator) | Extended | Extended | Local only |
 | [`devin-office`](https://github.com/Icaro0310/devin-office) | Extended | Extended | Local only |
 | [`qwenpaw-suite`](https://github.com/Icaro0310/qwenpaw-suite) | Extended | Extended | Unsupported |
-| [`poordjaevin`](https://github.com/Icaro0310/poordjaevin) | Extended | Extended | Local only |
+| [`devin-judge`](https://github.com/Icaro0310/devin-judge) | Extended | Extended | Local only |
 | [`devin-switch`](https://github.com/Icaro0310/devin-switch) | Extended | Extended | Local only |
 | [`devin-skill-catalog`](https://github.com/Icaro0310/devin-skill-catalog) | Extended | Extended | Local only |
 
