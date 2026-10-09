@@ -23,7 +23,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: ${{ (inputs.package == 'devkit' || startsWith(github.ref_name, 'devkit-v')) && 'pypi-devkit' || 'pypi-skill-catalog' }}
     permissions:
       id-token: write
       contents: read
