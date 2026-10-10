@@ -48,10 +48,20 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     outdated = sub.add_parser("outdated", help="list installed tools with a newer version in the remote registry")
     outdated.add_argument("--json", action="store_true", help="print the check as JSON")
+    outdated.add_argument(
+        "--environment",
+        choices=["linux", "personal-windows", "corporate-windows"],
+        help="execution environment; defaults to linux on Linux and personal-windows on Windows",
+    )
     update = sub.add_parser("update", help="preview tool updates; pass --apply to install them")
     update.add_argument("--apply", action="store_true", help="reinstall outdated tools")
     update.add_argument("--force", action="store_true", help="reinstall every installed tool")
     update.add_argument("--json", action="store_true", help="print the plan as JSON")
+    update.add_argument(
+        "--environment",
+        choices=["linux", "personal-windows", "corporate-windows"],
+        help="execution environment; defaults to linux on Linux and personal-windows on Windows",
+    )
     return parser
 
 
@@ -62,11 +72,15 @@ def main(argv: list[str] | None = None) -> int:
         manifest = load_manifest(args.manifest)
         if args.action in {"outdated", "update"}:
             remote = fetch_remote_manifest()
-            plan = build_update_plan(remote, force=args.action == "update" and args.force)
+            plan = build_update_plan(
+                remote,
+                force=args.action == "update" and args.force,
+                environment=args.environment,
+            )
             if args.json:
                 print(json.dumps(plan, ensure_ascii=False, indent=2))
             else:
-                print(f"Remote registry v{plan['registry_version']} (generated {plan['generated']})")
+                print(f"Remote registry v{plan['registry_version']} (generated {plan['generated']}; environment={plan['environment']})")
                 for item in plan["actions"]:
                     if item["action"] == "update":
                         print(f"- {item['tool']}: {item['from']} -> {item['to']}")
@@ -74,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
                         print(f"- {item['tool']}: up to date ({item['version']})")
                     elif item["action"] == "blocked":
                         print(f"- {item['tool']}: BLOCKED — {item['detail']}")
+                    elif item["action"] == "environment-blocked":
+                        print(f"- {item['tool']}: BLOCKED in {plan['environment']} — {item['detail']}")
             if args.action == "outdated":
                 return 0
             pending = [a for a in plan["actions"] if a["action"] == "update"]

@@ -8,6 +8,20 @@ from devin_devkit import updater
 from devin_devkit.installer import DevKitError
 
 
+def _envs(**corporate):
+    meta = {
+        "supported": True,
+        "delegation": "forbidden",
+        "external_dependencies": False,
+    }
+    meta.update(corporate)
+    return {
+        "linux": {"supported": True},
+        "personal_windows": {"supported": True},
+        "corporate_windows": meta,
+    }
+
+
 def remote_manifest():
     return {
         "schema": "devin-devkit-manifest/0.1",
@@ -19,24 +33,28 @@ def remote_manifest():
                 "package": "devin-doctor", "version": "0.2.0",
                 "commands": ["devin-doctor"], "status": "published",
                 "install_spec": "devin-doctor==0.2.0",
+                "environments": _envs(),
             },
             {
                 "id": "devin-history", "manager": "uv", "source": "github",
                 "package": "devin-history", "version": "0.1.0",
                 "commands": ["devin-history"], "status": "source",
                 "install_spec": "https://example.com/history.tar.gz",
+                "environments": _envs(),
             },
             {
                 "id": "devin-bridge", "manager": "npm", "source": "github",
                 "package": "@icaro0310/devin-bridge", "version": "0.2.0",
                 "commands": ["devin-bridge"], "status": "source",
                 "install_spec": "https://example.com/bridge.tar.gz",
+                "environments": _envs(),
             },
             {
                 "id": "devin-office", "manager": "manual", "source": "manual",
                 "package": "devin-office", "version": "0.1.0",
                 "commands": ["devin-office"], "status": "manual",
                 "install_spec": None,
+                "environments": _envs(),
             },
         ],
     }
@@ -135,6 +153,118 @@ def test_freshness_hint_is_silent_when_current_or_offline():
     assert updater.freshness_hint(local, opener=lambda *a, **k: (_ for _ in ()).throw(OSError())) is None
 
 
+def test_freshness_hint_offline_env_never_touches_network(monkeypatch):
+    monkeypatch.setenv("DEVIN_DEVKIT_OFFLINE", "1")
+
+    def boom(*a, **k):
+        raise AssertionError("network must not be touched")
+
+    assert updater.freshness_hint({"registry_version": 1}, opener=boom) is None
+
+
+def _external_tool():
+    return {
+        "id": "qwenpaw-suite", "manager": "uv", "source": "github",
+        "package": "qwenpaw-suite", "version": "9.9.9",
+        "commands": ["qwenpaw"], "status": "published",
+        "install_spec": "qwenpaw-suite==9.9.9",
+        "environments": {
+            "linux": {"supported": True},
+            "personal_windows": {"supported": True},
+            "corporate_windows": {
+                "supported": False,
+                "reason": "requires Devin VM/QwenPaw external runtime",
+            },
+        },
+    }
+
+
+def test_update_blocks_corporate_unsupported_tool_on_path():
+    """An env-forbidden remote tool must never get an update command —
+    even when its binary is on PATH (the F1 audit scenario)."""
+    manifest = remote_manifest()
+    manifest["tools"].append(_external_tool())
+    plan = updater.build_update_plan(
+        manifest,
+        installed={},
+        installed_specs={},
+        which=lambda c: "/usr/bin/qwenpaw" if c == "qwenpaw" else None,
+        system="windows",
+        environment="corporate-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "qwenpaw-suite")
+    assert action["action"] == "environment-blocked"
+    assert "command" not in action
+    assert plan["environment"] == "corporate_windows"
+
+
+def test_update_blocks_corporate_delegation_tool():
+    manifest = remote_manifest()
+    tool = _external_tool()
+    tool["environments"]["corporate_windows"] = {
+        "supported": True,
+        "delegation": "optional",
+        "external_dependencies": False,
+    }
+    manifest["tools"].append(tool)
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"qwenpaw-suite": "0.0.1"},
+        installed_specs={},
+        which=which_none,
+        system="windows",
+        environment="corporate-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "qwenpaw-suite")
+    assert action["action"] == "environment-blocked"
+    assert "corporate" in action["detail"].lower()
+
+
+def test_update_personal_windows_allows_same_tool():
+    manifest = remote_manifest()
+    manifest["tools"].append(_external_tool())
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"qwenpaw-suite": "0.0.1"},
+        installed_specs={},
+        which=which_none,
+        system="windows",
+        environment="personal-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "qwenpaw-suite")
+    assert action["action"] == "update"
+
+
+def test_update_blocks_tool_without_environment_metadata():
+    manifest = remote_manifest()
+    tool = _external_tool()
+    tool["environments"] = {"linux": {"supported": True}}
+    manifest["tools"].append(tool)
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"qwenpaw-suite": "0.0.1"},
+        installed_specs={},
+        which=which_none,
+        system="windows",
+        environment="corporate-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "qwenpaw-suite")
+    assert action["action"] == "environment-blocked"
+    assert "metadata" in action["detail"]
+
+
+def test_update_environment_host_mismatch_fails_closed():
+    with pytest.raises(DevKitError):
+        updater.build_update_plan(
+            remote_manifest(),
+            installed={},
+            installed_specs={},
+            which=which_none,
+            system="linux",
+            environment="corporate-windows",
+        )
+
+
 def test_same_version_channel_change_plans_reinstall():
     """GitHub-archive install at the same version must be migrated to
     the PyPI pin — version equality alone is not 'current'."""
@@ -144,6 +274,7 @@ def test_same_version_channel_change_plans_reinstall():
         "package": "devin-evals", "version": "0.2.0",
         "commands": ["devin-evals"], "status": "published",
         "install_spec": "devin-evals==0.2.0",
+        "environments": _envs(),
     }
     specs = {"devin-evals": "https://github.com/Icaro0310/devin-evals/archive/abc123.tar.gz"}
     plan = updater.build_update_plan(

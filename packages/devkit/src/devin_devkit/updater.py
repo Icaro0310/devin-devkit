@@ -18,7 +18,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-from devin_devkit.installer import DevKitError
+from devin_devkit.installer import DevKitError, normalize_environment, platform_name
 
 REMOTE_MANIFEST_URL = (
     "https://raw.githubusercontent.com/Icaro0310/devin-devkit/main/"
@@ -141,6 +141,26 @@ def installed_npm_tools(
     }
 
 
+def _environment_block(tool: dict[str, Any], environment: str) -> str | None:
+    """Reason an update must not run for ``tool`` in ``environment``.
+
+    Mirrors the installer's environment gate so ``update`` cannot install a
+    tool the selected environment forbids — e.g. an external-runtime tool
+    landing on corporate Windows because its command happens to be on PATH.
+    """
+    env_meta = tool.get("environments", {}).get(environment)
+    if env_meta is None:
+        return f"no {environment} environment metadata"
+    if not env_meta.get("supported"):
+        return env_meta.get("reason", f"unsupported in {environment}")
+    if environment == "corporate_windows" and (
+        env_meta.get("external_dependencies")
+        or env_meta.get("delegation") in {"optional", "supported", "required"}
+    ):
+        return "external runtime or delegation is disabled in corporate Windows"
+    return None
+
+
 def build_update_plan(
     remote: dict[str, Any],
     *,
@@ -149,6 +169,8 @@ def build_update_plan(
     which: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = subprocess.run,
     force: bool = False,
+    system: str | None = None,
+    environment: str | None = None,
 ) -> dict[str, Any]:
     """Diff installed tools against the remote manifest.
 
@@ -164,6 +186,11 @@ def build_update_plan(
         installed.update(installed_npm_tools(runner))
     if installed_specs is None:
         installed_specs = installed_uv_specs()
+
+    try:
+        selected_environment = normalize_environment(environment, platform_name(system))
+    except ValueError as exc:
+        raise DevKitError(str(exc)) from exc
 
     actions: list[dict[str, Any]] = []
     for tool in remote.get("tools", []):
@@ -182,6 +209,7 @@ def build_update_plan(
             continue
         local_version = installed.get(tool["package"], "?")
         remote_version = tool.get("version", "?")
+        env_block = _environment_block(tool, selected_environment)
         if not force and local_version == remote_version:
             installed_spec = installed_specs.get(tool["package"])
             if (
@@ -189,16 +217,22 @@ def build_update_plan(
                 and installed_spec is not None
                 and _spec_channel(installed_spec) != _spec_channel(spec)
             ):
-                actions.append({
-                    "tool": tool_id,
-                    "action": "update",
-                    "from": local_version,
-                    "to": remote_version,
-                    "reason": "install source changed",
-                    "command": ["uv", "tool", "install", "--force", spec],
-                })
+                if env_block:
+                    actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
+                else:
+                    actions.append({
+                        "tool": tool_id,
+                        "action": "update",
+                        "from": local_version,
+                        "to": remote_version,
+                        "reason": "install source changed",
+                        "command": ["uv", "tool", "install", "--force", spec],
+                    })
             else:
                 actions.append({"tool": tool_id, "action": "current", "version": local_version})
+            continue
+        if env_block:
+            actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
             continue
         command = (
             ["uv", "tool", "install", "--force", spec]
@@ -215,6 +249,7 @@ def build_update_plan(
     return {
         "registry_version": remote.get("registry_version"),
         "generated": remote.get("generated"),
+        "environment": selected_environment,
         "actions": actions,
     }
 
@@ -247,7 +282,11 @@ def freshness_hint(
     """One-line hint when the remote registry is newer than the bundled manifest.
 
     Never raises: network or parse problems simply return None.
+    ``DEVIN_DEVKIT_OFFLINE=1`` skips the fetch entirely (local-only
+    environments where any outbound call must be opt-in).
     """
+    if os.environ.get("DEVIN_DEVKIT_OFFLINE") == "1":
+        return None
     try:
         remote = fetch_remote_manifest(opener=opener)
     except DevKitError:
