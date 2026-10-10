@@ -48,8 +48,12 @@ Until the CLI requires an explicit `--environment` on Windows, the recommended h
 
 ```powershell
 function devkit {
-    if ($args -contains "--environment") { devin-devkit @args; return }
     if ($args[0] -in @("install", "update", "outdated")) {
+        $explicit = $args | Where-Object { $_ -eq "--environment" -or $_ -like "--environment=*" } |
+            Select-Object -First 1
+        if ($explicit -and $explicit -notmatch "corporate-windows") {
+            Write-Warning "devkit wrapper: overriding '$explicit' with --environment corporate-windows"
+        }
         devin-devkit @args --environment corporate-windows
     } else {
         devin-devkit @args
@@ -57,7 +61,7 @@ function devkit {
 }
 ```
 
-The wrapper injects the environment for the three subcommands that accept it and never overrides an explicit `--environment`. It is not enforcement: a caller that invokes `devin-devkit` directly still gets the permissive default — that gap is closed by the pending CLI change, not by documentation.
+The wrapper always appends `--environment corporate-windows` for the three subcommands that accept it. The CLI honors the last option, so the injection wins over either explicit form (`--environment X` or `--environment=X`) — both are treated identically, and a non-corporate choice produces a warning instead of silently bypassing or silently replacing the gate. It is still not enforcement: a caller that invokes `devin-devkit` directly still gets the permissive default — that gap is closed by the pending CLI change, not by documentation.
 
 ## Devin paths and PATH
 
