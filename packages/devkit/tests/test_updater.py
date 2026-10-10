@@ -33,6 +33,7 @@ def remote_manifest():
                 "package": "devin-doctor", "version": "0.2.0",
                 "commands": ["devin-doctor"], "status": "published",
                 "install_spec": "devin-doctor==0.2.0",
+                "platforms": ["linux", "windows"],
                 "environments": _envs(),
             },
             {
@@ -40,6 +41,7 @@ def remote_manifest():
                 "package": "devin-history", "version": "0.1.0",
                 "commands": ["devin-history"], "status": "source",
                 "install_spec": "https://example.com/history.tar.gz",
+                "platforms": ["linux", "windows"],
                 "environments": _envs(),
             },
             {
@@ -47,6 +49,7 @@ def remote_manifest():
                 "package": "@icaro0310/devin-bridge", "version": "0.2.0",
                 "commands": ["devin-bridge"], "status": "source",
                 "install_spec": "https://example.com/bridge.tar.gz",
+                "platforms": ["linux", "windows"],
                 "environments": _envs(),
             },
             {
@@ -54,6 +57,7 @@ def remote_manifest():
                 "package": "devin-office", "version": "0.1.0",
                 "commands": ["devin-office"], "status": "manual",
                 "install_spec": None,
+                "platforms": ["linux", "windows"],
                 "environments": _envs(),
             },
         ],
@@ -68,13 +72,22 @@ def which_none(command):
     return None
 
 
+_MANAGERS = {"uv", "npm", "git", "node"}
+
+
+def which_managers(command):
+    """Package managers on PATH, tool commands absent — lets update
+    plans reach the version-compare stage without faking tool installs."""
+    return f"/usr/bin/{command}" if command in _MANAGERS else None
+
+
 def test_plan_updates_only_installed_outdated_tools():
     installed = {
         "devin-doctor": "0.1.0",      # older than remote 0.2.0 -> update
         "devin-history": "0.1.0",     # same version -> current
         "@icaro0310/devin-bridge": "0.1.0",  # npm, older -> update
     }
-    plan = updater.build_update_plan(remote_manifest(), installed=installed, installed_specs={}, which=which_none)
+    plan = updater.build_update_plan(remote_manifest(), installed=installed, installed_specs={}, which=which_managers)
     actions = {a["tool"]: a for a in plan["actions"]}
 
     assert actions["devin-doctor"]["action"] == "update"
@@ -85,11 +98,83 @@ def test_plan_updates_only_installed_outdated_tools():
     assert "devin-office" not in actions  # manual tools are never touched
 
 
-def test_plan_detects_tools_on_path_not_in_uv_list():
+def test_plan_marks_path_only_tools_unmanaged():
+    """A command on PATH that devkit did not install is never force-
+    reinstalled — the same 'never overwrites' contract as install."""
     plan = updater.build_update_plan(remote_manifest(), installed={}, installed_specs={}, which=which_all)
     actions = {a["tool"]: a["action"] for a in plan["actions"]}
-    assert actions["devin-doctor"] == "update"  # on PATH but version unknown "?"
-    assert actions["devin-history"] == "update"
+    assert actions["devin-doctor"] == "unmanaged"
+    assert actions["devin-history"] == "unmanaged"
+
+
+def test_force_does_not_adopt_unmanaged_path_tools():
+    plan = updater.build_update_plan(
+        remote_manifest(), installed={}, installed_specs={}, which=which_all, force=True
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "unmanaged"
+    assert "command" not in action
+
+
+def test_unsupported_platform_is_reported_not_updated():
+    manifest = remote_manifest()
+    manifest["tools"][0]["platforms"] = ["linux"]
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.1.0"},
+        installed_specs={},
+        which=which_managers,
+        system="windows",
+        environment="personal-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "unsupported"
+    assert "windows" in action["detail"]
+
+
+def test_missing_manager_binary_blocks_update_at_plan_time():
+    """Same fail-closed contract as install: no 'update' the apply step
+    cannot run."""
+    plan = updater.build_update_plan(
+        remote_manifest(),
+        installed={"devin-doctor": "0.1.0"},
+        installed_specs={},
+        which=which_none,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "blocked"
+    assert "uv" in action["detail"]
+
+
+def test_requires_git_blocks_update_without_git():
+    manifest = remote_manifest()
+    manifest["tools"][0]["requires_git"] = True
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.1.0"},
+        installed_specs={},
+        which=lambda c: "/usr/bin/uv" if c == "uv" else None,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "blocked"
+    assert "git" in action["detail"]
+
+
+def test_corporate_blocked_even_when_version_current():
+    """An env-forbidden tool reports the violation even if the installed
+    version already matches — 'current' would hide a policy breach."""
+    manifest = remote_manifest()
+    manifest["tools"].append(_external_tool())
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"qwenpaw-suite": "9.9.9"},
+        installed_specs={},
+        which=which_managers,
+        system="windows",
+        environment="corporate-windows",
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "qwenpaw-suite")
+    assert action["action"] == "environment-blocked"
 
 
 def test_plan_skips_absent_tools():
@@ -99,7 +184,7 @@ def test_plan_skips_absent_tools():
 
 def test_force_reinstalls_current_tools():
     installed = {"devin-history": "0.1.0"}
-    plan = updater.build_update_plan(remote_manifest(), installed=installed, installed_specs={}, which=which_none, force=True)
+    plan = updater.build_update_plan(remote_manifest(), installed=installed, installed_specs={}, which=which_managers, force=True)
     history = next(a for a in plan["actions"] if a["tool"] == "devin-history")
     assert history["action"] == "update"
 
@@ -114,7 +199,7 @@ def test_apply_reports_failures():
         remote_manifest(),
         installed={"devin-doctor": "0.1.0", "devin-history": "0.0.9"},
         installed_specs={},
-        which=which_none,
+        which=which_managers,
     )
     result = updater.apply_update_plan(plan, runner=runner)
     assert result["updated"] == ["devin-doctor"]
@@ -168,6 +253,7 @@ def _external_tool():
         "package": "qwenpaw-suite", "version": "9.9.9",
         "commands": ["qwenpaw"], "status": "published",
         "install_spec": "qwenpaw-suite==9.9.9",
+        "platforms": ["linux", "windows"],
         "environments": {
             "linux": {"supported": True},
             "personal_windows": {"supported": True},
@@ -227,7 +313,7 @@ def test_update_personal_windows_allows_same_tool():
         manifest,
         installed={"qwenpaw-suite": "0.0.1"},
         installed_specs={},
-        which=which_none,
+        which=which_managers,
         system="windows",
         environment="personal-windows",
     )
@@ -274,6 +360,7 @@ def test_same_version_channel_change_plans_reinstall():
         "package": "devin-evals", "version": "0.2.0",
         "commands": ["devin-evals"], "status": "published",
         "install_spec": "devin-evals==0.2.0",
+        "platforms": ["linux", "windows"],
         "environments": _envs(),
     }
     specs = {"devin-evals": "https://github.com/Icaro0310/devin-evals/archive/abc123.tar.gz"}
@@ -281,7 +368,7 @@ def test_same_version_channel_change_plans_reinstall():
         manifest,
         installed={"devin-evals": "0.2.0"},
         installed_specs=specs,
-        which=which_none,
+        which=which_managers,
     )
     action = next(a for a in plan["actions"] if a["tool"] == "devin-evals")
     assert action["action"] == "update"
@@ -296,7 +383,7 @@ def test_same_version_same_source_stays_current():
         manifest,
         installed={"devin-history": "0.1.0"},
         installed_specs=specs,
-        which=which_none,
+        which=which_managers,
     )
     action = next(a for a in plan["actions"] if a["tool"] == "devin-history")
     assert action["action"] == "current"
@@ -307,7 +394,7 @@ def test_missing_receipt_falls_back_to_version_compare():
         remote_manifest(),
         installed={"devin-history": "0.1.0"},
         installed_specs={},
-        which=which_none,
+        which=which_managers,
     )
     action = next(a for a in plan["actions"] if a["tool"] == "devin-history")
     assert action["action"] == "current"
@@ -362,3 +449,32 @@ def test_installed_uv_specs_nested_table_and_index_url(tmp_path):
     specs = updater.installed_uv_specs(tmp_path)
     assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
     assert specs["devin-doctor"] == "devin-doctor==0.2.0"
+
+
+def test_uv_tools_dir_windows_uses_appdata(monkeypatch):
+    """uv stores receipts at %APPDATA%\\uv\\data\\tools on Windows —
+    a Unix-style ~/.local path silently disables channel detection."""
+    monkeypatch.setenv("APPDATA", r"C:\Users\test\AppData\Roaming")
+    monkeypatch.delenv("UV_TOOL_DIR", raising=False)
+    monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+    path = updater._uv_tools_dir("nt")
+    assert path.parts[-3:] == ("uv", "data", "tools")
+    assert "Roaming" in str(path)
+
+
+def test_uv_tools_dir_unix_honors_xdg_and_override(monkeypatch):
+    monkeypatch.delenv("UV_TOOL_DIR", raising=False)
+    monkeypatch.setenv("XDG_DATA_HOME", "/xdg/data")
+    assert str(updater._uv_tools_dir("posix")) == "/xdg/data/uv/tools"
+    monkeypatch.setenv("UV_TOOL_DIR", "/custom/tools")
+    assert str(updater._uv_tools_dir()) == "/custom/tools"
+
+
+def test_freshness_hint_suppressed_in_corporate_environment():
+    def boom(*a, **k):
+        raise AssertionError("network must not be touched")
+
+    hint = updater.freshness_hint(
+        {"registry_version": 1}, environment="corporate_windows", opener=boom
+    )
+    assert hint is None

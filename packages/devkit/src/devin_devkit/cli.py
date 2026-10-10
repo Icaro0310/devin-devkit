@@ -90,6 +90,10 @@ def main(argv: list[str] | None = None) -> int:
                         print(f"- {item['tool']}: BLOCKED — {item['detail']}")
                     elif item["action"] == "environment-blocked":
                         print(f"- {item['tool']}: BLOCKED in {plan['environment']} — {item['detail']}")
+                    elif item["action"] == "unsupported":
+                        print(f"- {item['tool']}: unsupported — {item['detail']}")
+                    elif item["action"] == "unmanaged":
+                        print(f"- {item['tool']}: unmanaged — {item['detail']}")
             if args.action == "outdated":
                 return 0
             pending = [a for a in plan["actions"] if a["action"] == "update"]
@@ -121,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         plan = build_plan(manifest, args.profile, environment=args.environment)
         if not args.apply:
             _print_plan(plan, args.json)
-            hint = freshness_hint(manifest)
+            hint = freshness_hint(manifest, environment=plan["environment"])
             if hint:
                 print(hint, file=sys.stderr)
             return 2 if plan["errors"] else 0

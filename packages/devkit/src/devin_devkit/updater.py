@@ -18,7 +18,12 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-from devin_devkit.installer import DevKitError, normalize_environment, platform_name
+from devin_devkit.installer import (
+    DevKitError,
+    _node_major,
+    normalize_environment,
+    platform_name,
+)
 
 REMOTE_MANIFEST_URL = (
     "https://raw.githubusercontent.com/Icaro0310/devin-devkit/main/"
@@ -72,13 +77,20 @@ except ImportError:  # Python 3.10 — declared as a conditional dependency
     import tomli as tomllib
 
 
-def _uv_tools_dir() -> Path:
+def _uv_tools_dir(os_name: str | None = None) -> Path:
+    """Mirror uv's own resolution: ``$UV_TOOL_DIR``, then
+    ``%APPDATA%\\uv\\data\\tools`` on Windows and
+    ``$XDG_DATA_HOME/uv/tools`` or ``~/.local/share/uv/tools`` on Unix.
+    Verify with ``uv tool dir`` when in doubt."""
     override = os.environ.get("UV_TOOL_DIR")
-    return (
-        Path(override)
-        if override
-        else Path.home() / ".local" / "share" / "uv" / "tools"
-    )
+    if override:
+        return Path(override)
+    if (os_name or os.name) == "nt":
+        appdata = os.environ.get("APPDATA")
+        root = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        return root / "uv" / "data" / "tools"
+    xdg = os.environ.get("XDG_DATA_HOME")
+    return (Path(xdg) if xdg else Path.home() / ".local" / "share") / "uv" / "tools"
 
 
 def installed_uv_specs(
@@ -161,6 +173,27 @@ def _environment_block(tool: dict[str, Any], environment: str) -> str | None:
     return None
 
 
+def _prereq_block(
+    tool: dict[str, Any],
+    which: Callable[[str], str | None],
+    node_major: int | None,
+) -> str | None:
+    """Missing prerequisite that would make a planned update fail at apply.
+
+    Mirrors the installer's preflight so a plan never advertises an
+    ``update`` that cannot run (uv/npm off PATH, git missing for a
+    git-sourced spec, Node.js <20 for npm tools)."""
+    manager = tool.get("manager")
+    binary = "uv" if manager == "uv" else "npm"
+    if which(binary) is None:
+        return f"missing {binary}"
+    if tool.get("requires_git") and which("git") is None:
+        return "missing git"
+    if manager == "npm" and (node_major is None or node_major < 20):
+        return "Node.js >=20 is required"
+    return None
+
+
 def build_update_plan(
     remote: dict[str, Any],
     *,
@@ -187,12 +220,14 @@ def build_update_plan(
     if installed_specs is None:
         installed_specs = installed_uv_specs()
 
+    host = platform_name(system)
     try:
-        selected_environment = normalize_environment(environment, platform_name(system))
+        selected_environment = normalize_environment(environment, host)
     except ValueError as exc:
         raise DevKitError(str(exc)) from exc
 
     actions: list[dict[str, Any]] = []
+    node_major: int | None = None
     for tool in remote.get("tools", []):
         tool_id = tool["id"]
         manager = tool.get("manager")
@@ -200,16 +235,36 @@ def build_update_plan(
             continue
         commands = tool.get("commands", [])
         on_path = any(which(command) is not None for command in commands)
-        if tool["package"] not in installed and not on_path:
+        managed = tool["package"] in installed
+        if not managed and not on_path:
             actions.append({"tool": tool_id, "action": "not-installed"})
+            continue
+        if host not in tool.get("platforms", []):
+            actions.append({"tool": tool_id, "action": "unsupported", "detail": f"not listed for {host}"})
+            continue
+        env_block = _environment_block(tool, selected_environment)
+        if env_block:
+            actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
+            continue
+        if not managed:
+            actions.append({
+                "tool": tool_id,
+                "action": "unmanaged",
+                "detail": "commands on PATH were not installed by devkit; remove them first to adopt the managed package",
+            })
             continue
         spec = tool.get("install_spec")
         if not spec:
             actions.append({"tool": tool_id, "action": "blocked", "detail": "missing install specification"})
             continue
-        local_version = installed.get(tool["package"], "?")
+        if manager == "npm" and node_major is None:
+            node_major = _node_major(runner, which)
+        prereq = _prereq_block(tool, which, node_major)
+        if prereq:
+            actions.append({"tool": tool_id, "action": "blocked", "detail": prereq})
+            continue
+        local_version = installed[tool["package"]]
         remote_version = tool.get("version", "?")
-        env_block = _environment_block(tool, selected_environment)
         if not force and local_version == remote_version:
             installed_spec = installed_specs.get(tool["package"])
             if (
@@ -217,22 +272,16 @@ def build_update_plan(
                 and installed_spec is not None
                 and _spec_channel(installed_spec) != _spec_channel(spec)
             ):
-                if env_block:
-                    actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
-                else:
-                    actions.append({
-                        "tool": tool_id,
-                        "action": "update",
-                        "from": local_version,
-                        "to": remote_version,
-                        "reason": "install source changed",
-                        "command": ["uv", "tool", "install", "--force", spec],
-                    })
+                actions.append({
+                    "tool": tool_id,
+                    "action": "update",
+                    "from": local_version,
+                    "to": remote_version,
+                    "reason": "install source changed",
+                    "command": ["uv", "tool", "install", "--force", spec],
+                })
             else:
                 actions.append({"tool": tool_id, "action": "current", "version": local_version})
-            continue
-        if env_block:
-            actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
             continue
         command = (
             ["uv", "tool", "install", "--force", spec]
@@ -277,15 +326,17 @@ def apply_update_plan(
 def freshness_hint(
     manifest: dict[str, Any],
     *,
+    environment: str | None = None,
     opener: Callable[..., Any] | None = None,
 ) -> str | None:
     """One-line hint when the remote registry is newer than the bundled manifest.
 
     Never raises: network or parse problems simply return None.
-    ``DEVIN_DEVKIT_OFFLINE=1`` skips the fetch entirely (local-only
-    environments where any outbound call must be opt-in).
+    ``DEVIN_DEVKIT_OFFLINE=1`` skips the fetch entirely, and the hint is
+    also suppressed when the caller already resolved a ``corporate_windows``
+    environment — local-only means no gratuitous outbound calls.
     """
-    if os.environ.get("DEVIN_DEVKIT_OFFLINE") == "1":
+    if environment == "corporate_windows" or os.environ.get("DEVIN_DEVKIT_OFFLINE") == "1":
         return None
     try:
         remote = fetch_remote_manifest(opener=opener)
