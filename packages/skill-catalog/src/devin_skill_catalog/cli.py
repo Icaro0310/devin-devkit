@@ -29,11 +29,15 @@ import argparse
 import json
 import shutil
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from devin_skill_catalog import __version__, bundle, gates, lint, scan
-from devin_skill_catalog.diffing import DiffStatus, diff_inventories
+from devin_skill_catalog.diffing import (
+    DiffRow,
+    DiffStatus,
+    diff_inventories,
+)
 from devin_skill_catalog.model import (
     KINDS,
     STATE_APPROVED,
@@ -51,7 +55,6 @@ from devin_skill_catalog.paths import (
     registry_path,
 )
 from devin_skill_catalog.registry import Registry, RegistryError
-
 
 # --------------------------------------------------------------------------
 # helpers
@@ -108,6 +111,36 @@ def _finding_dicts(findings: list[Finding]) -> list[dict]:
             "message": f.message,
         }
         for f in findings
+    ]
+
+
+def _item_dicts(items: list[Item], reg: Registry | None) -> list[dict]:
+    """The ``scan --json`` item payload — reused by the MCP adapter."""
+    return [
+        {
+            "key": it.key,
+            "kind": it.kind,
+            "name": it.name,
+            "scope": it.scope,
+            "state": (reg.state_of(it.kind, it.name) if reg else None)
+            or "unregistered",
+            "sha256": it.sha256,
+            "path": str(it.path),
+        }
+        for it in items
+    ]
+
+
+def _diff_row_dicts(rows: list[DiffRow]) -> list[dict]:
+    """The ``diff --json`` row payload — reused by the MCP adapter."""
+    return [
+        {
+            "key": r.key,
+            "status": r.status.value,
+            "sha_a": r.sha_a,
+            "sha_b": r.sha_b,
+        }
+        for r in rows
     ]
 
 
@@ -169,30 +202,7 @@ def cmd_scan(args) -> int:
     except RegistryError:
         pass
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "items": [
-                        {
-                            "key": it.key,
-                            "kind": it.kind,
-                            "name": it.name,
-                            "scope": it.scope,
-                            "state": (
-                                reg.state_of(it.kind, it.name)
-                                if reg
-                                else None
-                            )
-                            or "unregistered",
-                            "sha256": it.sha256,
-                            "path": str(it.path),
-                        }
-                        for it in items
-                    ]
-                },
-                indent=2,
-            )
-        )
+        print(json.dumps({"items": _item_dicts(items, reg)}, indent=2))
         return 0
     if not items:
         print("no skills or rules found")
@@ -216,22 +226,7 @@ def cmd_diff(args) -> int:
     b = scan.scan_devin_dir(scan.resolve_devin_dir(Path(args.b)))
     rows = diff_inventories(a, b)
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "rows": [
-                        {
-                            "key": r.key,
-                            "status": r.status.value,
-                            "sha_a": r.sha_a,
-                            "sha_b": r.sha_b,
-                        }
-                        for r in rows
-                    ]
-                },
-                indent=2,
-            )
-        )
+        print(json.dumps({"rows": _diff_row_dicts(rows)}, indent=2))
     else:
         for r in rows:
             extra = ""
@@ -302,8 +297,10 @@ def _cmd_quarantine(args) -> int:
         f"copy {len(item.files)} file(s)  {item.item_dir}",
         f"             → {store}",
         f"registry: {current} → quarantined",
-        "note: the original files in .devin/ stay untouched — "
-        "remove them manually if the item must stop loading",
+        (
+            "note: the original files in .devin/ stay untouched — "
+            "remove them manually if the item must stop loading"
+        ),
     ]
     if not _plan(lines, args.apply):
         return 0
@@ -494,7 +491,7 @@ def cmd_export(args) -> int:
     out = Path(args.out)
     try:
         _manifest, pairs = bundle.build_manifest(reg)
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception as exc:  # noqa: BLE001 — defensive, any failure is an error line
         print(f"error: {exc}", file=sys.stderr)
         return 1
     if not pairs:
@@ -525,11 +522,15 @@ def cmd_import(args) -> int:
             src = manifest.get("source", {})
             lines = [
                 f"import {len(plans)} item(s) from {path}",
-                f"source profile: {src.get('platform', '?')} / "
-                f"python {src.get('python', '?')} / "
-                f"{src.get('tool', '?')} {src.get('tool_version', '')}",
-                "every item lands QUARANTINED — never directly "
-                "active/approved",
+                (
+                    f"source profile: {src.get('platform', '?')} / "
+                    f"python {src.get('python', '?')} / "
+                    f"{src.get('tool', '?')} {src.get('tool_version', '')}"
+                ),
+                (
+                    "every item lands QUARANTINED — never directly "
+                    "active/approved"
+                ),
             ]
             for p in plans:
                 cur = reg.state_of(p["kind"], p["name"]) or "new"

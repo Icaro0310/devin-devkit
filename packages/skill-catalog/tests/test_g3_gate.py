@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from devin_skill_catalog import cli, scan
 from devin_skill_catalog.model import STATE_APPROVED, STATE_QUARANTINED
 from devin_skill_catalog.paths import quarantine_item_dir, registry_path

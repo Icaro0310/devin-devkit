@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from types import SimpleNamespace
 
-import devin_devkit.cli as cli
+from devin_devkit import cli
 
 
 def test_profiles_and_list_use_bundled_registry(capsys):

@@ -164,9 +164,12 @@ def _infer_devin_dir(item_file: Path) -> Path:
     """Recover the devin dir for a lone file: ``.../skills/<n>/SKILL.md`` →
     ``...`` ``(the .devin dir)``; ``.../rules/<n>.md`` → ``...``."""
     parts = item_file.parts
-    if item_file.name == SKILL_FILENAME and len(parts) >= 3:
-        if item_file.parent.parent.name == "skills":
-            return item_file.parent.parent.parent
+    if (
+        item_file.name == SKILL_FILENAME
+        and len(parts) >= 3
+        and item_file.parent.parent.name == "skills"
+    ):
+        return item_file.parent.parent.parent
     if item_file.parent.name == "rules":
         return item_file.parent.parent
     return item_file.parent
