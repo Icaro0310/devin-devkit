@@ -54,6 +54,20 @@ Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP messa
 
 The generated [compatibility matrix](COMPATIBILITY.md) comes from `devin-powerups/registry.json`. Corporate Windows entries marked `Unsupported` include a registry reason; entries marked `Local only` install without VM, QwenPaw, external compute, workload delegation, or required external integrations.
 
+
+## Adapters (MCP / Devin skill / plugin)
+
+- MCP server: `pip install 'devin-{pkg}[mcp]'` then run
+  `devin-{pkg}-mcp` (stdio). Read-only tools only.
+- Devin plugin + skill: `devin plugins install
+  Icaro0310/devin-devkit#packages/{pkg}/adapters`. The manifest
+  launches the server through `uvx --from 'devin-{pkg}[mcp]'
+  devin-{pkg}-mcp`, which resolves once the first PyPI release ships.
+  Until then, an editable install does not change what `uvx --from`
+  resolves — either run the source-installed `devin-{pkg}-mcp`
+  directly, or point a local manifest copy at the checkout:
+  `uvx --from './packages/{pkg}[mcp]' devin-{pkg}-mcp`.
+
 ## Troubleshooting
 
 - The corporate plan fails closed when a selected profile contains a tool that violates local-only constraints.

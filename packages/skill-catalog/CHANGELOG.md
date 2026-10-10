@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Read-only adapters: `devin_skill_catalog.mcp_server` MCP server
+  (`devin-skill-catalog-mcp` entry point, `mcp` extra), Devin skill and
+  `adapters/` plugin root.
+
 - README gains the generated `Part of the DEVIN ecosystem` block
   (track/nature/audience/interface rendered from the registry).
 

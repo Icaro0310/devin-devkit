@@ -37,6 +37,20 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 - **Permissions:** tools read Devin data under `$XDG_DATA_HOME/devin` and write only their own config/state — no root or sudo is required.
 - **Scheduling:** optional recurring work belongs to `systemd --user` timers or cron; installation never creates jobs.
 
+
+## Adapters (MCP / Devin skill / plugin)
+
+- MCP server: `pip install 'devin-{pkg}[mcp]'` then run
+  `devin-{pkg}-mcp` (stdio). Read-only tools only.
+- Devin plugin + skill: `devin plugins install
+  Icaro0310/devin-devkit#packages/{pkg}/adapters`. The manifest
+  launches the server through `uvx --from 'devin-{pkg}[mcp]'
+  devin-{pkg}-mcp`, which resolves once the first PyPI release ships.
+  Until then, an editable install does not change what `uvx --from`
+  resolves — either run the source-installed `devin-{pkg}-mcp`
+  directly, or point a local manifest copy at the checkout:
+  `uvx --from './packages/{pkg}[mcp]' devin-{pkg}-mcp`.
+
 ## Troubleshooting
 
 - If a command is not found, ensure the `uv` tools directory is on `PATH` and run `uv tool update-shell`.

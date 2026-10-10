@@ -96,7 +96,7 @@ def scan_targets(
     ``include_user``, every existing user-level Devin dir."""
     items: list[Item] = []
     for t in targets:
-        items.extend(scan_devin_dir(resolve_devin_dir(t), SCOPE_WORKSPACE))
+        items.extend(resolve_target(t))
     if include_user:
         for d in user_devin_dirs():
             items.extend(scan_devin_dir(d, SCOPE_USER))

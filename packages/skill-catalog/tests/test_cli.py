@@ -44,6 +44,17 @@ def test_lint_clean_single_item(devin_dir: Path, capsys):
     ) == 0
 
 
+def test_lint_single_staged_file(devin_dir: Path, capsys):
+    """Pre-commit path: staged SKILL.md/rule files are passed as
+    filenames, not directories — they must actually be linted."""
+    bad = devin_dir / "skills" / "bad-name" / "SKILL.md"
+    assert cli.main(["lint", str(bad), "--no-user"]) == 1
+    good = devin_dir / "skills" / "good-skill" / "SKILL.md"
+    assert cli.main(["lint", str(good), "--no-user"]) == 0
+    rule = devin_dir / "rules" / "no-title.md"
+    assert cli.main(["lint", str(rule), "--no-user"]) == 1
+
+
 def test_diff_exit_codes(tmp_path: Path, capsys):
     from conftest import GOOD_RULE, GOOD_SKILL, write
 
