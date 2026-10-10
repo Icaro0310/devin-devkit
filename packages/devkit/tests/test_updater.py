@@ -132,6 +132,33 @@ def test_unsupported_platform_is_reported_not_updated():
     assert "windows" in action["detail"]
 
 
+def test_current_tool_reports_current_without_prereqs():
+    # A tool already at the manifest version is current even when the
+    # managers are off PATH — prerequisites gate reinstalls only.
+    plan = updater.build_update_plan(
+        remote_manifest(),
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={},
+        which=lambda command: None,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "current"
+
+
+def test_channel_change_without_manager_is_blocked():
+    # A same-version source migration still needs the manager, so it
+    # reports blocked rather than planning an update.
+    plan = updater.build_update_plan(
+        remote_manifest(),
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={"devin-doctor": "https://example.com/old.tar.gz"},
+        which=lambda command: None,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "blocked"
+    assert "uv" in action["detail"]
+
+
 def test_missing_manager_binary_blocks_update_at_plan_time():
     """Same fail-closed contract as install: no 'update' the apply step
     cannot run."""

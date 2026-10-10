@@ -77,3 +77,33 @@ def test_apply_preflight_error_returns_without_installs(monkeypatch, capsys):
 
     assert cli.main(["install", "full", "--apply"]) == 2
     assert "requires Node.js >=20" in capsys.readouterr().err
+
+
+def _stub_update_path(monkeypatch):
+    """Remote manifest + empty installed set, and spies for the plan
+    kwargs and any apply call."""
+    remote = {"registry_version": 1, "generated": "x", "tools": []}
+    monkeypatch.setattr(cli, "fetch_remote_manifest", lambda: remote)
+    monkeypatch.setattr("devin_devkit.updater.installed_uv_tools", lambda runner: {})
+    monkeypatch.setattr("devin_devkit.updater.installed_npm_tools", lambda runner: {})
+    monkeypatch.setattr("devin_devkit.updater.installed_uv_specs", lambda: {})
+
+
+def test_outdated_forwards_environment_and_never_applies(monkeypatch, capsys):
+    _stub_update_path(monkeypatch)
+    applied = []
+    monkeypatch.setattr(cli, "apply_update_plan", lambda plan: applied.append(plan))
+
+    assert cli.main(["outdated", "--environment", "linux"]) == 0
+    output = capsys.readouterr().out
+    assert "environment=linux" in output
+    assert applied == []
+
+
+def test_update_apply_forwards_environment_and_runs_plan(monkeypatch, capsys):
+    _stub_update_path(monkeypatch)
+    applied = []
+    monkeypatch.setattr(cli, "apply_update_plan", lambda plan: applied.append(plan) or {"updated": [], "failed": []})
+
+    assert cli.main(["update", "--apply", "--environment", "linux"]) == 0
+    assert len(applied) == 1

@@ -58,6 +58,6 @@ The generated [compatibility matrix](COMPATIBILITY.md) comes from `devin-powerup
 
 - The corporate plan fails closed when a selected profile contains a tool that violates local-only constraints. `update` and `outdated` apply the same gate — pass `--environment corporate-windows` there too.
 - `devin-devkit install <profile> --environment corporate-windows` is a dry run. `--apply` is required to install.
-- `list` and dry-run `install` make one HTTPS call to `raw.githubusercontent.com` for a registry freshness check. Set `DEVIN_DEVKIT_OFFLINE=1` to skip all remote calls.
+- `list` and dry-run `install` make one HTTPS call to `raw.githubusercontent.com` for a registry freshness check. Set `DEVIN_DEVKIT_OFFLINE=1` to skip that freshness fetch only — `outdated` and `update` still contact the remote manifest to compute the plan.
 - Existing commands are never overwritten; a partial command collision blocks the profile.
 - For a tool's usage and data-path overrides, follow its main `README.md`.

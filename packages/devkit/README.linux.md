@@ -8,7 +8,7 @@ Linux uses the extended runtime: local execution plus optional delegated workloa
 
 - A supported Linux distribution and Bash.
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/) or your distribution's package manager. It can manage a compatible Python interpreter.
-- Git when a selected profile includes `devin-skill-catalog` (installed from a pinned `git+https` spec) or for manual source checkouts such as `devin-office`. PyPI and HTTPS archive installs do not need Git.
+- Git when installing the DevKit itself from the `git+https` source shown below, when a selected profile includes `devin-skill-catalog` (installed from a pinned `git+https` spec), or for manual source checkouts such as `devin-office`. PyPI and HTTPS archive installs do not need Git.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
 
 ## Install the DevKit

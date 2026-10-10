@@ -257,31 +257,34 @@ def build_update_plan(
         if not spec:
             actions.append({"tool": tool_id, "action": "blocked", "detail": "missing install specification"})
             continue
+        local_version = installed[tool["package"]]
+        remote_version = tool.get("version", "?")
+        installed_spec = installed_specs.get(tool["package"])
+        channel_changed = (
+            manager == "uv"
+            and installed_spec is not None
+            and _spec_channel(installed_spec) != _spec_channel(spec)
+        )
+        if not force and local_version == remote_version and not channel_changed:
+            actions.append({"tool": tool_id, "action": "current", "version": local_version})
+            continue
+        # Prerequisites gate an actual reinstall only — a tool already at
+        # the manifest version is current without uv/npm/git on PATH.
         if manager == "npm" and node_major is None:
             node_major = _node_major(runner, which)
         prereq = _prereq_block(tool, which, node_major)
         if prereq:
             actions.append({"tool": tool_id, "action": "blocked", "detail": prereq})
             continue
-        local_version = installed[tool["package"]]
-        remote_version = tool.get("version", "?")
         if not force and local_version == remote_version:
-            installed_spec = installed_specs.get(tool["package"])
-            if (
-                manager == "uv"
-                and installed_spec is not None
-                and _spec_channel(installed_spec) != _spec_channel(spec)
-            ):
-                actions.append({
-                    "tool": tool_id,
-                    "action": "update",
-                    "from": local_version,
-                    "to": remote_version,
-                    "reason": "install source changed",
-                    "command": ["uv", "tool", "install", "--force", spec],
-                })
-            else:
-                actions.append({"tool": tool_id, "action": "current", "version": local_version})
+            actions.append({
+                "tool": tool_id,
+                "action": "update",
+                "from": local_version,
+                "to": remote_version,
+                "reason": "install source changed",
+                "command": ["uv", "tool", "install", "--force", spec],
+            })
             continue
         command = (
             ["uv", "tool", "install", "--force", spec]
