@@ -44,6 +44,21 @@ devin-devkit install full --environment corporate-windows
 
 Do not omit `--environment corporate-windows` on a restricted machine. Without it, Windows defaults to the Personal Windows extended runtime so optional delegation-capable tools can be reported correctly.
 
+Until the CLI requires an explicit `--environment` on Windows, the recommended hardening is a profile function that injects it automatically — this covers interactive use and any script or hook that calls `devkit` instead of `devin-devkit` directly. Add to `$PROFILE`:
+
+```powershell
+function devkit {
+    if ($args -contains "--environment") { devin-devkit @args; return }
+    if ($args[0] -in @("install", "update", "outdated")) {
+        devin-devkit @args --environment corporate-windows
+    } else {
+        devin-devkit @args
+    }
+}
+```
+
+The wrapper injects the environment for the three subcommands that accept it and never overrides an explicit `--environment`. It is not enforcement: a caller that invokes `devin-devkit` directly still gets the permissive default — that gap is closed by the pending CLI change, not by documentation.
+
 ## Devin paths and PATH
 
 Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP message databases are under `%APPDATA%\Devin\User\`. The DevKit does not change those directories or Devin settings.
