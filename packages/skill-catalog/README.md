@@ -14,8 +14,9 @@
 <!-- DEVIN-ECO:BEGIN -->
 > **Part of the [DEVIN ecosystem](https://github.com/Icaro0310/awesome-devin)**  
 > Track: Build · Nature: product  
-> For: Maintainers, AI engineers  
-> Interface: CLI / Registry
+> For: Maintainers, AI engineers, Developers  
+> Interface: CLI / Registry  
+> Path: Developers · step 2/4 — after `devin-devkit`, before `devin-internals-spec`
 <!-- DEVIN-ECO:END -->
 
 
