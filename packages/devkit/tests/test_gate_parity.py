@@ -198,9 +198,12 @@ def test_divergence_only_where_semantics_differ():
     assert u["action"] == "current"
 
     # Same version but channel changed -> a reinstall IS planned ->
-    # parity restored: both report blocked on missing uv.
+    # parity restored: both report blocked on missing uv. The installed
+    # version must equal the remote one, or a version bump plans the
+    # reinstall anyway and the channel drift is never exercised.
     _, u2 = _update_action(
         tool, "linux", "linux", which_none,
+        installed={"sample-pkg": "1.0.0"},
         specs={"sample-pkg": "https://example.com/old.tar.gz"},
     )
     assert u2["action"] == "blocked"
