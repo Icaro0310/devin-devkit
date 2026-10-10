@@ -1,6 +1,6 @@
 # Corporate Windows installation
 
-This guide covers restricted Windows machines where the Devin Ecosystem must remain self-contained. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers restricted Windows machines where the Devin Ecosystem must remain self-contained. The DevKit is published on PyPI; the source archive is also available from GitHub.
 
 ## Runtime guarantee
 
@@ -21,12 +21,12 @@ The mode is explicit because the operating system cannot distinguish a personal 
 - Windows 10 or newer and PowerShell.
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
-- Git only for manual source checkouts such as `devin-office`; installable profiles use HTTPS archives.
+- Git when a selected profile includes `devin-skill-catalog` (installed from a pinned `git+https` spec) or for manual source checkouts such as `devin-office`. PyPI and HTTPS archive installs do not need Git.
 
 ## Install the DevKit
 
 ```powershell
-uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
+uv tool install devin-devkit
 ```
 
 Preview and apply a local-only profile:
@@ -56,7 +56,8 @@ The generated [compatibility matrix](COMPATIBILITY.md) comes from `devin-powerup
 
 ## Troubleshooting
 
-- The corporate plan fails closed when a selected profile contains a tool that violates local-only constraints.
+- The corporate plan fails closed when a selected profile contains a tool that violates local-only constraints. `update` and `outdated` apply the same gate — pass `--environment corporate-windows` there too.
 - `devin-devkit install <profile> --environment corporate-windows` is a dry run. `--apply` is required to install.
+- `list` and dry-run `install` make one HTTPS call to `raw.githubusercontent.com` for a registry freshness check. Set `DEVIN_DEVKIT_OFFLINE=1` to skip all remote calls.
 - Existing commands are never overwritten; a partial command collision blocks the profile.
 - For a tool's usage and data-path overrides, follow its main `README.md`.
