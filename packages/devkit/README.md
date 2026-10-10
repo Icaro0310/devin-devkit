@@ -87,7 +87,7 @@ devin-devkit update --apply    # reinstall outdated tools
 devin-devkit update --force --apply   # reinstall everything
 ```
 
-`outdated`/`update` read the manifest published in this repository, which a weekly workflow re-exports from the maintainer registry, so the pins are never more than about a week behind upstream. Updates apply the same gates as `install`: the selected `--environment`, platform support, and prerequisite checks are enforced at plan time, and tools whose commands exist on `PATH` but were not installed by devkit (no uv receipt, no npm global entry) are reported as `unmanaged` and never force-reinstalled — remove them manually first if you want devkit to adopt them.
+`outdated`/`update` read the manifest published in this repository, which a weekly workflow re-exports from the maintainer registry, so the pins are never more than about a week behind upstream. Updates apply the same gates as `install`: the selected `--environment`, platform support, and prerequisite checks are enforced at plan time, and tools whose commands exist on `PATH` but were not installed by devkit (no uv receipt, no npm global entry) are reported as `unmanaged` and never force-reinstalled — remove them manually first if you want devkit to adopt them. A tool that was permitted and later became forbidden (policy or manifest changed) reports `environment-blocked` on `outdated`/`update` even when already at the pinned version — that is intentional, not a regression: the check exists to surface the violation, and `current` would hide it.
 
 To run from a checkout without installing the DevKit itself:
 
