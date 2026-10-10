@@ -7,6 +7,11 @@
 - **Publish** — consolidated `pypi-publish.yml` builds and uploads
   `devin-devkit` and `devin-skill-catalog` via PyPI Trusted Publishing
   (OIDC), tag `*-v*` or manual dispatch.
+- **CI** — hardened `release.yml` and `pypi-publish.yml`: the release
+  tag now reaches `gh release create` through an env var instead of
+  inline `github.ref_name` interpolation, and a wheel check asserts the
+  installed package's `__version__` matches `pyproject.toml` before
+  upload.
 
 ## 2026-10 (F4 consolidation)
 
