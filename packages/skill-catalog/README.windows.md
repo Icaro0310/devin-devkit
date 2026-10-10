@@ -36,6 +36,20 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 - **WSL:** treat it as a Linux machine — follow [README.linux.md](README.linux.md) inside it.
 - **Uninstall:** `uv tool uninstall <package>` (or `npm uninstall -g` for a Node.js tool) removes the CLI; delete `%APPDATA%\devin` to remove local data. No services or scheduled tasks are left behind.
 
+
+## Adapters (MCP / Devin skill / plugin)
+
+- MCP server: `pip install 'devin-{pkg}[mcp]'` then run
+  `devin-{pkg}-mcp` (stdio). Read-only tools only.
+- Devin plugin + skill: `devin plugins install
+  Icaro0310/devin-devkit#packages/{pkg}/adapters`. The manifest
+  launches the server through `uvx --from 'devin-{pkg}[mcp]'
+  devin-{pkg}-mcp`, which resolves once the first PyPI release ships.
+  Until then, an editable install does not change what `uvx --from`
+  resolves — either run the source-installed `devin-{pkg}-mcp`
+  directly, or point a local manifest copy at the checkout:
+  `uvx --from './packages/{pkg}[mcp]' devin-{pkg}-mcp`.
+
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.

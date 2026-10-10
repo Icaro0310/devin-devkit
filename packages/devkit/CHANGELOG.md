@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Read-only adapters: `devin_devkit.mcp_server` MCP server
+  (`devin-devkit-mcp` entry point, `mcp` extra), Devin skill and
+  `adapters/` plugin root.
+
 - `COMPATIBILITY.md` rows for `homebrew-tap` (Linux/macOS local-only) and `scoop-bucket` (Windows local-only, incl. corporate).
 - Registry-backed profile installer with `qa`, `evaluation`, `security`, `memory`, `agent`, `operations`, `full`, and `all` selections.
 - Dry-run by default; `--apply` is required to install. Python tools use isolated `uv` environments; the Node bridge uses npm and requires Node.js 20+.

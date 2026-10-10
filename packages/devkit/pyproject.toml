@@ -16,9 +16,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+mcp = ["mcp>=1.2"]
 
 [project.scripts]
 devin-devkit = "devin_devkit.cli:main"
+devin-devkit-mcp = "devin_devkit.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

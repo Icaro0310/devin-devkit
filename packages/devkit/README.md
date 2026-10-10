@@ -104,6 +104,25 @@ The manifest pins PyPI versions where available and GitHub source archives to im
 - Current installable profiles do not need Git. Git is needed only for manual source checkouts such as `devin-office`; package archives use HTTPS.
 - Supported environments: Linux, Personal Windows and Corporate Windows. Linux and Personal Windows may use optional delegated runtime; Corporate Windows rejects registry entries that require external runtime, delegation or external integrations. macOS is planned but not claimed as tested.
 
+
+## Adapters (MCP server, Devin skill, plugin)
+
+`devin_devkit.mcp_server` exposes the read-only half of the CLI as MCP
+tools via the `devin-devkit-mcp` entry point
+(`pip install 'devin-devkit[mcp]'`). The write path stays CLI-only for a
+human.
+
+`adapters/` is a self-contained Devin plugin root
+(`adapters/.devin-plugin/plugin.json` +
+`adapters/skills/devin-devkit/SKILL.md`), installed with
+`devin plugins install
+Icaro0310/devin-devkit#packages/devkit/adapters` — it ships in the repo,
+not inside the wheel. The manifest launches the server through
+`uvx --from 'devin-devkit[mcp]' devin-devkit-mcp`, which resolves once the
+first PyPI release ships; until then run the source-installed
+`devin-devkit-mcp` directly or point a local manifest copy at the
+checkout (`uvx --from './packages/devkit[mcp]' devin-devkit-mcp`).
+
 ## Development and synchronization
 
 ```bash

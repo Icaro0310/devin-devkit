@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import pytest
-
 from devin_devkit import updater
-from devin_devkit.installer import DevKitError
 
 
 def remote_manifest():

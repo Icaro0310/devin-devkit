@@ -8,7 +8,6 @@ file with a level-1 title. Findings are per item, PASS/WARN/FAIL.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from devin_skill_catalog.model import (
     KIND_RULE,
@@ -21,7 +20,7 @@ from devin_skill_catalog.model import (
 # Below this length a description is a placeholder, not a description.
 MIN_DESCRIPTION_LEN = 20
 _TITLE_RE = re.compile(r"^#\s+\S", re.MULTILINE)
-_PLACEHOLDER_RE = re.compile(r"^(todo|tbd|fixme|xxx|placeholder)\b", re.I)
+_PLACEHOLDER_RE = re.compile(r"^(todo|tbd|fixme|xxx|placeholder)\b", re.IGNORECASE)
 
 
 def _f(status: Status, check: str, msg: str, item: Item) -> Finding:

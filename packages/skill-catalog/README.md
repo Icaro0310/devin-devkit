@@ -228,6 +228,25 @@ python -m pytest
 Tests run entirely on synthetic `.devin/` fixture trees — nothing real
 is scanned.
 
+
+## Adapters (MCP server, Devin skill, plugin)
+
+`devin_skill_catalog.mcp_server` exposes the read-only half of the CLI as MCP
+tools via the `devin-skill-catalog-mcp` entry point
+(`pip install 'devin-skill-catalog[mcp]'`). The write path stays CLI-only for a
+human.
+
+`adapters/` is a self-contained Devin plugin root
+(`adapters/.devin-plugin/plugin.json` +
+`adapters/skills/devin-skill-catalog/SKILL.md`), installed with
+`devin plugins install
+Icaro0310/devin-devkit#packages/skill-catalog/adapters` — it ships in the repo,
+not inside the wheel. The manifest launches the server through
+`uvx --from 'devin-skill-catalog[mcp]' devin-skill-catalog-mcp`, which resolves once the
+first PyPI release ships; until then run the source-installed
+`devin-skill-catalog-mcp` directly or point a local manifest copy at the
+checkout (`uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`).
+
 ## When to use this
 
 - You want to know which skills/rules exist across workspaces and user

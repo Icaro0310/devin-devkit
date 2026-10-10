@@ -24,7 +24,6 @@ job). G2 is documented as "evidence, not proof".
 
 from __future__ import annotations
 
-import base64
 import json
 import math
 import re
@@ -35,7 +34,6 @@ from pathlib import Path
 from devin_skill_catalog import lint
 from devin_skill_catalog.model import (
     KIND_RULE,
-    KIND_SKILL,
     Finding,
     Item,
     Status,
@@ -53,7 +51,7 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, Status, str]] = [
             r"\bignore\s+(all\s+|any\s+|the\s+|your\s+)?"
             r"(previous|prior|above|earlier)\s+"
             r"(instructions?|prompts?|rules?|directions?)",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "prompt-injection phrasing — 'ignore previous instructions'",
@@ -62,7 +60,7 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, Status, str]] = [
         re.compile(
             r"\bdisregard\s+(all\s+|any\s+|the\s+)?"
             r"(previous|prior|above)\b",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "prompt-injection phrasing — 'disregard previous'",
@@ -71,7 +69,7 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, Status, str]] = [
         re.compile(
             r"\b(reveal|print|show|output|leak|exfiltrate|repeat)\b"
             r"[^.\n]{0,60}\b(system|initial|original)\s+prompt\b",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "system-prompt exfiltration phrasing",
@@ -80,7 +78,7 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, Status, str]] = [
         re.compile(
             r"\b(system|initial)\s+prompt\b[^.\n]{0,60}"
             r"\b(reveal|leak|exfiltrate|send|post)\b",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "system-prompt exfiltration phrasing",
@@ -89,20 +87,20 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, Status, str]] = [
         re.compile(
             r"\b(curl|wget|fetch)\b[^\n|]{0,200}\|\s*(sudo\s+)?"
             r"(ba|z|fi|da)?sh\b",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "download-and-execute pattern (curl|wget piped to a shell)",
     ),
     (
-        re.compile(r"\byou\s+are\s+now\s+(a|an|in)\b", re.I),
+        re.compile(r"\byou\s+are\s+now\s+(a|an|in)\b", re.IGNORECASE),
         Status.WARN,
         "jailbreak-style phrasing — 'you are now …'",
     ),
     (
         re.compile(
             r"\bdo\s+not\s+(tell|inform|show|reveal\s+to)\s+the\s+user\b",
-            re.I,
+            re.IGNORECASE,
         ),
         Status.FAIL,
         "concealment phrasing — 'do not tell the user'",
@@ -281,7 +279,7 @@ _FILE_TOKEN_RE = re.compile(
     r"\b([\w.-]+\.(?:py|sh|bash|mjs|js|ts|md|json|ya?ml|toml|txt|csv))\b"
 )
 _CODE_SPAN_RE = re.compile(r"`([^`\n]+)`")
-_FENCED_RE = re.compile(r"```[^\n]*\n(.*?)```", re.S)
+_FENCED_RE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
 
 # frontmatter keys whose values are interpreted as declared context
 _PATH_KEYS = ("files", "file", "scripts", "script", "references", "requires_files")

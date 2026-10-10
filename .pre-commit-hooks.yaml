@@ -1,0 +1,7 @@
+- id: skill-catalog-lint
+  name: devin-skill-catalog lint
+  description: Lint SKILL.md/rule files staged in the commit against the catalog gates.
+  entry: devin-skill-catalog lint --no-user
+  language: system
+  files: "(SKILL\\.md|\\.devin/(skills|rules)/.*\\.md)$"
+  pass_filenames: true
