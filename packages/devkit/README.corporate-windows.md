@@ -49,10 +49,17 @@ Until the CLI requires an explicit `--environment` on Windows, the recommended h
 ```powershell
 function devkit {
     if ($args[0] -in @("install", "update", "outdated")) {
-        $explicit = $args | Where-Object { $_ -eq "--environment" -or $_ -like "--environment=*" } |
-            Select-Object -First 1
-        if ($explicit -and $explicit -notmatch "corporate-windows") {
-            Write-Warning "devkit wrapper: overriding '$explicit' with --environment corporate-windows"
+        $chosen = $null
+        for ($i = 0; $i -lt $args.Count; $i++) {
+            if ($args[$i] -eq "--environment" -and $i + 1 -lt $args.Count) {
+                $chosen = $args[$i + 1]; break
+            }
+            if ($args[$i] -like "--environment=*") {
+                $chosen = $args[$i] -replace "^--environment=", ""; break
+            }
+        }
+        if ($chosen -and $chosen -ne "corporate-windows") {
+            Write-Warning "devkit wrapper: overriding '--environment $chosen' with corporate-windows"
         }
         devin-devkit @args --environment corporate-windows
     } else {
