@@ -9,6 +9,7 @@ installed tools up to date.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import shutil
@@ -20,10 +21,13 @@ from typing import Any, Callable
 
 from devin_devkit.installer import (
     DevKitError,
-    _node_major,
+    evaluate_requirements,
+    evaluate_target,
     normalize_environment,
     platform_name,
 )
+
+logger = logging.getLogger(__name__)
 
 REMOTE_MANIFEST_URL = (
     "https://raw.githubusercontent.com/Icaro0310/devin-devkit/main/"
@@ -153,47 +157,6 @@ def installed_npm_tools(
     }
 
 
-def _environment_block(tool: dict[str, Any], environment: str) -> str | None:
-    """Reason an update must not run for ``tool`` in ``environment``.
-
-    Mirrors the installer's environment gate so ``update`` cannot install a
-    tool the selected environment forbids — e.g. an external-runtime tool
-    landing on corporate Windows because its command happens to be on PATH.
-    """
-    env_meta = tool.get("environments", {}).get(environment)
-    if env_meta is None:
-        return f"no {environment} environment metadata"
-    if not env_meta.get("supported"):
-        return env_meta.get("reason", f"unsupported in {environment}")
-    if environment == "corporate_windows" and (
-        env_meta.get("external_dependencies")
-        or env_meta.get("delegation") in {"optional", "supported", "required"}
-    ):
-        return "external runtime or delegation is disabled in corporate Windows"
-    return None
-
-
-def _prereq_block(
-    tool: dict[str, Any],
-    which: Callable[[str], str | None],
-    node_major: int | None,
-) -> str | None:
-    """Missing prerequisite that would make a planned update fail at apply.
-
-    Mirrors the installer's preflight so a plan never advertises an
-    ``update`` that cannot run (uv/npm off PATH, git missing for a
-    git-sourced spec, Node.js <20 for npm tools)."""
-    manager = tool.get("manager")
-    binary = "uv" if manager == "uv" else "npm"
-    if which(binary) is None:
-        return f"missing {binary}"
-    if tool.get("requires_git") and which("git") is None:
-        return "missing git"
-    if manager == "npm" and (node_major is None or node_major < 20):
-        return "Node.js >=20 is required"
-    return None
-
-
 def build_update_plan(
     remote: dict[str, Any],
     *,
@@ -227,7 +190,6 @@ def build_update_plan(
         raise DevKitError(str(exc)) from exc
 
     actions: list[dict[str, Any]] = []
-    node_major: int | None = None
     for tool in remote.get("tools", []):
         tool_id = tool["id"]
         manager = tool.get("manager")
@@ -239,12 +201,11 @@ def build_update_plan(
         if not managed and not on_path:
             actions.append({"tool": tool_id, "action": "not-installed"})
             continue
-        if host not in tool.get("platforms", []):
-            actions.append({"tool": tool_id, "action": "unsupported", "detail": f"not listed for {host}"})
-            continue
-        env_block = _environment_block(tool, selected_environment)
-        if env_block:
-            actions.append({"tool": tool_id, "action": "environment-blocked", "detail": env_block})
+        gate = evaluate_target(tool, host=host, environment=selected_environment)
+        if gate is not None:
+            name, detail = gate
+            action = "environment-blocked" if name.startswith("environment-") else "unsupported"
+            actions.append({"tool": tool_id, "action": action, "detail": detail})
             continue
         if not managed:
             actions.append({
@@ -270,11 +231,9 @@ def build_update_plan(
             continue
         # Prerequisites gate an actual reinstall only — a tool already at
         # the manifest version is current without uv/npm/git on PATH.
-        if manager == "npm" and node_major is None:
-            node_major = _node_major(runner, which)
-        prereq = _prereq_block(tool, which, node_major)
-        if prereq:
-            actions.append({"tool": tool_id, "action": "blocked", "detail": prereq})
+        gate = evaluate_requirements(tool, which=which, runner=runner)
+        if gate is not None:
+            actions.append({"tool": tool_id, "action": "blocked", "detail": gate[1]})
             continue
         if not force and local_version == remote_version:
             actions.append({
@@ -339,7 +298,11 @@ def freshness_hint(
     also suppressed when the caller already resolved a ``corporate_windows``
     environment — local-only means no gratuitous outbound calls.
     """
-    if environment == "corporate_windows" or os.environ.get("DEVIN_DEVKIT_OFFLINE") == "1":
+    if environment == "corporate_windows":
+        logger.info("freshness check skipped: corporate_windows is local-only")
+        return None
+    if os.environ.get("DEVIN_DEVKIT_OFFLINE") == "1":
+        logger.info("freshness check skipped: DEVIN_DEVKIT_OFFLINE=1")
         return None
     try:
         remote = fetch_remote_manifest(opener=opener)

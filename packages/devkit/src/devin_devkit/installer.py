@@ -92,7 +92,6 @@ def evaluate_requirements(
     *,
     which: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = subprocess.run,
-    node_major: int | None = None,
 ) -> tuple[str, str] | None:
     """Local prerequisite/spec gate: could an install/update command run?
 
@@ -109,7 +108,7 @@ def evaluate_requirements(
     if tool.get("requires_git") and which("git") is None:
         return "git", "missing git"
     if manager == "npm":
-        major = node_major if node_major is not None else _node_major(runner, which)
+        major = _node_major(runner, which)
         if major is None or major < 20:
             return "node", "Node.js >=20 is required"
     if not tool.get("install_spec"):
@@ -190,7 +189,6 @@ def build_plan(
     tool_map = {tool["id"]: tool for tool in manifest.get("tools", [])}
     actions: list[dict[str, Any]] = []
     errors: list[str] = []
-    node_major = None
 
     for tool_id in profile.get("tools", []):
         tool = tool_map.get(tool_id)
@@ -221,9 +219,7 @@ def build_plan(
                 actions.append({"tool": tool_id, "action": "blocked", "detail": "partial command collision"})
             continue
 
-        if manager == "npm" and node_major is None:
-            node_major = _node_major(runner, which)
-        gate = evaluate_requirements(tool, which=which, runner=runner, node_major=node_major)
+        gate = evaluate_requirements(tool, which=which, runner=runner)
         if gate is not None:
             name, detail = gate
             errors.append(_REQUIREMENT_GATE_ERRORS[name].format(
