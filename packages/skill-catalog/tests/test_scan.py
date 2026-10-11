@@ -47,6 +47,32 @@ def test_resolve_devin_dir(workspace: Path, devin_dir: Path):
     assert scan.resolve_devin_dir(devin_dir) == devin_dir
 
 
+def test_resolve_devin_dirs_mixed_layout(tmp_path: Path):
+    """Top-level ``skills/`` coexisting with ``.devin/`` → both scanned."""
+    from conftest import BAD_NAME_SKILL, GOOD_SKILL, write
+
+    write(
+        tmp_path / "skills" / "top-skill" / "SKILL.md",
+        GOOD_SKILL.replace("good-skill", "top-skill"),
+    )
+    write(
+        tmp_path / ".devin" / "skills" / "inner-skill" / "SKILL.md",
+        BAD_NAME_SKILL,
+    )
+    assert scan.resolve_devin_dirs(tmp_path) == [
+        tmp_path,
+        tmp_path / ".devin",
+    ]
+    # singular resolver keeps first-match semantics for compat
+    assert scan.resolve_devin_dir(tmp_path) == tmp_path
+    keys = {
+        it.key
+        for it in scan.scan_targets([tmp_path], include_user=False)
+    }
+    assert keys == {"skill:top-skill", "skill:inner-skill"}
+    assert {it.key for it in scan.resolve_target(tmp_path)} == keys
+
+
 def test_resolve_target_variants(devin_dir: Path, workspace: Path):
     # single SKILL.md file → one skill named by its dir
     items = scan.resolve_target(
