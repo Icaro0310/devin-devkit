@@ -1,0 +1,18 @@
+- id: devin-skill-catalog-gate
+  name: devin-skill-catalog workspace lint
+  description: >-
+    Structural lint of the repo's Devin items before committing:
+    `devin-skill-catalog lint --no-user` inventories `.devin/` under
+    the project root (or a top-level `skills/` / `rules/` pair) and
+    validates every item — SKILL.md must carry frontmatter with a
+    `name` matching its directory and a non-trivial `description`,
+    rule files need an H1 title. Any FAIL finding exits 1 and
+    blocks the commit; WARN and PASS findings print but do not
+    block. `--no-user` keeps personal `~/.devin` items out of
+    scope, so a broken personal skill cannot block commits here;
+    a repo with no Devin items finds nothing and passes. Strictly
+    read-only — findings are printed, never fixed or written.
+  entry: devin-skill-catalog lint --no-user
+  language: system
+  pass_filenames: false
+  always_run: true
