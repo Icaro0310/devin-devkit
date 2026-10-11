@@ -1,6 +1,6 @@
 # Personal Windows installation
 
-This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). Install from PyPI (`uv tool install devin-devkit`) or from the GitHub source archive.
 
 Personal Windows uses the extended runtime: local Windows execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
 
@@ -58,7 +58,7 @@ Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP messa
 For a package such as `devin-doctor`, keep the published version constraint in its `pyproject.toml`; install sibling sources editably only in the development environment:
 
 ```powershell
-cd ..\devin-doctor
+cd ..\devin-explore\packages\doctor
 uv venv
 uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
 ```
