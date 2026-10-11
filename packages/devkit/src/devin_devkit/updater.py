@@ -86,9 +86,6 @@ def _uv_tools_dir(os_name: str | None = None) -> PurePath:
     ``%APPDATA%\\uv\\data\\tools`` on Windows and
     ``$XDG_DATA_HOME/uv/tools`` or ``~/.local/share/uv/tools`` on Unix.
     Verify with ``uv tool dir`` when in doubt."""
-    override = os.environ.get("UV_TOOL_DIR")
-    if override:
-        return Path(override)
     resolved = os_name or os.name
     # An explicit os_name is a test seam: return the OS's own path flavour
     # so assertions compare separators, not the host's native flavour.
@@ -98,6 +95,9 @@ def _uv_tools_dir(os_name: str | None = None) -> PurePath:
         path_type = PureWindowsPath
     else:
         path_type = PurePosixPath
+    override = os.environ.get("UV_TOOL_DIR")
+    if override:
+        return path_type(override)
     if resolved == "nt":
         appdata = os.environ.get("APPDATA")
         root = path_type(appdata) if appdata else path_type(Path.home()) / "AppData" / "Roaming"

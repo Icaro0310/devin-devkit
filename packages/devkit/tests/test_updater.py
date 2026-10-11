@@ -494,7 +494,7 @@ def test_uv_tools_dir_unix_honors_xdg_and_override(monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", "/xdg/data")
     assert str(updater._uv_tools_dir("posix")) == "/xdg/data/uv/tools"
     monkeypatch.setenv("UV_TOOL_DIR", "/custom/tools")
-    assert str(updater._uv_tools_dir()) == "/custom/tools"
+    assert str(updater._uv_tools_dir("posix")) == "/custom/tools"
 
 
 def test_freshness_hint_suppressed_in_corporate_environment():
