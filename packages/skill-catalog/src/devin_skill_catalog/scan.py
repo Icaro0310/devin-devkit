@@ -96,25 +96,40 @@ def scan_targets(
     ``include_user``, every existing user-level Devin dir."""
     items: list[Item] = []
     for t in targets:
-        items.extend(scan_devin_dir(resolve_devin_dir(t), SCOPE_WORKSPACE))
+        for d in resolve_devin_dirs(t):
+            items.extend(scan_devin_dir(d, SCOPE_WORKSPACE))
     if include_user:
         for d in user_devin_dirs():
             items.extend(scan_devin_dir(d, SCOPE_USER))
     return items
 
 
+def resolve_devin_dirs(path: Path) -> list[Path]:
+    """Map a path to every dir that contains ``skills/``/``rules/``.
+
+    Accepts a ``.devin`` dir itself or a workspace root containing one.
+    A workspace root may hold a top-level ``skills/``/``rules/`` pair
+    *and* a ``.devin/`` dir — both are scan roots so no item is
+    silently skipped. Falls back to ``[path]`` itself (empty
+    inventory; caller reports "nothing found").
+    """
+    p = Path(path).expanduser()
+    dirs: list[Path] = []
+    if looks_like_devin_dir(p):
+        dirs.append(p)
+    cand = p / ".devin"
+    if cand.is_dir() and cand not in dirs:
+        dirs.append(cand)
+    return dirs or [p]
+
+
 def resolve_devin_dir(path: Path) -> Path:
     """Map a path to the dir that contains ``skills/``/``rules/``.
 
-    Accepts a ``.devin`` dir itself or a workspace root containing one.
+    Returns the first scan root — for full coverage of mixed layouts
+    use ``resolve_devin_dirs``.
     """
-    p = Path(path).expanduser()
-    if looks_like_devin_dir(p):
-        return p
-    cand = p / ".devin"
-    if cand.is_dir():
-        return cand
-    return p  # empty inventory; caller reports "nothing found"
+    return resolve_devin_dirs(path)[0]
 
 
 def resolve_target(path: Path) -> list[Item]:
@@ -156,7 +171,7 @@ def resolve_target(path: Path) -> list[Item]:
                     SCOPE_WORKSPACE,
                 )
             ]
-        return scan_devin_dir(resolve_devin_dir(p), SCOPE_WORKSPACE)
+        return scan_targets([p], include_user=False)
     return []
 
 

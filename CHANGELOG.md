@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Pre-commit hook** — new `devin-skill-catalog-gate` repo hook
+  (`.pre-commit-hooks.yaml`): runs `devin-skill-catalog lint --no-user`
+  on commits that touch `.devin/`, `skills/` or `rules/` paths; FAIL
+  findings block the commit. `system` hook — requires
+  `devin-skill-catalog` on PATH.
+- **skill-catalog** — workspace scan now inventories *both* a top-level
+  `skills/`/`rules/` pair and `.devin/` when they coexist (previously
+  `.devin/` items were silently skipped).
 - **Docs** — refreshed the generated `Part of the DEVIN ecosystem` block: journey recuration v2 (six paths, zero repeats, `Local-first ops` label, `devin-bridge` in DevOps).
 - **CI** — Ruff lint job added (`astral-sh/ruff-action`, pinned).
 - **Publish** — consolidated `pypi-publish.yml` builds and uploads

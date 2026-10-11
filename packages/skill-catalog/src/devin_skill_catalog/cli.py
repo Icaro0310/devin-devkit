@@ -212,8 +212,8 @@ def cmd_lint(args) -> int:
 
 
 def cmd_diff(args) -> int:
-    a = scan.scan_devin_dir(scan.resolve_devin_dir(Path(args.a)))
-    b = scan.scan_devin_dir(scan.resolve_devin_dir(Path(args.b)))
+    a = scan.scan_targets([Path(args.a)], include_user=False)
+    b = scan.scan_targets([Path(args.b)], include_user=False)
     rows = diff_inventories(a, b)
     if args.json:
         print(
