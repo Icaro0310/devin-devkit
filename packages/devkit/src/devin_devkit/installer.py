@@ -57,6 +57,87 @@ def normalize_environment(environment: str | None, host: str) -> str:
     return normalized
 
 
+def evaluate_target(
+    tool: dict[str, Any],
+    *,
+    host: str,
+    environment: str,
+) -> tuple[str, str] | None:
+    """Policy gate: can this tool run in ``environment`` on ``host``?
+
+    Returns ``(gate, detail)`` for the first failing check —
+    ``environment-metadata``, ``environment-unsupported``,
+    ``environment-corporate`` or ``platform`` — or ``None`` when the
+    target is allowed. Shared by install and update so the environment
+    predicates (and their order) cannot drift apart again; callers map
+    the canonical gate to their own action vocabulary.
+    """
+    env_meta = tool.get("environments", {}).get(environment)
+    if env_meta is None:
+        return "environment-metadata", f"no {environment} environment metadata"
+    if not env_meta.get("supported"):
+        return "environment-unsupported", env_meta.get("reason", f"unsupported in {environment}")
+    if environment == "corporate_windows" and (
+        env_meta.get("external_dependencies")
+        or env_meta.get("delegation") in {"optional", "supported", "required"}
+    ):
+        return "environment-corporate", "external runtime or delegation is disabled in corporate Windows"
+    if host not in tool.get("platforms", []):
+        return "platform", f"not listed for {host}"
+    return None
+
+
+def evaluate_requirements(
+    tool: dict[str, Any],
+    *,
+    which: Callable[[str], str | None] = shutil.which,
+    runner: Callable[..., Any] = subprocess.run,
+) -> tuple[str, str] | None:
+    """Local prerequisite/spec gate: could an install/update command run?
+
+    Returns ``(gate, detail)`` — ``manager``, ``git``, ``node`` or
+    ``spec`` — or ``None``. Manual/source-only tools return ``None``;
+    callers own PATH-collision and version semantics.
+    """
+    manager = tool.get("manager")
+    if manager not in {"uv", "npm"}:
+        return None
+    binary = "uv" if manager == "uv" else "npm"
+    if which(binary) is None:
+        return "manager", f"missing {binary}"
+    if tool.get("requires_git") and which("git") is None:
+        return "git", "missing git"
+    if manager == "npm":
+        major = _node_major(runner, which)
+        if major is None or major < 20:
+            return "node", "Node.js >=20 is required"
+    if not tool.get("install_spec"):
+        return "spec", "missing install specification"
+    return None
+
+
+_TARGET_GATE_ACTIONS = {
+    "environment-metadata": "unsupported",
+    "environment-unsupported": "unsupported",
+    "environment-corporate": "blocked",
+    "platform": "unsupported",
+}
+
+_TARGET_GATE_ERRORS = {
+    "environment-metadata": "{tool} has no {env} environment metadata",
+    "environment-unsupported": "{tool} is unsupported in {env}: {detail}",
+    "environment-corporate": "{tool} violates the corporate Windows local-only guarantee",
+    # platform is non-fatal: reported as an unsupported action, no error
+}
+
+_REQUIREMENT_GATE_ERRORS = {
+    "manager": "{tool} requires {requirement} on PATH",
+    "git": "{tool} has a Git dependency and requires git on PATH",
+    "node": "{tool} requires Node.js >=20",
+    "spec": "{tool} has no install specification",
+}
+
+
 def resolve_profile(manifest: dict[str, Any], name: str) -> tuple[str, dict[str, Any]]:
     profiles = manifest.get("profiles", {})
     if name not in profiles:
@@ -108,32 +189,19 @@ def build_plan(
     tool_map = {tool["id"]: tool for tool in manifest.get("tools", [])}
     actions: list[dict[str, Any]] = []
     errors: list[str] = []
-    node_major = None
 
     for tool_id in profile.get("tools", []):
         tool = tool_map.get(tool_id)
         if tool is None:
             errors.append(f"profile {resolved_name!r} references unknown tool {tool_id!r}")
             continue
-        environment_meta = tool.get("environments", {}).get(selected_environment)
-        if environment_meta is None:
-            errors.append(f"{tool_id} has no {selected_environment} environment metadata")
-            actions.append({"tool": tool_id, "action": "unsupported", "detail": f"no metadata for {selected_environment}"})
-            continue
-        if not environment_meta.get("supported"):
-            reason = environment_meta.get("reason", f"not listed for {selected_environment}")
-            errors.append(f"{tool_id} is unsupported in {selected_environment}: {reason}")
-            actions.append({"tool": tool_id, "action": "unsupported", "detail": reason})
-            continue
-        if selected_environment == "corporate_windows" and (
-            environment_meta.get("external_dependencies") or environment_meta.get("delegation") in {"optional", "supported", "required"}
-        ):
-            reason = "external runtime or delegation is disabled in corporate Windows"
-            errors.append(f"{tool_id} violates the corporate Windows local-only guarantee")
-            actions.append({"tool": tool_id, "action": "blocked", "detail": reason})
-            continue
-        if host not in tool.get("platforms", []):
-            actions.append({"tool": tool_id, "action": "unsupported", "detail": f"not listed for {host}"})
+        gate = evaluate_target(tool, host=host, environment=selected_environment)
+        if gate is not None:
+            name, detail = gate
+            error = _TARGET_GATE_ERRORS.get(name)
+            if error is not None:
+                errors.append(error.format(tool=tool_id, env=selected_environment, detail=detail))
+            actions.append({"tool": tool_id, "action": _TARGET_GATE_ACTIONS[name], "detail": detail})
             continue
         if tool.get("status") == "manual" or tool.get("manager") == "manual":
             actions.append({"tool": tool_id, "action": "manual", "detail": tool.get("manual_note", "manual setup required")})
@@ -151,28 +219,15 @@ def build_plan(
                 actions.append({"tool": tool_id, "action": "blocked", "detail": "partial command collision"})
             continue
 
-        manager_binary = "uv" if manager == "uv" else "npm"
-        if which(manager_binary) is None:
-            errors.append(f"{tool_id} requires {manager_binary} on PATH")
-            actions.append({"tool": tool_id, "action": "blocked", "detail": f"missing {manager_binary}"})
+        gate = evaluate_requirements(tool, which=which, runner=runner)
+        if gate is not None:
+            name, detail = gate
+            errors.append(_REQUIREMENT_GATE_ERRORS[name].format(
+                tool=tool_id, requirement=detail.removeprefix("missing ")))
+            actions.append({"tool": tool_id, "action": "blocked", "detail": detail})
             continue
-        if tool.get("requires_git") and which("git") is None:
-            errors.append(f"{tool_id} has a Git dependency and requires git on PATH")
-            actions.append({"tool": tool_id, "action": "blocked", "detail": "missing git"})
-            continue
-        if manager == "npm":
-            if node_major is None:
-                node_major = _node_major(runner, which)
-            if node_major is None or node_major < 20:
-                errors.append(f"{tool_id} requires Node.js >=20")
-                actions.append({"tool": tool_id, "action": "blocked", "detail": "Node.js >=20 is required"})
-                continue
 
-        spec = tool.get("install_spec")
-        if not spec:
-            errors.append(f"{tool_id} has no install specification")
-            actions.append({"tool": tool_id, "action": "blocked", "detail": "missing install specification"})
-            continue
+        spec = tool["install_spec"]
         command = ["uv", "tool", "install", spec] if manager == "uv" else ["npm", "install", "--global", spec]
         actions.append({"tool": tool_id, "action": "install", "command": command})
 

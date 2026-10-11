@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `devin-metrics` now installs from PyPI (`devin-metrics==0.2.0`); the git pin is dropped after publication.
 - `devin-evals`, `devin-backup` and `devin-search` now install from PyPI pins after publication; the git-archive specs are dropped.
 - `update` detects same-version channel migrations: a tool installed from a git archive whose manifest spec moved to PyPI now plans a reinstall instead of reporting `current` (reads the install source from uv receipts).
+- `update` and `outdated` accept `--environment` and apply the same environment and platform gates as `install`: gated tools report `environment-blocked`/`unsupported` instead of being scheduled, and an environment-blocked tool no longer reports `current`. Missing prerequisites (uv/npm/git/Node.js >=20) block a planned reinstall at plan time; a tool already at the manifest version still reports `current` without them.
 
 - `labeler.yml` is now a thin caller of the shared reusable workflow in `devin-powerups` (`@v1`); PR labeling behavior is unchanged.
 
