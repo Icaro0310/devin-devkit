@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+
+- Documentação de plataforma: `README.corporate-windows.md` ganha o bloco corporativo completo (9 seções) + seção Zscaler, e documenta as chamadas de rede reais (`freshness_hint` em `list`/dry-run `install`; fetch de manifest remoto em `outdated`/`update`, sem kill-switch por enquanto). Claims stale de publicação removidos.
 - `devin-metrics` now installs from PyPI (`devin-metrics==0.2.0`); the git pin is dropped after publication.
 - `devin-evals`, `devin-backup` and `devin-search` now install from PyPI pins after publication; the git-archive specs are dropped.
 - `update` detects same-version channel migrations: a tool installed from a git archive whose manifest spec moved to PyPI now plans a reinstall instead of reporting `current` (reads the install source from uv receipts).

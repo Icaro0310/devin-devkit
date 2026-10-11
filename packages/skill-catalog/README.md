@@ -70,6 +70,14 @@ content.
 
 Requires Python ≥ 3.10 and `pipx` or `uv`. Stdlib only — no dependencies.
 
+```bash
+uv tool install devin-skill-catalog   # or: pipx install devin-skill-catalog
+```
+
+Published on PyPI as `devin-skill-catalog`. The bundled DevKit manifest
+still installs it from the GitHub source archive; profile installs and the
+PyPI install produce the same CLI.
+
 ## Commands
 
 ```bash
