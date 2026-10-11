@@ -52,10 +52,9 @@ function devkit {
         $chosen = $null
         for ($i = 0; $i -lt $args.Count; $i++) {
             if ($args[$i] -eq "--environment" -and $i + 1 -lt $args.Count) {
-                $chosen = $args[$i + 1]; break
-            }
-            if ($args[$i] -like "--environment=*") {
-                $chosen = $args[$i] -replace "^--environment=", ""; break
+                $chosen = $args[$i + 1]; $i++
+            } elseif ($args[$i] -like "--environment=*") {
+                $chosen = $args[$i] -replace "^--environment=", ""
             }
         }
         if ($chosen -and $chosen -ne "corporate-windows") {
