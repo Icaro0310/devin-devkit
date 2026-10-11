@@ -81,8 +81,10 @@ def test_apply_preflight_error_returns_without_installs(monkeypatch, capsys):
 
 def _stub_update_path(monkeypatch):
     """Remote manifest + empty installed set, and spies for the plan
-    kwargs and any apply call."""
+    kwargs and any apply call. Host is pinned to linux so
+    ``--environment linux`` resolves on any CI platform."""
     remote = {"registry_version": 1, "generated": "x", "tools": []}
+    monkeypatch.setattr("devin_devkit.updater.platform_name", lambda system=None: "linux")
     monkeypatch.setattr(cli, "fetch_remote_manifest", lambda: remote)
     monkeypatch.setattr("devin_devkit.updater.installed_uv_tools", lambda runner: {})
     monkeypatch.setattr("devin_devkit.updater.installed_npm_tools", lambda runner: {})

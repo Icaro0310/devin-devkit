@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import urllib.error
 import urllib.request
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import Any, Callable
 
 from devin_devkit.installer import (
@@ -81,7 +81,7 @@ except ImportError:  # Python 3.10 — declared as a conditional dependency
     import tomli as tomllib
 
 
-def _uv_tools_dir(os_name: str | None = None) -> Path:
+def _uv_tools_dir(os_name: str | None = None) -> PurePath:
     """Mirror uv's own resolution: ``$UV_TOOL_DIR``, then
     ``%APPDATA%\\uv\\data\\tools`` on Windows and
     ``$XDG_DATA_HOME/uv/tools`` or ``~/.local/share/uv/tools`` on Unix.
@@ -89,12 +89,21 @@ def _uv_tools_dir(os_name: str | None = None) -> Path:
     override = os.environ.get("UV_TOOL_DIR")
     if override:
         return Path(override)
-    if (os_name or os.name) == "nt":
+    resolved = os_name or os.name
+    # An explicit os_name is a test seam: return the OS's own path flavour
+    # so assertions compare separators, not the host's native flavour.
+    if os_name is None:
+        path_type: type[PurePath] = Path
+    elif resolved == "nt":
+        path_type = PureWindowsPath
+    else:
+        path_type = PurePosixPath
+    if resolved == "nt":
         appdata = os.environ.get("APPDATA")
-        root = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        root = path_type(appdata) if appdata else path_type(Path.home()) / "AppData" / "Roaming"
         return root / "uv" / "data" / "tools"
     xdg = os.environ.get("XDG_DATA_HOME")
-    return (Path(xdg) if xdg else Path.home() / ".local" / "share") / "uv" / "tools"
+    return (path_type(xdg) if xdg else path_type(Path.home()) / ".local" / "share") / "uv" / "tools"
 
 
 def installed_uv_specs(
