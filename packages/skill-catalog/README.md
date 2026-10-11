@@ -2,11 +2,11 @@
 
 <a href="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-skill-catalog.yml"><img src="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-skill-catalog.yml/badge.svg" alt="ci"/></a>
 
-<a href="https://scorecard.dev/viewer/?uri=github.com/Icaro0310/devin-skill-catalog"><img src="https://api.scorecard.dev/projects/github.com/Icaro0310/devin-skill-catalog/badge" alt="OpenSSF Scorecard"/></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/Icaro0310/devin-devkit"><img src="https://api.scorecard.dev/projects/github.com/Icaro0310/devin-devkit/badge" alt="OpenSSF Scorecard"/></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"/></a>
 <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+"/></a>
-<a href="https://github.com/Icaro0310/devin-devkit"><img src="https://img.shields.io/github/stars/Icaro0310/devin-skill-catalog" alt="GitHub stars"/></a>
-<a href="https://github.com/Icaro0310/devin-devkit/commits/main"><img src="https://img.shields.io/github/last-commit/Icaro0310/devin-skill-catalog" alt="Last commit"/></a>
+<a href="https://github.com/Icaro0310/devin-devkit"><img src="https://img.shields.io/github/stars/Icaro0310/devin-devkit" alt="GitHub stars"/></a>
+<a href="https://github.com/Icaro0310/devin-devkit/commits/main"><img src="https://img.shields.io/github/last-commit/Icaro0310/devin-devkit" alt="Last commit"/></a>
 <a href="https://github.com/Icaro0310/awesome-devin"><img src="https://img.shields.io/badge/part%20of-devin--*-ecosystem-7c3aed" alt="devin-* ecosystem"/></a>
 <a href="https://github.com/Icaro0310/devin-devkit/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome"/></a>
 </div>
@@ -69,17 +69,6 @@ content.
 ## Install
 
 Requires Python ≥ 3.10 and `pipx` or `uv`. Stdlib only — no dependencies.
-
-<!-- DIST-STATUS:BEGIN — generated from devin-powerups/registry.json -->
-> **Source-only distribution.** This tool is not yet published to PyPI.
-> Install from source:
->
-> ```bash
-> pipx install git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog
-> # or
-> uv tool install git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog
-> ```
-<!-- DIST-STATUS:END -->
 
 ## Commands
 

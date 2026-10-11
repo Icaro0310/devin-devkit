@@ -7,20 +7,19 @@ Personal Windows uses the extended runtime: local execution plus optional Devin 
 ## Prerequisites
 
 - `uv` and Python 3.10 or newer; `uv` can manage Python.
-- Git on `PATH` for a Git dependency in this package's current release.
 
 ## Install
 
 Install the isolated Python CLI:
 
 ```powershell
-uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog"
+uv tool install "devin-skill-catalog"
 ```
 
 ## Devin paths
 
 Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP stores under `%APPDATA%\Devin\User\`.
-Use the tool's documented `--data-dir` or `--config-dir` flags for non-default locations.
+Use `--data-dir` for non-default locations.
 
 ## Environment notes
 
@@ -39,4 +38,3 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.
-- This release has a Git dependency; verify Git is installed and on `PATH` with `git --version`.

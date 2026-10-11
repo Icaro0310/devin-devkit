@@ -1,6 +1,6 @@
 # Linux installation
 
-This guide covers Linux setup. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers Linux setup. Install from PyPI (`uv tool install devin-devkit`) or from the GitHub source archive.
 
 Linux uses the extended runtime: local execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
 
@@ -58,7 +58,7 @@ Optional jobs should be configured separately with `systemd --user` or cron. Ins
 For a package such as `devin-doctor`, keep the published version constraint in its `pyproject.toml`; install sibling sources editably only in the development environment:
 
 ```bash
-cd ../devin-doctor
+cd ../devin-explore/packages/doctor
 uv venv
 uv pip install --python .venv/bin/python -e ../devin-internals-spec -e .
 ```

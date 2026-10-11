@@ -1,6 +1,6 @@
 # Corporate Windows installation
 
-This guide covers restricted Windows machines where the Devin Ecosystem must remain self-contained. The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers restricted Windows machines where the Devin Ecosystem must remain self-contained. Install from PyPI (`uv tool install devin-devkit`) or from the GitHub source archive.
 
 ## Runtime guarantee
 
@@ -53,6 +53,32 @@ Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP messa
 ## Compatibility
 
 The generated [compatibility matrix](COMPATIBILITY.md) comes from `devin-powerups/registry.json`. Corporate Windows entries marked `Unsupported` include a registry reason; entries marked `Local only` install without VM, QwenPaw, external compute, workload delegation, or required external integrations.
+
+## Corporate Windows specifics
+
+- **No admin rights needed:** `uv` and every tool install under `%LOCALAPPDATA%`/`%APPDATA%` — nothing writes to `Program Files`, the registry, or requires elevation.
+- **Proxy:** set `HTTPS_PROXY`/`HTTP_PROXY` before installing. Per session: `$env:HTTPS_PROXY="http://proxy:port"`; persistently: `setx HTTPS_PROXY "http://proxy:port"`. `uv`, `pip` and `npm` honor them.
+- **TLS inspection:** if the corporate proxy intercepts TLS, point the installer at the company CA bundle: `$env:REQUESTS_CA_BUNDLE="C:\path\corp-root.pem"`. Certificate errors at install time mean the proxy, not the package.
+- **Execution policy:** installed CLIs are real executables — `Set-ExecutionPolicy` only matters for `.ps1` scripts from a checkout; `-Scope CurrentUser RemoteSigned` suffices, no admin.
+- **Blocked installers:** if winget/Store are disabled by policy, `uv` installs as a standalone binary — download the GitHub release zip, extract to `%LOCALAPPDATA%\bin`, add it to PATH.
+- **Long paths:** keep checkout/install roots short (`C:\dev`) — MAX_PATH (260 chars) can still bite inside virtualenvs; `LongPathsEnabled` needs admin, short roots do not.
+- **EDR/antivirus:** if a scan kills the install, retry with an exclusion or ask IT to allowlist `%LOCALAPPDATA%\uv` and `%USERPROFILE%\.local\bin`. These tools never elevate or listen on the network by default.
+- **Offline/air-gapped:** `pip download <package> -d wheels\` on a connected machine, copy the folder, then `pip install --no-index --find-links wheels\` on the target (pure-Python tools; native deps need a matching platform wheel). The DevKit itself needs the network it manages: installing tools fetches PyPI/GitHub archives. On air-gapped machines pre-stage the wheels plus `manifest.json` — `outdated`/`update` cannot run without the remote manifest.
+- **Network calls the DevKit makes:** installing a profile downloads each tool's pinned spec (PyPI or GitHub archive). Separately, `list`, `install` (even dry-run), `outdated` and `update` call `freshness_hint()`, which fetches `manifest.json` from `raw.githubusercontent.com` to warn when the bundled manifest is stale. It self-skips on failure (15s timeout) but still opens the connection — there is no off-switch env var yet; on a machine where any connection attempt is logged, avoid those commands or stage a fresh manifest locally.
+
+## Zscaler
+
+Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy genérico. Dois produtos importam aqui: **Zscaler Internet Access (ZIA)**, proxy com inspeção de TLS, e **Zscaler Private Access (ZPA)**, túnel/VPN para aplicações internas.
+
+- **Certificado raiz:** a inspeção de TLS da ZIA substitui o certificado dos sites pelo da Zscaler. Sem a raiz no bundle correto, `pip`/`uv`/`npm`/`git` falham com `SSL: CERTIFICATE_VERIFY_FAILED`. A raiz normalmente está em `C:\ProgramData\Zscaler\` (ou pode ser exportada pelo Zscaler Client Connector). Aponte as variáveis para esse arquivo:
+  ```powershell
+  $env:REQUESTS_CA_BUNDLE="C:\path\zscaler-root.pem"   # pip, uv, requests
+  $env:NODE_EXTRA_CA_CERTS="C:\path\zscaler-root.pem"  # node/npm
+  git config --global http.sslCAInfo "C:\path\zscaler-root.pem"
+  ```
+- **PAC file / auto-config:** se o proxy vem de um PAC em vez de variável fixa, `HTTPS_PROXY` manual pode não bastar. Descubra o proxy ativo antes de setar a variável: `netsh winhttp show proxy`, ou o painel do Zscaler Client Connector. Para downloads pontuais, copie o endereço que o PAC resolve para `HTTPS_PROXY`/`HTTP_PROXY`.
+- **Portas e protocolos:** todos os MCP servers deste ecossistema usam transporte `stdio` — nenhuma porta não-padrão é necessária, e ZPA não interfere. Se uma ferramenta futura expuser SSE/WebSocket, portas não-padrão podem ser bloqueadas pela ZPA; hoje isso não se aplica.
+- **"É a Zscaler ou outra coisa?":** `SSL: CERTIFICATE_VERIFY_FAILED` cujo emissor do certificado é `Zscaler` → inspeção de TLS, resolva pela raiz acima. Timeout ou `connection refused` → mais provável firewall/regra de rede, não TLS — valide o proxy ativo e reporte ao TI com o host e a porta.
 
 ## Troubleshooting
 
