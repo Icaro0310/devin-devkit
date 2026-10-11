@@ -1,6 +1,6 @@
 # Personal Windows installation
 
-This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). The DevKit is published on PyPI; the source archive is also available from GitHub.
+This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). Install from PyPI (`uv tool install devin-devkit`) or from the GitHub source archive.
 
 Personal Windows uses the extended runtime: local Windows execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
 
@@ -8,16 +8,12 @@ Personal Windows uses the extended runtime: local Windows execution plus optiona
 
 - Windows 10 or newer and PowerShell.
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
-- Git when a selected profile includes `devin-skill-catalog` (installed from a pinned `git+https` spec) or for manual source checkouts such as `devin-office`. PyPI and HTTPS archive installs do not need Git.
+- Git for manual source checkouts such as `devin-office`; DevKit downloads installable package archives over HTTPS.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
 
 ## Install the DevKit
 
-```powershell
-uv tool install devin-devkit
-```
-
-Or from the source archive:
+From the current GitHub source archive (Git is not required for this download):
 
 ```powershell
 uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
@@ -62,14 +58,14 @@ Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP messa
 For a package such as `devin-doctor`, keep the published version constraint in its `pyproject.toml`; install sibling sources editably only in the development environment:
 
 ```powershell
-cd ..\devin-doctor
+cd ..\devin-explore\packages\doctor
 uv venv
 uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
 ```
 
 ## Troubleshooting
 
-- Installable profiles use PyPI and HTTPS archives; `devin-skill-catalog` additionally needs `git` on `PATH` (pinned `git+https` spec), as do manual source checkouts such as `devin-office`.
+- The installable profiles use HTTPS archives; Git is only needed if you check out a manual source service such as `devin-office`.
 - `devin-devkit install <profile>` is a dry run. `--apply` is required to install.
 - Existing commands are never overwritten; a complete command set on `PATH` is reported but its versions are not verified, while a partial collision blocks the profile.
 - If `devin-bridge` is installed but not found, check `npm config get prefix` and make npm's global executable directory available on `PATH`.

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+
+- Documentação: banner DIST-STATUS stale removido (o pacote está publicado no PyPI); seção Install volta a ter o comando de instalação; guias de plataforma regenerados com seção Zscaler e flag `--config-dir` correto.
 - `labeler.yml` is now a thin caller of the shared reusable workflow in `devin-powerups` (`@v1`); PR labeling behavior is unchanged.
 
 - README install section replaced by a generated `DIST-STATUS` banner stating the tool is source-only (no PyPI release yet) and offering both `pipx` and `uv` source installs.
