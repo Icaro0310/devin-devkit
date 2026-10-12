@@ -204,25 +204,31 @@ Adopting a third-party skill means a governed catalog entry pinned by
 SHA-256, not a code fork and not a bare pointer. Upstream URLs are
 provenance; the catalog governs a frozen local copy.
 
-```bash
-# 1. Vendor into a staging .devin dir that nothing loads
-#    (never straight into a live workspace or ~/.devin —
-#    files there load immediately, bypassing the gates)
-mkdir -p skill-vendor/.devin/skills
-cp -r /path/to/upstream/skills/<name> skill-vendor/.devin/skills/
+1. **Vendor into a staging `.devin` dir that nothing loads** — never
+   straight into a live workspace or the user skills dir; files there
+   load immediately, bypassing the gates. Any folder shaped like
+   `.devin/skills/` works:
 
-# 2. Govern through the normal lifecycle
-devin-skill-catalog scan skill-vendor/.devin --no-user
-devin-skill-catalog quarantine skill:<name> skill-vendor/.devin --apply \
-    --note "vendor adopt: <upstream-url> @ <commit>"
-devin-skill-catalog gate g1 skill-vendor/.devin/skills/<name>
-devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
-devin-skill-catalog activate skill:<name> --apply
+   ```
+   <staging>/.devin/skills/<name>/   ← copy of the upstream skill dir
+   ```
 
-# 3. Install only what you want live, manually
-mkdir -p ~/.devin/skills
-cp -r skill-vendor/.devin/skills/<name> ~/.devin/skills/
-```
+2. **Govern through the normal lifecycle:**
+
+   ```
+   devin-skill-catalog scan <staging>/.devin --no-user
+   devin-skill-catalog quarantine skill:<name> <staging>/.devin --apply \
+       --note "vendor adopt: <upstream-url> @ <commit>"
+   devin-skill-catalog gate g1 <staging>/.devin/skills/<name>
+   devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
+   devin-skill-catalog activate skill:<name> --apply
+   ```
+
+3. **Install only what you want live, manually** — copy the item dir
+   into a live `skills/` dir (create it first so the copy lands at
+   `skills/<name>/SKILL.md`). Per-OS skills dir paths are in the
+   platform guides (`README.linux.md`, `README.windows.md`,
+   `README.corporate-windows.md`).
 
 Rules of the road:
 
@@ -237,7 +243,7 @@ Rules of the road:
   before activating it, or keep shipping copies via `import-bundle`
   quarantine on the receiving side.
 - On upstream changes, re-vendor by **replacing** the staged item dir
-  (`rm -rf` then copy) and re-quarantining from scratch — copying over
+  (delete it, then copy) and re-quarantining from scratch — copying over
   the old tree leaves files upstream deleted, and the quarantine store
   merges rather than replaces, so stale files would survive the
   re-review.
