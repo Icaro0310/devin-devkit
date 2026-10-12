@@ -217,8 +217,7 @@ provenance; the catalog governs a frozen local copy.
 
    ```
    devin-skill-catalog scan <staging>/.devin --no-user
-   devin-skill-catalog quarantine skill:<name> <staging>/.devin --apply \
-       --note "vendor adopt: <upstream-url> @ <commit>"
+   devin-skill-catalog quarantine skill:<name> <staging>/.devin --apply --note "vendor adopt: <upstream-url> @ <commit>"
    devin-skill-catalog gate g1 <staging>/.devin/skills/<name>
    devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
    devin-skill-catalog activate skill:<name> --apply
@@ -226,9 +225,11 @@ provenance; the catalog governs a frozen local copy.
 
 3. **Install only what you want live, manually** — copy the item dir
    into a live `skills/` dir (create it first so the copy lands at
-   `skills/<name>/SKILL.md`). Per-OS skills dir paths are in the
-   platform guides (`README.linux.md`, `README.windows.md`,
-   `README.corporate-windows.md`).
+   `skills/<name>/SKILL.md`): `.devin/skills/` inside a workspace for
+   project scope, or a user-level dir — `~/.devin/skills/` on any OS,
+   `${XDG_CONFIG_HOME:-~/.config}/devin/skills/` on Linux,
+   `%APPDATA%\devin\skills\` on Windows,
+   `~/Library/Application Support/devin/skills/` on macOS.
 
 Rules of the road:
 
