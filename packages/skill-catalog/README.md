@@ -198,6 +198,51 @@ e.g. devin-evals). Pass it with `promote --g3-report PATH`:
   promote prints a warning but proceeds — the report may legitimately
   describe a pre-fix artifact.
 
+## Adopting external skills
+
+Adopting a third-party skill means a governed catalog entry pinned by
+SHA-256, not a code fork and not a bare pointer. Upstream URLs are
+provenance; the catalog governs a frozen local copy.
+
+```bash
+# 1. Vendor into a staging .devin dir that nothing loads
+#    (never straight into a live workspace or ~/.devin —
+#    files there load immediately, bypassing the gates)
+mkdir -p skill-vendor/.devin/skills
+cp -r /path/to/upstream/skills/<name> skill-vendor/.devin/skills/
+
+# 2. Govern through the normal lifecycle
+devin-skill-catalog scan skill-vendor/.devin --no-user
+devin-skill-catalog quarantine skill:<name> skill-vendor/.devin --apply \
+    --note "vendor adopt: <upstream-url> @ <commit>"
+devin-skill-catalog gate g1 skill-vendor/.devin/skills/<name>
+devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
+devin-skill-catalog activate skill:<name> --apply
+
+# 3. Install only what you want live, manually
+cp -r skill-vendor/.devin/skills/<name> ~/.devin/skills/
+```
+
+Rules of the road:
+
+- Keep a `VENDORS.md` next to the staging dir: upstream URL, license,
+  commit SHA, date. Keep the license file for MIT/CC-BY content.
+- A G1 FAIL on third-party content deserves a human read before
+  `--force`: skills that *teach* injection hygiene legitimately quote
+  attack strings — that is a recorded false-positive, not a verdict.
+- Active-in-catalog ≠ loaded. Install into a live skills dir only what
+  you actually want in sessions, or ship a reviewed set with
+  `export-bundle`.
+- Re-vendor on upstream changes by copying the new tree over the staged
+  one and re-running the flow — the registry history records the
+  re-review.
+
+Worked example: 25 skills from `addyosmani/agent-skills` (MIT), 6 from
+`DietrichGebert/ponytail` (MIT) and a local `graphify` install were
+governed this way on 2026-10-13 — 30 clean G1 passes and 2 documented
+false-positives (quoted injection strings inside anti-injection
+guidance), all promoted and activated.
+
 ## Honest limitations
 
 - **Heuristic gates are not proof.** G1 catches known-bad phrasing and
