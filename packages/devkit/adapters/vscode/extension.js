@@ -1,110 +1,126 @@
 "use strict";
 
-// Thin adapter: the extension shells out to `devin-devkit` and renders the
-// result — no install/update logic is reimplemented here. Read-only by
-// construction: the mutating flags of the CLI (the apply/force switches on
-// install and update) are never passed, so every plan shown is a dry run.
+// Thin adapter: shells out to `devin-devkit` and renders the result — no
+// install/update logic is reimplemented here. Read-only by construction:
+// the CLI's mutating apply/force switches are never passed — every plan
+// shown is a dry run.
 
 const vscode = require("vscode");
 const cp = require("child_process");
 
 let statusBar;
-// Monotonic counter — a slow check finishing late must not overwrite a
-// newer verdict already rendered on the status bar.
-let statusSeq = 0;
+let statusSeq = 0; // monotonic — a slow check must not overwrite a newer verdict
+let compatWarned = false;
 
-// Contract with the CLI JSON payloads (outdated/install/update plans).
-// Keep in sync with the "devin-devkit-cli" range in package.json —
-// test/cli-contract.test.js asserts it.
+// Contract with the CLI JSON payloads — keep in sync with the
+// "devin-devkit-cli" range in package.json (cli-contract.test.js asserts it).
 const COMPATIBLE_CLI = { min: [0, 1], maxExclusive: [0, 2] };
+const pkgRange = () =>
+  `>=${COMPATIBLE_CLI.min.join(".")}.0,<${COMPATIBLE_CLI.maxExclusive.join(".")}.0`;
 
-function config() {
-  const c = vscode.workspace.getConfiguration("devinDevkit");
-  return { executable: c.get("executable", "devin-devkit") };
+// "Cannot update here" action kinds: the updater emits blocked,
+// environment-blocked and unsupported — all attention, never current.
+// not-installed/unmanaged carry no verdict and don't count.
+const GATED_ACTIONS = new Set(["blocked", "environment-blocked", "unsupported"]);
+
+// Resolves {code, stdout, stderr}; never throws on non-zero exit —
+// `install <p> --json` exits 2 on a blocked plan: a renderable result.
+function runDevkit(args) {
+  const exe = vscode.workspace.getConfiguration("devinDevkit").get("executable", "devin-devkit");
+  return new Promise((resolve, reject) => {
+    cp.execFile(exe, args, { timeout: 120000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err && err.killed) return reject(new Error("devin-devkit timed out after 120s"));
+      if (err && err.code === "ENOENT") return reject(new Error(
+        "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
+        "or set devinDevkit.executable."));
+      resolve({ code: err ? err.code : 0, stdout, stderr });
+    });
+  });
 }
 
-// Runs the CLI once and resolves {code, stdout, stderr}. Never throws on a
-// non-zero exit — `install <p> --json` exits 2 when the plan is blocked,
-// which is a renderable result, not an error.
-function runDevkit(args) {
-  const { executable } = config();
-  return new Promise((resolve, reject) => {
-    cp.execFile(
-      executable,
-      args,
-      { timeout: 120000, maxBuffer: 8 * 1024 * 1024 },
-      (err, stdout, stderr) => {
-        if (err && err.killed) {
-          reject(new Error("devin-devkit timed out after 120s"));
-          return;
-        }
-        if (err && err.code === "ENOENT") {
-          reject(
-            new Error(
-              "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
-              "or set devinDevkit.executable.",
-            ),
-          );
-          return;
-        }
-        resolve({ code: err ? err.code : 0, stdout, stderr });
-      },
-    );
-  });
+const parseVersion = (text) => {
+  const m = /(\d+)\.(\d+)\.(\d+)/.exec(String(text || ""));
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+};
+
+// "compatible" | "too-old" | "too-new" | "unknown"
+function cliCompatStatus(version) {
+  const v = Array.isArray(version) ? version : parseVersion(version);
+  if (!v) return "unknown";
+  const [a, b] = COMPATIBLE_CLI.min, [c, d] = COMPATIBLE_CLI.maxExclusive;
+  if (v[0] < a || (v[0] === a && v[1] < b)) return "too-old";
+  if (v[0] > c || (v[0] === c && v[1] >= d)) return "too-new";
+  return "compatible";
+}
+
+// Warn once when the installed CLI is detectably out of range. Older CLIs
+// lack --version (exit 2): that stays "unknown" and silent — never blocks.
+async function checkCliCompat() {
+  if (compatWarned) return;
+  compatWarned = true;
+  try {
+    const { code, stdout } = await runDevkit(["--version"]);
+    const s = code === 0 ? cliCompatStatus(stdout) : "unknown";
+    if (s === "too-old" || s === "too-new") {
+      vscode.window.showWarningMessage(`devin-devkit ${stdout.trim()} is outside the ` +
+        `supported range ${pkgRange()} — the extension may misread this CLI.`);
+    }
+  } catch { /* undetectable — never block */ }
 }
 
 // `update --json` prints a trailing "Dry run only." note after the JSON —
 // extract the object leniently instead of failing the parse.
 function extractJson(stdout) {
-  const start = stdout.indexOf("{");
-  const end = stdout.lastIndexOf("}");
-  if (start < 0 || end <= start) {
-    throw new Error("devin-devkit did not return JSON — see output channel");
-  }
+  const start = stdout.indexOf("{"), end = stdout.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("devin-devkit did not return JSON");
   return JSON.parse(stdout.slice(start, end + 1));
 }
 
-function countActions(plan, action) {
-  return ((plan && plan.actions) || []).filter((a) => a && a.action === action).length;
+// Non-zero exit + no JSON = the CLI failed before planning — surface stderr.
+function requirePayload(code, stdout, stderr, what) {
+  if (code !== 0 && !String(stdout).trim()) throw new Error(
+    `devin-devkit ${what} exited ${code}: ${String(stderr).trim() || "no output"}`);
 }
+
+const countActions = (plan, action) =>
+  ((plan && plan.actions) || []).filter((a) => a && a.action === action).length;
+const countGated = (plan) =>
+  ((plan && plan.actions) || []).filter((a) => a && GATED_ACTIONS.has(a.action)).length;
 
 function statusBadge(plan) {
   const updates = countActions(plan, "update");
-  const blocked = countActions(plan, "blocked");
+  const gated = countGated(plan);
   const warn = new vscode.ThemeColor("statusBarItem.warningBackground");
-  if (updates > 0) {
-    return { text: `$(cloud-download) devkit: ${updates} update${updates === 1 ? "" : "s"}`, bg: warn };
-  }
-  if (blocked > 0) {
-    return { text: `$(warning) devkit: ${blocked} blocked`, bg: warn };
-  }
+  if (updates > 0) return { text: `$(cloud-download) devkit: ${updates} update${updates === 1 ? "" : "s"}`, bg: warn };
+  if (gated > 0) return { text: `$(warning) devkit: ${gated} blocked`, bg: warn };
   return { text: "$(pass) devkit: current", bg: undefined };
 }
 
+const render = (text, tooltip, bg) => { // bg must be reset, not left stale
+  statusBar.text = text;
+  statusBar.tooltip = tooltip;
+  statusBar.backgroundColor = bg;
+  statusBar.show();
+};
+
 async function status() {
   const seq = ++statusSeq;
-  statusBar.text = "$(sync~spin) devkit: checking";
-  statusBar.show();
+  render("$(sync~spin) devkit: checking", "devin-devkit outdated --json");
   try {
     const { code, stdout, stderr } = await runDevkit(["outdated", "--json"]);
+    requirePayload(code, stdout, stderr, "outdated");
     const plan = extractJson(stdout);
     if (seq !== statusSeq) return plan;
     const badge = statusBadge(plan);
-    statusBar.text = badge.text;
-    statusBar.backgroundColor = badge.bg;
-    statusBar.tooltip =
+    render(badge.text,
       `devin-devkit — registry v${plan.registry_version || "?"}; ` +
-      `${countActions(plan, "update")} update(s), ${countActions(plan, "blocked")} blocked, ` +
-      `${countActions(plan, "current")} current`;
-    statusBar.show();
+      `${countActions(plan, "update")} update(s), ${countGated(plan)} blocked, ` +
+      `${countActions(plan, "current")} current`, badge.bg);
     return plan;
   } catch (e) {
-    if (seq === statusSeq) {
-      statusBar.text = "$(error) devkit: unavailable";
-      statusBar.tooltip = e.message;
-      statusBar.show();
-      vscode.window.showErrorMessage(e.message);
-    }
+    if (seq !== statusSeq) return null;
+    render("$(error) devkit: unavailable", e.message);
+    vscode.window.showErrorMessage(e.message);
     return null;
   }
 }
@@ -115,77 +131,62 @@ async function showDoc(language, content) {
   await editor.edit((b) => b.insert(new vscode.Position(0, 0), content));
 }
 
+// stderr can carry the newer-registry hint — keep both streams so a stale
+// bundled catalog can't look identical to a current one.
+const joinStreams = (stdout, stderr) =>
+  [String(stdout).trimEnd(), String(stderr).trim()].filter(Boolean).join("\n\n");
+
 async function runTextCommand(args) {
   const { code, stdout, stderr } = await runDevkit(args);
   if (code !== 0 && !stdout) {
-    vscode.window.showErrorMessage(`devin-devkit ${args[0]} exited ${code}: ${stderr}`);
-    return;
+    return void vscode.window.showErrorMessage(`devin-devkit ${args[0]} exited ${code}: ${stderr}`);
   }
-  await showDoc("plaintext", stdout || stderr);
+  await showDoc("plaintext", joinStreams(stdout, stderr) || "(no output)");
 }
 
 const profiles = () => runTextCommand(["profiles"]);
 const listTools = () => runTextCommand(["list"]);
 
-function parseProfileNames(profilesText) {
-  const names = [];
-  for (const line of profilesText.split("\n")) {
-    const m = /^([A-Za-z0-9_-]+):/.exec(line);
-    if (m) names.push(m[1]);
+const parseProfileNames = (text) =>
+  text.split("\n").map((l) => /^([A-Za-z0-9_-]+):/.exec(l)).filter(Boolean).map((m) => m[1]);
+
+async function previewPlan(args, what) {
+  const { code, stdout, stderr } = await runDevkit(args);
+  try {
+    requirePayload(code, stdout, stderr, what);
+    const plan = extractJson(stdout);
+    if ((plan.errors || []).length) vscode.window.showWarningMessage(
+      `devin-devkit: ${what} plan has ${plan.errors.length} blocking error(s) — see the plan.`);
+    await showDoc("json", JSON.stringify(plan, null, 2));
+  } catch (e) {
+    vscode.window.showErrorMessage(e.message);
   }
-  return names;
 }
 
 async function previewInstall() {
-  const list = await runDevkit(["profiles"]);
-  const names = parseProfileNames(list.stdout);
-  if (!names.length) {
-    vscode.window.showErrorMessage(`devin-devkit profiles: no profiles found (exit ${list.code})`);
-    return;
-  }
+  const { stdout } = await runDevkit(["profiles"]);
+  const names = parseProfileNames(stdout);
+  if (!names.length) return vscode.window.showErrorMessage("devin-devkit profiles: no profiles found");
   const picked = await vscode.window.showQuickPick(names, {
-    placeHolder: "Profile to preview (dry run only)",
-  });
-  if (!picked) return;
-  const { code, stdout, stderr } = await runDevkit(["install", picked, "--json"]);
-  if (!stdout.trim()) {
-    vscode.window.showErrorMessage(`devin-devkit install ${picked} exited ${code}: ${stderr}`);
-    return;
-  }
-  const plan = extractJson(stdout);
-  if ((plan.errors || []).length) {
-    vscode.window.showWarningMessage(
-      `devin-devkit: plan for "${picked}" has ${plan.errors.length} blocking error(s) — see the plan.`,
-    );
-  }
-  await showDoc("json", JSON.stringify(plan, null, 2));
+    placeHolder: "Profile to preview (dry run only)" });
+  if (picked) await previewPlan(["install", picked, "--json"], `install ${picked}`);
 }
 
-async function previewUpdate() {
-  const { stdout } = await runDevkit(["update", "--json"]);
-  const plan = extractJson(stdout);
-  await showDoc("json", JSON.stringify(plan, null, 2));
-}
+const previewUpdate = () => previewPlan(["update", "--json"], "update");
 
 function activate(context) {
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   statusBar.command = "devin-devkit.status";
-  statusBar.text = "$(tools) devkit";
-  statusBar.tooltip = "Click to check for outdated Devin tools";
-  statusBar.show();
-
-  context.subscriptions.push(
-    statusBar,
-    vscode.commands.registerCommand("devin-devkit.status", status),
-    vscode.commands.registerCommand("devin-devkit.profiles", profiles),
-    vscode.commands.registerCommand("devin-devkit.list", listTools),
-    vscode.commands.registerCommand("devin-devkit.previewInstall", previewInstall),
-    vscode.commands.registerCommand("devin-devkit.previewUpdate", previewUpdate),
-  );
-
-  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) {
-    status();
-  }
+  render("$(tools) devkit", "Click to check for outdated Devin tools");
+  const cmds = {
+    "devin-devkit.status": status, "devin-devkit.profiles": profiles,
+    "devin-devkit.list": listTools, "devin-devkit.previewInstall": previewInstall,
+    "devin-devkit.previewUpdate": previewUpdate,
+  };
+  context.subscriptions.push(statusBar,
+    ...Object.entries(cmds).map(([id, fn]) => vscode.commands.registerCommand(id, fn)));
+  checkCliCompat();
+  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
 }
 
 function deactivate() {}
@@ -193,5 +194,6 @@ function deactivate() {}
 module.exports = { activate, deactivate };
 // Test-only surface — pure internals reachable without the editor.
 module.exports.__internals__ = {
-  COMPATIBLE_CLI, extractJson, countActions, statusBadge, parseProfileNames,
+  COMPATIBLE_CLI, GATED_ACTIONS, parseVersion, cliCompatStatus, checkCliCompat,
+  extractJson, requirePayload, countActions, countGated, statusBadge, parseProfileNames, joinStreams,
 };

@@ -23,7 +23,10 @@ uv tool install devin-devkit
 
 Compatible CLI range: `>=0.1.0,<0.2.0` (pinned as `devin-devkit-cli` in
 `package.json`; `test/cli-contract.test.js` keeps the pin, the
-`COMPATIBLE_CLI` bounds and the real package version in sync).
+`COMPATIBLE_CLI` bounds and the real package version in sync). At
+activation the extension probes `devin-devkit --version` and warns once if
+the installed CLI is detectably out of range — CLIs without a `--version`
+flag stay silent, and detection never blocks.
 
 ## Commands
 
