@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- VS Code adapter (`packages/devkit/adapters/vscode/`): read-only status badge driven by `outdated --json`, profile/tool listings, and `install`/`update` plan previews as JSON documents. The apply/force flags are never passed — previews stay dry runs — and the adapter pins its compatible CLI range (`devin-devkit-cli >=0.1.0,<0.2.0`) with a runtime version check that warns once when the installed CLI is detectably out of range.
 - `COMPATIBILITY.md` rows for `homebrew-tap` (Linux/macOS local-only) and `scoop-bucket` (Windows local-only, incl. corporate).
 - Registry-backed profile installer with `qa`, `evaluation`, `security`, `memory`, `agent`, `operations`, `full`, and `all` selections.
 - Dry-run by default; `--apply` is required to install. Python tools use isolated `uv` environments; the Node bridge uses npm and requires Node.js 20+.
