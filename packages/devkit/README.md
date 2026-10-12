@@ -15,7 +15,7 @@
 
 > Unofficial community project. Not affiliated with, endorsed by, or sponsored by Cognition AI. Devin is a Cognition AI trademark.
 
-**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
+**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](../../COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
 
 Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosystem: the curated hub for the devin-* tools.
 
@@ -43,7 +43,9 @@ devin-devkit install qa --environment corporate-windows
 
 Environment entry points: [Linux](environments/linux/README.md) · [Personal Windows](environments/personal-windows/README.md) · [Corporate Windows](environments/corporate-windows/README.md).
 
-The generated [compatibility matrix](COMPATIBILITY.md) is rendered from `registry.json`; unsupported entries carry an explicit registry reason rather than guessed compatibility.
+## Compatibility
+
+The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `registry.json`; unsupported entries carry an explicit registry reason rather than guessed compatibility. Entries marked `Local only` install without VM, QwenPaw, external compute, workload delegation, or required external integrations.
 
 ## Profiles
 
