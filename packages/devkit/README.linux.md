@@ -52,10 +52,9 @@ The DevKit does not change those directories or Devin settings. `uv` exposes ins
 
 ## Compatibility
 
-The generated [compatibility matrix](COMPATIBILITY.md) comes from
-`devin-powerups/registry.json`. Entries marked `Local only` install
-without VM, QwenPaw, external compute, workload delegation, or
-required external integrations; other entries carry a registry reason.
+Shared behavior, see the [Compatibility](README.md#compatibility)
+section in README.md; the generated matrix at the repository root
+applies to every platform.
 
 ## Local development with sibling checkouts
 
