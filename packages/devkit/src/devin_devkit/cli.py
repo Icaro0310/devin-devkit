@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from devin_devkit import __version__
 from devin_devkit.installer import DevKitError, apply_plan, build_plan, load_manifest
 from devin_devkit.updater import (
     apply_update_plan,
@@ -33,6 +34,7 @@ def _print_plan(plan: dict[str, Any], as_json: bool) -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="devin-devkit", description="Install curated Devin tool profiles with isolated uv/npm environments.")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--manifest", type=Path, help=argparse.SUPPRESS)
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("profiles", help="list available installation profiles")
