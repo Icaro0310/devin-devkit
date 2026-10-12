@@ -220,6 +220,7 @@ devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
 devin-skill-catalog activate skill:<name> --apply
 
 # 3. Install only what you want live, manually
+mkdir -p ~/.devin/skills
 cp -r skill-vendor/.devin/skills/<name> ~/.devin/skills/
 ```
 
@@ -231,10 +232,14 @@ Rules of the road:
   `--force`: skills that *teach* injection hygiene legitimately quote
   attack strings — that is a recorded false-positive, not a verdict.
 - Active-in-catalog ≠ loaded. Install into a live skills dir only what
-  you actually want in sessions, or ship a reviewed set with
-  `export-bundle`.
-- Re-vendor on upstream changes by copying the new tree over the staged
-  one and re-running the flow — the registry history records the
+  you actually want in sessions.
+- `export-bundle` packs **approved** items only — bundle a reviewed set
+  before activating it, or keep shipping copies via `import-bundle`
+  quarantine on the receiving side.
+- On upstream changes, re-vendor by **replacing** the staged item dir
+  (`rm -rf` then copy) and re-quarantining from scratch — copying over
+  the old tree leaves files upstream deleted, and the quarantine store
+  merges rather than replaces, so stale files would survive the
   re-review.
 
 Worked example: 25 skills from `addyosmani/agent-skills` (MIT), 6 from

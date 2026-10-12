@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- README "Adopting external skills" section: vendor → scan → quarantine
+  → gate → promote → activate → manual install, with re-vendor and
+  `export-bundle` state caveats.
+
 - README gains the generated `Part of the DEVIN ecosystem` block
   (track/nature/audience/interface rendered from the registry).
 
