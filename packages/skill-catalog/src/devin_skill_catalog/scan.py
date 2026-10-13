@@ -96,8 +96,7 @@ def scan_targets(
     ``include_user``, every existing user-level Devin dir."""
     items: list[Item] = []
     for t in targets:
-        for d in resolve_devin_dirs(t):
-            items.extend(scan_devin_dir(d, SCOPE_WORKSPACE))
+        items.extend(resolve_target(t))
     if include_user:
         for d in user_devin_dirs():
             items.extend(scan_devin_dir(d, SCOPE_USER))
@@ -171,7 +170,10 @@ def resolve_target(path: Path) -> list[Item]:
                     SCOPE_WORKSPACE,
                 )
             ]
-        return scan_targets([p], include_user=False)
+        items: list[Item] = []
+        for d in resolve_devin_dirs(p):
+            items.extend(scan_devin_dir(d, SCOPE_WORKSPACE))
+        return items
     return []
 
 
@@ -179,9 +181,12 @@ def _infer_devin_dir(item_file: Path) -> Path:
     """Recover the devin dir for a lone file: ``.../skills/<n>/SKILL.md`` →
     ``...`` ``(the .devin dir)``; ``.../rules/<n>.md`` → ``...``."""
     parts = item_file.parts
-    if item_file.name == SKILL_FILENAME and len(parts) >= 3:
-        if item_file.parent.parent.name == "skills":
-            return item_file.parent.parent.parent
+    if (
+        item_file.name == SKILL_FILENAME
+        and len(parts) >= 3
+        and item_file.parent.parent.name == "skills"
+    ):
+        return item_file.parent.parent.parent
     if item_file.parent.name == "rules":
         return item_file.parent.parent
     return item_file.parent

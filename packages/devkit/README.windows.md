@@ -70,6 +70,19 @@ uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
 ```
 
 
+## Adapters (MCP / Devin skill / plugin)
+
+- MCP server: `pip install 'devin-devkit[mcp]'` then run
+  `devin-devkit-mcp` (stdio). Read-only tools only.
+- Devin plugin + skill: `devin plugins install
+  Icaro0310/devin-devkit#packages/devkit/adapters`. The manifest
+  launches the server through `uvx --from 'devin-devkit[mcp]'
+  devin-devkit-mcp`, which resolves once the first PyPI release ships.
+  Until then, an editable install does not change what `uvx --from`
+  resolves — either run the source-installed `devin-devkit-mcp`
+  directly, or point a local manifest copy at the checkout:
+  `uvx --from './packages/devkit[mcp]' devin-devkit-mcp`.
+
 ## Troubleshooting
 
 - If a command is not found, run `uv tool update-shell` and open a new terminal.

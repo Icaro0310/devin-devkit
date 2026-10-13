@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from devin_skill_catalog import cli
 from devin_skill_catalog.model import (
     STATE_ACTIVE,

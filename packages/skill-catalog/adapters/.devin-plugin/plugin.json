@@ -1,0 +1,15 @@
+{
+  "name": "devin-skill-catalog",
+  "version": "0.1.0",
+  "description": "Inventory, lint, quarantine and promote Devin skills and rules — with per-workspace diff and offline G1/G2 gates.",
+  "author": { "name": "Icaro0310" },
+  "repository": "https://github.com/Icaro0310/devin-devkit",
+  "license": "MIT",
+  "keywords": ["devin", "skills", "rules", "lint", "catalog", "governance"],
+  "mcpServers": {
+    "devin-skill-catalog": {
+      "command": "uvx",
+      "args": ["--from", "devin-skill-catalog[mcp]", "devin-skill-catalog-mcp"]
+    }
+  }
+}

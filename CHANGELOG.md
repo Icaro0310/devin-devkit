@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Adapters** — read-only MCP servers, Devin skills and `adapters/` plugin roots for `devin-devkit` and `devin-skill-catalog`.
 - **Pre-commit hook** — new `devin-skill-catalog-gate` repo hook
   (`.pre-commit-hooks.yaml`): runs `devin-skill-catalog lint --no-user`
   on commits that touch `.devin/`, `skills/` or `rules/` paths; FAIL

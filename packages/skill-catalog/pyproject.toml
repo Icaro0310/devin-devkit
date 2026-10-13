@@ -14,9 +14,11 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+mcp = ["mcp>=1.2"]
 
 [project.scripts]
 devin-skill-catalog = "devin_skill_catalog.cli:main"
+devin-skill-catalog-mcp = "devin_skill_catalog.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

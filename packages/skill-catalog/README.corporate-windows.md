@@ -56,6 +56,20 @@ Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy g
 - **"É a Zscaler ou outra coisa?":** `SSL: CERTIFICATE_VERIFY_FAILED` cujo emissor do certificado é `Zscaler` significa inspeção de TLS; resolva pela raiz acima. Timeout ou `connection refused` aponta mais para firewall/regra de rede, não TLS. Valide o proxy ativo e reporte ao TI com o host e a porta.
 
 
+
+## Adapters (MCP / Devin skill / plugin)
+
+- MCP server: `pip install 'devin-skill-catalog[mcp]'` then run
+  `devin-skill-catalog-mcp` (stdio). Read-only tools only.
+- Devin plugin + skill: `devin plugins install
+  Icaro0310/devin-devkit#packages/skill-catalog/adapters`. The manifest
+  launches the server through `uvx --from 'devin-skill-catalog[mcp]'
+  devin-skill-catalog-mcp`, which resolves once the first PyPI release ships.
+  Until then, an editable install does not change what `uvx --from`
+  resolves — either run the source-installed `devin-skill-catalog-mcp`
+  directly, or point a local manifest copy at the checkout:
+  `uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`.
+
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.

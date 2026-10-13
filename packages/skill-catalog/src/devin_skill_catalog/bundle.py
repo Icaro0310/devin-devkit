@@ -268,7 +268,9 @@ class BundleReader:
             self._dir = path
         elif path.is_file():
             try:
-                self._tar = tarfile.open(path, "r:*")
+                # the handle is stored on self and closed by close() —
+                # a `with` block here would invalidate the reader
+                self._tar = tarfile.open(path, "r:*")  # noqa: SIM115
             except tarfile.TarError as exc:
                 raise BundleError(f"{path} is not a readable bundle") from exc
         else:

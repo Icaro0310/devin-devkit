@@ -5,9 +5,10 @@ import platform as platform_module
 import re
 import shutil
 import subprocess
+from collections.abc import Callable
 from importlib.resources import files
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 class DevKitError(RuntimeError):

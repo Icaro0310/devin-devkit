@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from types import SimpleNamespace
 
-import devin_devkit.cli as cli
+from devin_devkit import cli
 
 
 def test_profiles_and_list_use_bundled_registry(capsys):
@@ -124,7 +123,7 @@ def _stub_update_path(monkeypatch):
     monkeypatch.setattr(cli, "fetch_remote_manifest", lambda: remote)
     monkeypatch.setattr("devin_devkit.updater.installed_uv_tools", lambda runner: {})
     monkeypatch.setattr("devin_devkit.updater.installed_npm_tools", lambda runner: {})
-    monkeypatch.setattr("devin_devkit.updater.installed_uv_specs", lambda: {})
+    monkeypatch.setattr("devin_devkit.updater.installed_uv_specs", dict)
 
 
 def test_outdated_forwards_environment_and_never_applies(monkeypatch, capsys):

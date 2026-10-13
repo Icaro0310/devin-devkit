@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
-
 from devin_skill_catalog import bundle, cli
 from devin_skill_catalog.model import (
-    STATE_ACTIVE,
     STATE_APPROVED,
     STATE_QUARANTINED,
 )
@@ -79,7 +76,7 @@ def test_import_lands_quarantined_only(
     bdir = tmp_path / "b"
     _export(devin_dir, src_cfg, bdir)
     with bundle.BundleReader(bdir) as reader:
-        manifest, plans = bundle.plan_import(reader)
+        _manifest, plans = bundle.plan_import(reader)
         reg = _reg(dst_cfg)
         results = bundle.apply_import(reader, reg, dst_cfg, plans)
     assert [r["action"] for r in results] == ["quarantined"]
@@ -99,9 +96,11 @@ def test_import_rejects_checksum_tampering(devin_dir: Path, tmp_path: Path):
     # tamper with a file after export
     skill_md = bdir / "items" / "skill" / "good-skill" / "SKILL.md"
     skill_md.write_text("tampered\n", encoding="utf-8")
-    with bundle.BundleReader(bdir) as reader:
-        with pytest.raises(bundle.BundleError, match="checksum"):
-            bundle.plan_import(reader)
+    with (
+        bundle.BundleReader(bdir) as reader,
+        pytest.raises(bundle.BundleError, match="checksum"),
+    ):
+        bundle.plan_import(reader)
 
 
 def test_import_via_cli_plan_then_apply(devin_dir: Path, tmp_path: Path,

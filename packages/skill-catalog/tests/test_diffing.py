@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from conftest import GOOD_RULE, GOOD_SKILL, write
 from devin_skill_catalog import scan
 from devin_skill_catalog.diffing import DiffStatus, diff_inventories
-
-from conftest import GOOD_RULE, GOOD_SKILL, write
 
 
 def _mk(root: Path, *, skill_body: str = GOOD_SKILL, rule=True):

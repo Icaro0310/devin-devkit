@@ -5,10 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from conftest import write
 from devin_skill_catalog import gates, scan
 from devin_skill_catalog.model import Status
-
-from conftest import write
 
 SECRET_VALUE = "ghp_AAAAbbbbCCCCddddEEEEffffGGGGhhhh"
 

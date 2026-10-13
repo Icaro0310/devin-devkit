@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Read-only adapters: `devin_skill_catalog.mcp_server` MCP server
+  (`devin-skill-catalog-mcp` entry point, `mcp` extra), Devin skill and
+  `adapters/` plugin root.
 - README "Adopting external skills" section: vendor → scan → quarantine
   → gate → promote → activate → manual install, with re-vendor and
   `export-bundle` state caveats.
