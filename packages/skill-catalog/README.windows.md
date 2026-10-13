@@ -1,4 +1,4 @@
-# devin-skill-catalog — Personal Windows guide
+# devin-skill-catalog, Personal Windows guide
 
 This guide covers unrestricted Windows setup. For restricted machines, see [README.corporate-windows.md](README.corporate-windows.md); for features, shared commands, limitations, and the safety model, see [README.md](README.md).
 
@@ -7,20 +7,19 @@ Personal Windows uses the extended runtime: local execution plus optional Devin 
 ## Prerequisites
 
 - `uv` and Python 3.10 or newer; `uv` can manage Python.
-- Git on `PATH` for a Git dependency in this package's current release.
 
 ## Install
 
 Install the isolated Python CLI:
 
 ```powershell
-uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog"
+uv tool install "devin-skill-catalog"
 ```
 
 ## Devin paths
 
 Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP stores under `%APPDATA%\Devin\User\`.
-Use the tool's documented `--data-dir` or `--config-dir` flags for non-default locations.
+Use `--config-dir` for non-default locations.
 
 ## Environment notes
 
@@ -31,26 +30,25 @@ Use the tool's documented `--data-dir` or `--config-dir` flags for non-default l
 ## Personal Windows specifics
 
 - **Python:** `uv` manages its own Python, which also avoids the Microsoft Store `python.exe` alias stub (it opens the Store instead of running). If you install Python from python.org anyway, tick "Add python.exe to PATH".
-- **Shell:** PowerShell 7 + Windows Terminal is the recommended setup; every command also works in `cmd.exe` and Windows PowerShell 5.1 — none require admin.
+- **Shell:** PowerShell 7 + Windows Terminal is the recommended setup; every command also works in `cmd.exe` and Windows PowerShell 5.1, none require admin.
 - **Install location:** executables live under `%USERPROFILE%\.local\bin`; data under `%APPDATA%\devin`. Nothing touches `Program Files` or the registry.
-- **WSL:** treat it as a Linux machine — follow [README.linux.md](README.linux.md) inside it.
+- **WSL:** treat it as a Linux machine, follow [README.linux.md](README.linux.md) inside it.
 - **Uninstall:** `uv tool uninstall <package>` (or `npm uninstall -g` for a Node.js tool) removes the CLI; delete `%APPDATA%\devin` to remove local data. No services or scheduled tasks are left behind.
 
 
 ## Adapters (MCP / Devin skill / plugin)
 
-- MCP server: `pip install 'devin-{pkg}[mcp]'` then run
-  `devin-{pkg}-mcp` (stdio). Read-only tools only.
+- MCP server: `pip install 'devin-skill-catalog[mcp]'` then run
+  `devin-skill-catalog-mcp` (stdio). Read-only tools only.
 - Devin plugin + skill: `devin plugins install
-  Icaro0310/devin-devkit#packages/{pkg}/adapters`. The manifest
-  launches the server through `uvx --from 'devin-{pkg}[mcp]'
-  devin-{pkg}-mcp`, which resolves once the first PyPI release ships.
+  Icaro0310/devin-devkit#packages/skill-catalog/adapters`. The manifest
+  launches the server through `uvx --from 'devin-skill-catalog[mcp]'
+  devin-skill-catalog-mcp`, which resolves once the first PyPI release ships.
   Until then, an editable install does not change what `uvx --from`
-  resolves — either run the source-installed `devin-{pkg}-mcp`
+  resolves — either run the source-installed `devin-skill-catalog-mcp`
   directly, or point a local manifest copy at the checkout:
-  `uvx --from './packages/{pkg}[mcp]' devin-{pkg}-mcp`.
+  `uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`.
 
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.
-- This release has a Git dependency; verify Git is installed and on `PATH` with `git --version`.

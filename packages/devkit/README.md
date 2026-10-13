@@ -15,7 +15,7 @@
 
 > Unofficial community project. Not affiliated with, endorsed by, or sponsored by Cognition AI. Devin is a Cognition AI trademark.
 
-**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
+**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)** · **[Compatibility](../../COMPATIBILITY.md)** · **[macOS status](README.macos.md)**
 
 Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosystem: the curated hub for the devin-* tools.
 
@@ -43,7 +43,9 @@ devin-devkit install qa --environment corporate-windows
 
 Environment entry points: [Linux](environments/linux/README.md) · [Personal Windows](environments/personal-windows/README.md) · [Corporate Windows](environments/corporate-windows/README.md).
 
-The generated [compatibility matrix](COMPATIBILITY.md) is rendered from `registry.json`; unsupported entries carry an explicit registry reason rather than guessed compatibility.
+## Compatibility
+
+The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `registry.json`; unsupported entries carry an explicit registry reason rather than guessed compatibility. Entries marked `Local only` install without VM, QwenPaw, external compute, workload delegation, or required external integrations.
 
 ## Profiles
 
@@ -60,11 +62,13 @@ QwenPaw is an optional add-on and is not installed by these profiles. macOS is p
 
 ## Use
 
-Install the current GitHub source archive or use a local checkout; the package has no runtime dependencies:
+Install from PyPI (no runtime dependencies):
 
 ```bash
-uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
+uv tool install devin-devkit
 ```
+
+From a source checkout, use `uv tool install .` inside `packages/devkit`, or the subdirectory spec `git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit`.
 
 From a local checkout, use `uv tool install .`. Then inspect the available profiles and preview before applying:
 
@@ -85,7 +89,7 @@ devin-devkit update --apply    # reinstall outdated tools
 devin-devkit update --force --apply   # reinstall everything
 ```
 
-`outdated`/`update` read the manifest published in this repository, which a weekly workflow re-exports from the maintainer registry, so the pins are never more than about a week behind upstream.
+`outdated`/`update` read the manifest published in this repository, which a weekly workflow re-exports from the maintainer registry, so the pins are never more than about a week behind upstream. Updates apply the same gates as `install`: the selected `--environment`, platform support, and prerequisite checks are enforced at plan time, and tools whose commands exist on `PATH` but were not installed by devkit (no uv receipt, no npm global entry) are reported as `unmanaged` and never force-reinstalled — remove them manually first if you want devkit to adopt them. A tool that was permitted and later became forbidden (policy or manifest changed) reports `environment-blocked` on `outdated`/`update` even when already at the pinned version — that is intentional, not a regression: the check exists to surface the violation, and `current` would hide it.
 
 To run from a checkout without installing the DevKit itself:
 
@@ -93,15 +97,15 @@ To run from a checkout without installing the DevKit itself:
 uv run --project . python -m devin_devkit.cli install qa
 ```
 
-After a PyPI package release, the installer can also be run with `uvx devin-devkit ...`.
+The installer can also be run without installing: `uvx devin-devkit ...`.
 
 The manifest pins PyPI versions where available and GitHub source archives to immutable commit SHAs otherwise. Before it starts, the installer checks platform support, registry-declared environment compatibility, required managers, Node.js for `devin-bridge`, and existing command collisions. It never overwrites an existing command; commands already on `PATH` are reported as pre-existing but are not version-verified, and a partial collision blocks the profile before any installs run.
 
 ## Runtime requirements
 
 - Python tools: Python 3.10 or newer, installed in isolated environments managed by `uv`.
-- `devin-bridge`: Node.js 20 or newer and npm. Its pinned GitHub archive is downloaded over HTTPS.
-- Current installable profiles do not need Git. Git is needed only for manual source checkouts such as `devin-office`; package archives use HTTPS.
+- `devin-bridge`: Node.js 20 or newer and npm. Installed from the npm registry as `@icaro0310/devin-bridge`.
+- Most tools install from PyPI or HTTPS archives without Git. `devin-skill-catalog` currently installs from a `git+https` spec and requires `git` on `PATH`; Git is also needed for manual source checkouts such as `devin-office`.
 - Supported environments: Linux, Personal Windows and Corporate Windows. Linux and Personal Windows may use optional delegated runtime; Corporate Windows rejects registry entries that require external runtime, delegation or external integrations. macOS is planned but not claimed as tested.
 
 

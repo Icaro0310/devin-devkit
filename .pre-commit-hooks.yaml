@@ -1,7 +1,23 @@
-- id: skill-catalog-lint
-  name: devin-skill-catalog lint
-  description: Lint SKILL.md/rule files staged in the commit against the catalog gates.
+- id: devin-skill-catalog-gate
+  name: devin-skill-catalog workspace lint
+  description: >-
+    Structural lint of the repo's Devin items before committing —
+    requires `devin-skill-catalog` on PATH (`pipx install
+    devin-skill-catalog` or `uv tool install devin-skill-catalog`).
+    `devin-skill-catalog lint --no-user` inventories `.devin/` under
+    the project root and a top-level `skills/` / `rules/` pair (both,
+    when they coexist) and validates every item — SKILL.md must carry
+    frontmatter with a `name` matching its directory and a non-trivial
+    `description`, rule files need an H1 title. Any FAIL finding
+    exits 1 and blocks the commit; WARN and PASS findings print but do
+    not block. `--no-user` keeps personal `~/.devin` items out of
+    scope, so a broken personal skill cannot block commits here; a
+    repo with no Devin items finds nothing and passes. Strictly
+    read-only — findings are printed, never fixed or written. The
+    `files` filter scopes it to commits that touch `.devin/skills`,
+    `.devin/rules`, `skills/` or `rules/` paths — every other commit
+    skips it, so a missing binary never blocks unrelated work.
   entry: devin-skill-catalog lint --no-user
   language: system
-  files: "(SKILL\\.md|\\.devin/(skills|rules)/.*\\.md)$"
-  pass_filenames: true
+  pass_filenames: false
+  files: '^(\.devin/(skills|rules)/|(skills|rules)/)'

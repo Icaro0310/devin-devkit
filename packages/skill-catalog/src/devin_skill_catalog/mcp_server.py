@@ -68,9 +68,11 @@ def do_diff(a: str, b: str) -> dict:
     """Diff two dirs and return ``diff --json`` as a dict:
     ``{"rows": [{key, status, sha_a, sha_b}]}`` — status is IDENTICAL /
     MODIFIED / ONLY_IN_A / ONLY_IN_B. Each side resolves exactly like the
-    CLI: a .devin dir or a workspace root containing one."""
-    inv_a = scan.scan_devin_dir(scan.resolve_devin_dir(Path(a)))
-    inv_b = scan.scan_devin_dir(scan.resolve_devin_dir(Path(b)))
+    CLI: a .devin dir or a workspace root containing one — mixed layouts
+    that hold both a top-level ``skills/``/``rules/`` pair and a
+    ``.devin/`` dir are all inventoried."""
+    inv_a = scan.scan_targets([Path(a)], include_user=False)
+    inv_b = scan.scan_targets([Path(b)], include_user=False)
     return {"rows": _diff_row_dicts(diff_inventories(inv_a, inv_b))}
 
 

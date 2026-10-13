@@ -51,6 +51,22 @@ The standalone `devin-skill-catalog` repository was absorbed into this
 workspace (F4.5); its history is preserved under `packages/` and the old
 repo is archived with a pointer here.
 
+## Pre-commit hook
+
+This repo publishes `devin-skill-catalog-gate`: a `system` hook that
+lints a consumer repo's Devin items on commits touching `.devin/`,
+`skills/` or `rules/` paths. Install the CLI first
+(`pipx install devin-skill-catalog` or
+`uv tool install devin-skill-catalog`), then:
+
+```yaml
+# .pre-commit-config.yaml — in the consuming repo
+- repo: https://github.com/Icaro0310/devin-devkit
+  rev: <tag-or-sha>
+  hooks:
+    - id: devin-skill-catalog-gate
+```
+
 ## Platform support
 
 Both packages support Linux, macOS and Windows. Per-package guides live

@@ -42,7 +42,7 @@ def test_do_install_matches_cli_json(tmp_path, monkeypatch, capsys):
 
     # keep the parity check hermetic — the freshness hint is a
     # network lookup that never affects the JSON payload
-    monkeypatch.setattr(cli, "freshness_hint", lambda m: None)
+    monkeypatch.setattr(cli, "freshness_hint", lambda m, **kwargs: None)
     rc = cli.main([
         "--manifest", str(manifest_path),
         "install", "qa", "--json",

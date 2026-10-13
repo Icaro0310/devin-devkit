@@ -1,64 +1,70 @@
-# Personal Windows installation
+# devin-devkit, Personal Windows guide
 
-This guide covers unrestricted personal Windows setup. For restricted corporate machines, use the [Corporate Windows guide](README.corporate-windows.md). The DevKit source archive is available from GitHub; the package is not yet on PyPI.
+This guide covers unrestricted Windows setup. For restricted machines, see [README.corporate-windows.md](README.corporate-windows.md); for features, shared commands, limitations, and the safety model, see [README.md](README.md).
 
-Personal Windows uses the extended runtime: local Windows execution plus optional delegated workloads through Devin VM or QwenPaw when the selected tool supports them. Delegation is optional and is not installed or configured by this DevKit.
+Personal Windows uses the extended runtime: local execution plus optional Devin VM/QwenPaw delegation when this artifact supports it.
 
 ## Prerequisites
 
-- Windows 10 or newer and PowerShell.
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
-- Git for manual source checkouts such as `devin-office`; DevKit downloads installable package archives over HTTPS.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
+- Git only for manual source checkouts; installable profiles use HTTPS archives.
 
-## Install the DevKit
-
-From the current GitHub source archive (Git is not required for this download):
+## Install
 
 ```powershell
 uv tool install "git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/devkit"
 ```
 
-From a local checkout:
-
-```powershell
-cd devin-devkit
-uv tool install .
-```
-
-Then list profiles and preview an install:
+From a local checkout, `uv tool install .` also works. Then list profiles and preview an install:
 
 ```powershell
 devin-devkit profiles
 devin-devkit install qa --environment personal-windows
 ```
 
-The final command previews the plan without installing. Apply it explicitly:
+The last command is a dry run; apply it explicitly:
 
 ```powershell
 devin-devkit install qa --environment personal-windows --apply
-```
-
-For the entire installable tool set:
-
-```powershell
-devin-devkit install full --environment personal-windows --apply
+devin-devkit install full --environment personal-windows --apply   # entire installable set
 ```
 
 If Node.js is not available, choose a profile without `devin-bridge` instead of forcing a partial installation.
 
-## Devin paths and PATH
+## Devin paths
 
-Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP message databases are under `%APPDATA%\Devin\User\`. The DevKit does not change those directories or Devin settings.
+Session data normally lives under `%APPDATA%\devin\cli\`; UI state and ACP stores under `%APPDATA%\Devin\User\`.
+The DevKit does not change those directories or Devin settings. `uv` exposes installed commands through its tools directory, if a command is not found run `uv tool update-shell` and open a new terminal.
 
-`uv` exposes installed commands through its tools directory. If PowerShell cannot find a command, follow `uv tool update-shell` guidance and open a new terminal.
+## Environment notes
+
+- Delegated runtime is optional; this guide installs local tooling only.
+- Corporate Windows is a separate local-only environment.
+- macOS is planned but not claimed as tested.
+
+## Personal Windows specifics
+
+- **Python:** `uv` manages its own Python, which also avoids the Microsoft Store `python.exe` alias stub (it opens the Store instead of running). If you install Python from python.org anyway, tick "Add python.exe to PATH".
+- **Shell:** PowerShell 7 + Windows Terminal is the recommended setup; every command also works in `cmd.exe` and Windows PowerShell 5.1, none require admin.
+- **Install location:** executables live under `%USERPROFILE%\.local\bin`; data under `%APPDATA%\devin`. Nothing touches `Program Files` or the registry.
+- **WSL:** treat it as a Linux machine, follow [README.linux.md](README.linux.md) inside it.
+- **Uninstall:** `uv tool uninstall <package>` (or `npm uninstall -g` for a Node.js tool) removes the CLI; delete `%APPDATA%\devin` to remove local data. No services or scheduled tasks are left behind.
+
+## Compatibility
+
+Shared behavior, see the [Compatibility](README.md#compatibility)
+section in README.md; the generated matrix at the repository root
+applies to every platform.
 
 ## Local development with sibling checkouts
 
-For a package such as `devin-doctor`, keep the published version constraint in its `pyproject.toml`; install sibling sources editably only in the development environment:
+For a package such as `devin-doctor`, keep the published version
+constraint in its `pyproject.toml`; install sibling sources editably
+only in the development environment:
 
 ```powershell
-cd ..\devin-doctor
+cd ..\devin-explore\packages\doctor
 uv venv
 uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
 ```
@@ -66,21 +72,20 @@ uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
 
 ## Adapters (MCP / Devin skill / plugin)
 
-- MCP server: `pip install 'devin-{pkg}[mcp]'` then run
-  `devin-{pkg}-mcp` (stdio). Read-only tools only.
+- MCP server: `pip install 'devin-devkit[mcp]'` then run
+  `devin-devkit-mcp` (stdio). Read-only tools only.
 - Devin plugin + skill: `devin plugins install
-  Icaro0310/devin-devkit#packages/{pkg}/adapters`. The manifest
-  launches the server through `uvx --from 'devin-{pkg}[mcp]'
-  devin-{pkg}-mcp`, which resolves once the first PyPI release ships.
+  Icaro0310/devin-devkit#packages/devkit/adapters`. The manifest
+  launches the server through `uvx --from 'devin-devkit[mcp]'
+  devin-devkit-mcp`, which resolves once the first PyPI release ships.
   Until then, an editable install does not change what `uvx --from`
-  resolves — either run the source-installed `devin-{pkg}-mcp`
+  resolves — either run the source-installed `devin-devkit-mcp`
   directly, or point a local manifest copy at the checkout:
-  `uvx --from './packages/{pkg}[mcp]' devin-{pkg}-mcp`.
+  `uvx --from './packages/devkit[mcp]' devin-devkit-mcp`.
 
 ## Troubleshooting
 
-- The installable profiles use HTTPS archives; Git is only needed if you check out a manual source service such as `devin-office`.
-- `devin-devkit install <profile>` is a dry run. `--apply` is required to install.
+- If a command is not found, run `uv tool update-shell` and open a new terminal.
+- `install <profile>` is a dry run; `--apply` is required to install.
 - Existing commands are never overwritten; a complete command set on `PATH` is reported but its versions are not verified, while a partial collision blocks the profile.
-- If `devin-bridge` is installed but not found, check `npm config get prefix` and make npm's global executable directory available on `PATH`.
-- For a tool's usage and data-path overrides, follow its main `README.md`.
+- If `devin-bridge` is installed but not found, check `npm config get prefix` and ensure npm's global executable directory is on `PATH`.

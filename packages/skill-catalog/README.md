@@ -2,11 +2,11 @@
 
 <a href="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-skill-catalog.yml"><img src="https://github.com/Icaro0310/devin-devkit/actions/workflows/test-skill-catalog.yml/badge.svg" alt="ci"/></a>
 
-<a href="https://scorecard.dev/viewer/?uri=github.com/Icaro0310/devin-skill-catalog"><img src="https://api.scorecard.dev/projects/github.com/Icaro0310/devin-skill-catalog/badge" alt="OpenSSF Scorecard"/></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/Icaro0310/devin-devkit"><img src="https://api.scorecard.dev/projects/github.com/Icaro0310/devin-devkit/badge" alt="OpenSSF Scorecard"/></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"/></a>
 <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+"/></a>
-<a href="https://github.com/Icaro0310/devin-devkit"><img src="https://img.shields.io/github/stars/Icaro0310/devin-skill-catalog" alt="GitHub stars"/></a>
-<a href="https://github.com/Icaro0310/devin-devkit/commits/main"><img src="https://img.shields.io/github/last-commit/Icaro0310/devin-skill-catalog" alt="Last commit"/></a>
+<a href="https://github.com/Icaro0310/devin-devkit"><img src="https://img.shields.io/github/stars/Icaro0310/devin-devkit" alt="GitHub stars"/></a>
+<a href="https://github.com/Icaro0310/devin-devkit/commits/main"><img src="https://img.shields.io/github/last-commit/Icaro0310/devin-devkit" alt="Last commit"/></a>
 <a href="https://github.com/Icaro0310/awesome-devin"><img src="https://img.shields.io/badge/part%20of-devin--*-ecosystem-7c3aed" alt="devin-* ecosystem"/></a>
 <a href="https://github.com/Icaro0310/devin-devkit/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome"/></a>
 </div>
@@ -70,16 +70,13 @@ content.
 
 Requires Python ≥ 3.10 and `pipx` or `uv`. Stdlib only — no dependencies.
 
-<!-- DIST-STATUS:BEGIN — generated from devin-powerups/registry.json -->
-> **Source-only distribution.** This tool is not yet published to PyPI.
-> Install from source:
->
-> ```bash
-> pipx install git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog
-> # or
-> uv tool install git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog
-> ```
-<!-- DIST-STATUS:END -->
+```bash
+uv tool install devin-skill-catalog   # or: pipx install devin-skill-catalog
+```
+
+Published on PyPI as `devin-skill-catalog`. The bundled DevKit manifest
+still installs it from the GitHub source archive; profile installs and the
+PyPI install produce the same CLI.
 
 ## Commands
 
@@ -200,6 +197,63 @@ e.g. devin-evals). Pass it with `promote --g3-report PATH`:
 - If the report's `candidate.sha256` does not match the stored copy,
   promote prints a warning but proceeds — the report may legitimately
   describe a pre-fix artifact.
+
+## Adopting external skills
+
+Adopting a third-party skill means a governed catalog entry pinned by
+SHA-256, not a code fork and not a bare pointer. Upstream URLs are
+provenance; the catalog governs a frozen local copy.
+
+1. **Vendor into a staging `.devin` dir that nothing loads** — never
+   straight into a live workspace or the user skills dir; files there
+   load immediately, bypassing the gates. Any folder shaped like
+   `.devin/skills/` works:
+
+   ```
+   <staging>/.devin/skills/<name>/   ← copy of the upstream skill dir
+   ```
+
+2. **Govern through the normal lifecycle:**
+
+   ```
+   devin-skill-catalog scan <staging>/.devin --no-user
+   devin-skill-catalog quarantine skill:<name> <staging>/.devin --apply --note "vendor adopt: <upstream-url> @ <commit>"
+   devin-skill-catalog gate g1 <staging>/.devin/skills/<name>
+   devin-skill-catalog promote skill:<name> --apply --note "G1 pass"
+   devin-skill-catalog activate skill:<name> --apply
+   ```
+
+3. **Install only what you want live, manually** — copy the item dir
+   into a live `skills/` dir (create it first so the copy lands at
+   `skills/<name>/SKILL.md`): `.devin/skills/` inside a workspace for
+   project scope, or a user-level dir — `~/.devin/skills/` on any OS,
+   `${XDG_CONFIG_HOME:-~/.config}/devin/skills/` on Linux,
+   `%APPDATA%\devin\skills\` on Windows,
+   `~/Library/Application Support/devin/skills/` on macOS.
+
+Rules of the road:
+
+- Keep a `VENDORS.md` next to the staging dir: upstream URL, license,
+  commit SHA, date. Keep the license file for MIT/CC-BY content.
+- A G1 FAIL on third-party content deserves a human read before
+  `--force`: skills that *teach* injection hygiene legitimately quote
+  attack strings — that is a recorded false-positive, not a verdict.
+- Active-in-catalog ≠ loaded. Install into a live skills dir only what
+  you actually want in sessions.
+- `export-bundle` packs **approved** items only — bundle a reviewed set
+  before activating it, or keep shipping copies via `import-bundle`
+  quarantine on the receiving side.
+- On upstream changes, re-vendor by **replacing** the staged item dir
+  (delete it, then copy) and re-quarantining from scratch — copying over
+  the old tree leaves files upstream deleted, and the quarantine store
+  merges rather than replaces, so stale files would survive the
+  re-review.
+
+Worked example: 25 skills from `addyosmani/agent-skills` (MIT), 6 from
+`DietrichGebert/ponytail` (MIT) and a local `graphify` install were
+governed this way on 2026-10-13 — 30 clean G1 passes and 2 documented
+false-positives (quoted injection strings inside anti-injection
+guidance), all promoted and activated.
 
 ## Honest limitations
 

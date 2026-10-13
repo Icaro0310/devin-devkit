@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read-only adapters: `devin_skill_catalog.mcp_server` MCP server
   (`devin-skill-catalog-mcp` entry point, `mcp` extra), Devin skill and
   `adapters/` plugin root.
+- README "Adopting external skills" section: vendor → scan → quarantine
+  → gate → promote → activate → manual install, with re-vendor and
+  `export-bundle` state caveats.
 
 - README gains the generated `Part of the DEVIN ecosystem` block
   (track/nature/audience/interface rendered from the registry).
@@ -28,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+
+- Documentação: banner DIST-STATUS stale removido (o pacote está publicado no PyPI); seção Install volta a ter o comando de instalação; guias de plataforma regenerados com seção Zscaler e flag `--config-dir` correto.
+- Docs: guia corporate-windows — export da raiz Zscaler agora pede PEM ("Base-64 encoded X.509" no wizard de export ou `certutil -encode` após `Export-Certificate`, que gera DER) e distingue `certmgr.msc` (store do usuário) de `certlm.msc` (store da máquina); a receita offline instala `setuptools`+`wheel` antes do `--no-build-isolation`.
 - `labeler.yml` is now a thin caller of the shared reusable workflow in `devin-powerups` (`@v1`); PR labeling behavior is unchanged.
 
 - README install section replaced by a generated `DIST-STATUS` banner stating the tool is source-only (no PyPI release yet) and offering both `pipx` and `uv` source installs.
