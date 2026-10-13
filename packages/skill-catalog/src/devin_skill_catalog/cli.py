@@ -11,13 +11,16 @@ Subcommands::
     activate ITEM                   approved → active
     retire ITEM                     any state → retired
     export-bundle --out PATH        pack approved items + manifest
+                                    (--incremental: manifest-hash diff
+                                    via the bundle-export cursor)
     import-bundle PATH              land items quarantined (never active)
 
 Lifecycle mutations are **plan-first**: without ``--apply`` the command
 prints what it would do and writes nothing. The registry lives at
 ``<config-dir>/.devin-ecosystem/skill-catalog.json`` — the only place the
-tool writes besides ``--out`` bundle targets. ``.devin/`` dirs are always
-read-only.
+tool writes besides ``--out`` bundle targets and the incremental cursor
+(``.devin/bundle-export-state.json`` or ``$DEVIN_CURSOR_DIR``). Scanned
+``.devin/`` dirs are otherwise read-only.
 
 Exit codes: ``0`` ok · ``1`` FAIL findings / differences / refused ·
 ``2`` usage errors.
@@ -489,6 +492,11 @@ def _cmd_transition(args, target: str, verb: str) -> int:
 def cmd_export(args) -> int:
     reg, _config_dir = _registry(args)
     out = Path(args.out)
+    cursor = None
+    if args.incremental:
+        from devin_internals.cursor import Cursor
+
+        cursor = Cursor("bundle-export")
     try:
         _manifest, pairs = bundle.build_manifest(reg)
     except Exception as exc:  # noqa: BLE001 — defensive, any failure is an error line
@@ -502,13 +510,24 @@ def cmd_export(args) -> int:
         )
         return 1
     try:
-        manifest = bundle.export_bundle(reg, out, force=args.force)
+        result = bundle.export_bundle(
+            reg, out, force=args.force, cursor=cursor
+        )
     except bundle.BundleError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    written = set(result.written)
     print("exported:")
-    for spec in manifest["items"]:
-        print(f"  {spec['key']}  {spec['sha256'][:12]}")
+    for spec in result.manifest["items"]:
+        tag = "" if spec["key"] in written else "  (unchanged)"
+        print(f"  {spec['key']}  {spec['sha256'][:12]}{tag}")
+    for key in result.removed:
+        print(f"removed: {key} (no longer exportable)")
+    print(
+        f"{len(result.written)} exported, {len(result.unchanged)} "
+        f"unchanged"
+        + (f", {len(result.removed)} removed" if result.removed else "")
+    )
     print(f"manifest: {out if bundle.is_tar_path(out) else out / bundle.MANIFEST_NAME}")
     return 0
 
@@ -743,6 +762,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="overwrite a non-empty output dir / existing archive",
+    )
+    p.add_argument(
+        "--incremental",
+        action="store_true",
+        help="manifest-hash diff via the shared cursor "
+        "(.devin/bundle-export-state.json, overridable with "
+        "DEVIN_CURSOR_DIR): skip re-writing items whose digests match "
+        "the last committed export, prune items no longer exportable, "
+        "then commit the new map. A missing/corrupt cursor fails open "
+        "to a full export",
     )
     p.add_argument(
         "--config-dir",
