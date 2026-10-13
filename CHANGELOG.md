@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **CI** — `ci.yml` calls the reusable `adapters-check` sensor (`devin-powerups` `@v1`): scans distributed adapter/skill files for personal paths, internal names, token shapes and SKILL.md command coherence.
 - **skill-catalog** — `export-bundle --incremental`: manifest-hash diff via the shared `bundle-export` cursor (`devin-internals-spec`, `DEVIN_CURSOR_DIR` override); unchanged items are skipped (`N exported, M unchanged`), stale items pruned, cursor committed after atomic bundle writes; corrupt/missing cursor fails open to a full export.
 - **Adapters** — read-only MCP servers, Devin skills and `adapters/` plugin roots for `devin-devkit` and `devin-skill-catalog`.
 - **Pre-commit hook** — new `devin-skill-catalog-gate` repo hook
