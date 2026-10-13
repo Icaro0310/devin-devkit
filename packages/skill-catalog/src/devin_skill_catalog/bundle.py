@@ -16,16 +16,32 @@ imported items are registered ``quarantined`` — never ``approved`` or
 ``active``. Promotion still requires the gates. Every file's sha256 is
 verified against the manifest before it lands in the store.
 
-Neither direction touches a ``.devin/`` dir: import writes only into the
-catalog store under the config dir.
+**Incremental export** (``--incremental``) is a manifest-hash diff: a
+shared ``devin_internals.cursor.Cursor`` named ``bundle-export`` stores
+the per-item sha256 map of the last committed export, and items whose
+digest is unchanged are not re-written (a tar bundle — a single file —
+is skipped only when the whole map is identical). Following the
+incrementality envelope: writes are atomic (``tmp`` + ``os.replace``),
+the cursor commits only *after* the export completes, and a missing or
+corrupt cursor fails open to a full export. The cursor file lives at
+``.devin/bundle-export-state.json`` (or ``$DEVIN_CURSOR_DIR``) — the one
+exception to the rule below.
+
+Neither direction touches a ``.devin/`` dir beyond that cursor file:
+import writes only into the catalog store under the config dir.
 """
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
+import os
 import platform
+import shutil
 import tarfile
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from devin_skill_catalog import __version__, frontmatter, scan
@@ -94,8 +110,6 @@ def item_file_map(item: Item) -> dict[str, Path]:
 
 
 def _hash_member(data: bytes) -> str:
-    import hashlib
-
     return hashlib.sha256(data).hexdigest()
 
 
@@ -201,36 +215,188 @@ def build_manifest(registry: Registry) -> tuple[dict, list[tuple[dict, Item]]]:
     return manifest, pairs
 
 
+@dataclass
+class ExportResult:
+    """What an export run did — the ``N unchanged, M exported`` report."""
+
+    manifest: dict
+    out: Path
+    written: list[str] = field(default_factory=list)  # keys (re)written
+    unchanged: list[str] = field(default_factory=list)  # keys skipped
+    removed: list[str] = field(default_factory=list)  # stale dirs pruned
+
+
+def _item_digest(spec: dict) -> str:
+    """sha256 over a manifest item spec — the per-skill hash the
+    incremental cursor diffs on. Covers every listed file, so touching
+    any input re-exports exactly that entry."""
+    payload = json.dumps(spec, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _previous_items(cursor) -> dict[str, str]:
+    """The cursor's ``items`` map, fail-open: anything unreadable or
+    wrongly shaped is an empty map → full export."""
+    if cursor is None:
+        return {}
+    prev = cursor.get("items", {})
+    if not isinstance(prev, dict):
+        return {}
+    return {str(k): str(v) for k, v in prev.items()}
+
+
+def _atomic_write_bytes(path: Path, data: bytes) -> None:
+    """``tmp`` + ``os.replace`` — a crash never leaves a truncated file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(
+        dir=path.parent, prefix=path.name + ".", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def _dest_in_sync(dest_dir: Path, rel_paths: set[str]) -> bool:
+    """The exported item dir holds exactly the expected file set."""
+    if not dest_dir.is_dir():
+        return False
+    on_disk = {
+        p.relative_to(dest_dir).as_posix()
+        for p in dest_dir.rglob("*")
+        if p.is_file()
+    }
+    return on_disk == rel_paths
+
+
+def _safe_item_dir(out: Path, key: str) -> Path | None:
+    """``out/items/<kind>/<name>`` for a cursor-tracked key — or ``None``
+    when the key is malformed (a hand-edited cursor must not be able to
+    point a prune outside the bundle)."""
+    kind, _, name = key.partition(":")
+    if (
+        kind not in KINDS
+        or not name
+        or Path(name).name != name
+        or name in {".", ".."}
+    ):
+        return None
+    return out / ITEMS_DIRNAME / kind / name
+
+
 def export_bundle(
-    registry: Registry, out: Path, *, force: bool = False
-) -> dict:
-    """Write the bundle to ``out`` (dir or tar by suffix). Returns the
-    manifest. Refuses to overwrite a non-empty dir / existing archive
-    unless ``force``."""
+    registry: Registry, out: Path, *, force: bool = False, cursor=None
+) -> ExportResult:
+    """Write the bundle to ``out`` (dir or tar by suffix) and return an
+    :class:`ExportResult`. Refuses to overwrite a non-empty dir /
+    existing archive unless ``force`` — unless ``cursor`` is given:
+    incremental mode targets the same output every run, so a non-empty
+    dir is the expected shape.
+
+    ``cursor`` is a ``devin_internals.cursor.Cursor``-shaped object
+    (``get``/``set``/``commit`` — duck-typed so this module stays
+    importable without the dep). Its ``items`` map holds the per-item
+    digests of the last committed export; unchanged entries are not
+    re-written, stale ones are pruned from a dir bundle, and the cursor
+    commits only after every write succeeds.
+    """
     manifest, pairs = build_manifest(registry)
     out = Path(out)
+    new_items = {
+        spec["key"]: _item_digest(spec) for spec in manifest["items"]
+    }
+    old_items = _previous_items(cursor)
+    result = ExportResult(manifest=manifest, out=out)
     if is_tar_path(out):
-        if out.exists() and not force:
+        if out.exists() and not force and cursor is None:
             raise BundleError(f"{out} exists — pass --force to overwrite")
+        # A tar is one file: incremental means skip it entirely when the
+        # manifest hash map is identical (the embedded manifest's
+        # created_at then still describes the run that produced it).
+        if new_items and old_items == new_items and out.exists():
+            result.unchanged = list(new_items)
+            _commit_cursor(cursor, new_items)
+            return result
         _write_tar(manifest, pairs, out)
-    else:
-        if out.exists() and any(out.iterdir()) and not force:
-            raise BundleError(
-                f"{out} is not empty — pass --force to overwrite"
-            )
-        _write_dir(manifest, pairs, out)
-    return manifest
+        result.written = list(new_items)
+        _commit_cursor(cursor, new_items)
+        return result
+    if out.exists() and any(out.iterdir()) and not force and cursor is None:
+        raise BundleError(f"{out} is not empty — pass --force to overwrite")
+    write_pairs: list[tuple[dict, Item]] = []
+    for (entry, item), spec in zip(pairs, manifest["items"], strict=True):
+        key = spec["key"]
+        dest_dir = out / ITEMS_DIRNAME / item.kind / item.name
+        fmap = item_file_map(item)
+        if (
+            old_items.get(key) == new_items[key]
+            and _dest_in_sync(dest_dir, set(fmap))
+        ):
+            result.unchanged.append(key)
+            continue
+        if dest_dir.is_dir():
+            shutil.rmtree(dest_dir)  # drop stale files of a changed item
+        write_pairs.append((entry, item))
+        result.written.append(key)
+    removed = _prune_stale_items(out, old_items, new_items)
+    result.removed = removed
+    _write_dir(manifest, write_pairs, out)
+    _commit_cursor(cursor, new_items)
+    return result
 
 
-def _write_dir(manifest: dict, pairs: list[tuple[dict, Item]], out: Path) -> None:
-    for _entry, item in pairs:
+def _prune_stale_items(
+    out: Path, old_items: dict[str, str], new_items: dict[str, str]
+) -> list[str]:
+    """Remove ``items/<kind>/<name>`` dirs the cursor tracked that the
+    current manifest no longer exports. Returns the pruned keys."""
+    removed = []
+    for key in sorted(set(old_items) - set(new_items)):
+        dest_dir = _safe_item_dir(out, key)
+        if dest_dir is None or not dest_dir.is_dir():
+            continue
+        shutil.rmtree(dest_dir)
+        kind_dir = dest_dir.parent
+        if kind_dir.is_dir() and not any(kind_dir.iterdir()):
+            kind_dir.rmdir()
+        removed.append(key)
+    return removed
+
+
+def _commit_cursor(cursor, new_items: dict[str, str]) -> None:
+    """Advance the cursor AFTER the export completed — a crash before
+    this point re-exports on the next run instead of skipping."""
+    if cursor is None:
+        return
+    cursor.set("items", new_items)
+    cursor.set(
+        "manifest_sha256",
+        hashlib.sha256(
+            json.dumps(new_items, sort_keys=True).encode("utf-8")
+        ).hexdigest(),
+    )
+    cursor.commit()
+
+
+def _write_dir(
+    manifest: dict, write_pairs: list[tuple[dict, Item]], out: Path
+) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    for _entry, item in write_pairs:
         for rel, abs_path in item_file_map(item).items():
             dest = out / ITEMS_DIRNAME / item.kind / item.name / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(abs_path.read_bytes())
-    out.mkdir(parents=True, exist_ok=True)
-    (out / MANIFEST_NAME).write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            _atomic_write_bytes(dest, abs_path.read_bytes())
+    _atomic_write_bytes(
+        out / MANIFEST_NAME,
+        (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode(
+            "utf-8"
+        ),
     )
 
 
@@ -238,18 +404,34 @@ def _write_tar(
     manifest: dict, pairs: list[tuple[dict, Item]], out: Path
 ) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    mode = "w:gz" if out.name.lower().endswith((".tar.gz", ".tgz")) else "w"
-    with tarfile.open(out, mode) as tar:
-        for _entry, item in pairs:
-            for rel, abs_path in item_file_map(item).items():
-                arc = f"{ITEMS_DIRNAME}/{item.kind}/{item.name}/{rel}"
-                tar.add(abs_path, arcname=arc)
-        payload = (
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n"
-        ).encode("utf-8")
-        info = tarfile.TarInfo(MANIFEST_NAME)
-        info.size = len(payload)
-        tar.addfile(info, io.BytesIO(payload))
+    fd, tmp = tempfile.mkstemp(
+        dir=out.parent, prefix=out.name + ".", suffix=".tmp"
+    )
+    os.close(fd)
+    try:
+        mode = (
+            "w:gz"
+            if out.name.lower().endswith((".tar.gz", ".tgz"))
+            else "w"
+        )
+        with tarfile.open(tmp, mode) as tar:
+            for _entry, item in pairs:
+                for rel, abs_path in item_file_map(item).items():
+                    arc = f"{ITEMS_DIRNAME}/{item.kind}/{item.name}/{rel}"
+                    tar.add(abs_path, arcname=arc)
+            payload = (
+                json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            info = tarfile.TarInfo(MANIFEST_NAME)
+            info.size = len(payload)
+            tar.addfile(info, io.BytesIO(payload))
+        os.replace(tmp, out)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 # --------------------------------------------------------------------------

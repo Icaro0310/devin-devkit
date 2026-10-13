@@ -285,9 +285,21 @@ dev = [
 dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
+name = "devin-internals-spec"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/1d/ccc8f048c6e1733e65fd29b2397983f53002aa5ac85e04ef139d9652d255/devin_internals_spec-0.3.1.tar.gz", hash = "sha256:c290dfa9153942a598e79d69f8bce3ce1b695a7fb915186e6381370ccfd44bcf", size = 52655, upload-time = "2026-10-13T07:40:20.44Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/6b/09e2e1ffabbcefad275786d629f5bc6e94764f4a1020f0c1c0ca4ef7932c/devin_internals_spec-0.3.1-py3-none-any.whl", hash = "sha256:c230ed871f88c27ee34d12cd3b5cc80b9a0d3d079c03cffa0217b69d94747420", size = 41426, upload-time = "2026-10-13T07:40:19.081Z" },
+]
+
+[[package]]
 name = "devin-skill-catalog"
 version = "0.1.0"
 source = { editable = "packages/skill-catalog" }
+dependencies = [
+    { name = "devin-internals-spec" },
+]
 
 [package.optional-dependencies]
 dev = [
@@ -299,6 +311,7 @@ mcp = [
 
 [package.metadata]
 requires-dist = [
+    { name = "devin-internals-spec", specifier = ">=0.3.1,<0.4.0" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
 ]

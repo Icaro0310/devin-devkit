@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Incremental `export-bundle --incremental`: a manifest-hash diff via
+  the shared `devin_internals.cursor.Cursor` (`bundle-export` cursor at
+  `.devin/bundle-export-state.json`, overridable with
+  `DEVIN_CURSOR_DIR`). Items whose per-file digest map is unchanged are
+  not re-written and are reported as `(unchanged)` (`N exported, M
+  unchanged`); items dropped from the exportable set are pruned from a
+  directory bundle. Tar archives — a single file — are skipped only when
+  the whole map is identical. A missing/corrupt cursor fails open to a
+  full export; the cursor commits only after every write succeeds.
+  Bundle writes (item files, `manifest.json`, tar archives) are now
+  atomic (`tmp` + `os.replace`). Adds the `devin-internals-spec>=0.3.1`
+  dependency.
 - Read-only adapters: `devin_skill_catalog.mcp_server` MCP server
   (`devin-skill-catalog-mcp` entry point, `mcp` extra), Devin skill and
   `adapters/` plugin root.

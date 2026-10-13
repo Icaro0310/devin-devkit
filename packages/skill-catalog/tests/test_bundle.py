@@ -41,7 +41,7 @@ def _approved_registry(config_dir: Path, devin_dir: Path) -> Registry:
 def test_export_dir_bundle(config_dir: Path, devin_dir: Path, tmp_path):
     _approved_registry(config_dir, devin_dir)
     out = tmp_path / "bundle-out"
-    manifest = bundle.export_bundle(_reg(config_dir), out)
+    manifest = bundle.export_bundle(_reg(config_dir), out).manifest
     assert (out / "manifest.json").is_file()
     skill_files = out / "items" / "skill" / "good-skill"
     assert (skill_files / "SKILL.md").is_file()
