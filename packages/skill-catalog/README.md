@@ -301,6 +301,30 @@ first PyPI release ships; until then run the source-installed
 `devin-skill-catalog-mcp` directly or point a local manifest copy at the
 checkout (`uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`).
 
+The same stdio server registers in other MCP hosts:
+
+**Zed** — `context_servers` in `settings.json`:
+
+```json
+{
+  "context_servers": {
+    "devin-skill-catalog": { "command": { "path": "devin-skill-catalog-mcp", "args": [] } }
+  }
+}
+```
+
+**JetBrains** — Settings → Tools → AI Assistant → Model Context Protocol → Add:
+
+```json
+{ "mcpServers": { "devin-skill-catalog": { "command": "devin-skill-catalog-mcp" } } }
+```
+
+**Antigravity** — `~/.gemini/config/mcp_config.json`:
+
+```json
+{ "mcpServers": { "devin-skill-catalog": { "command": "devin-skill-catalog-mcp" } } }
+```
+
 ## When to use this
 
 - You want to know which skills/rules exist across workspaces and user

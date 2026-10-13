@@ -127,6 +127,30 @@ first PyPI release ships; until then run the source-installed
 `devin-devkit-mcp` directly or point a local manifest copy at the
 checkout (`uvx --from './packages/devkit[mcp]' devin-devkit-mcp`).
 
+The same stdio server registers in other MCP hosts:
+
+**Zed** — `context_servers` in `settings.json`:
+
+```json
+{
+  "context_servers": {
+    "devin-devkit": { "command": { "path": "devin-devkit-mcp", "args": [] } }
+  }
+}
+```
+
+**JetBrains** — Settings → Tools → AI Assistant → Model Context Protocol → Add:
+
+```json
+{ "mcpServers": { "devin-devkit": { "command": "devin-devkit-mcp" } } }
+```
+
+**Antigravity** — `~/.gemini/config/mcp_config.json`:
+
+```json
+{ "mcpServers": { "devin-devkit": { "command": "devin-devkit-mcp" } } }
+```
+
 ## Development and synchronization
 
 ```bash
