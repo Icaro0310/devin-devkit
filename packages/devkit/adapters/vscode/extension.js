@@ -7,6 +7,11 @@
 
 const vscode = require("vscode");
 const cp = require("child_process");
+// Shared Restricted-Mode-safe executable resolver — byte-identical copy of
+// devin-powerups adapters/shared/safe-executable.cjs (lockstep enforced by
+// config-restricted-check). On Windows, CreateProcess searches cwd before
+// PATH: spawn only the absolute path this returns.
+const { resolveSafeExecutable } = require("./safe-executable.cjs");
 
 let statusBar;
 let statusSeq = 0; // monotonic — a slow check must not overwrite a newer verdict
@@ -23,12 +28,27 @@ const pkgRange = () =>
 // not-installed/unmanaged carry no verdict and don't count.
 const GATED_ACTIONS = new Set(["blocked", "environment-blocked", "unsupported"]);
 
+// First workspace folder, when one is open — used only to bound
+// resolveSafeExecutable's inside-workspace rejection, not as spawn cwd.
+function workspaceDir() {
+  const folders = vscode.workspace.workspaceFolders;
+  return folders && folders.length ? folders[0].uri.fsPath : null;
+}
+
 // Resolves {code, stdout, stderr}; never throws on non-zero exit —
 // `install <p> --json` exits 2 on a blocked plan: a renderable result.
 function runDevkit(args) {
   const exe = vscode.workspace.getConfiguration("devinDevkit").get("executable", "devin-devkit");
+  const spec = resolveSafeExecutable(exe, {
+    workspaceDir: workspaceDir(),
+    trusted: vscode.workspace.isTrusted,
+    npmPackage: null,
+  });
   return new Promise((resolve, reject) => {
-    cp.execFile(exe, args, { timeout: 120000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+    if (!spec) return reject(new Error(
+      "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
+      "or set devinDevkit.executable."));
+    cp.execFile(spec.file, spec.argv.concat(args), { timeout: 120000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err && err.killed) return reject(new Error("devin-devkit timed out after 120s"));
       if (err && err.code === "ENOENT") return reject(new Error(
         "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
