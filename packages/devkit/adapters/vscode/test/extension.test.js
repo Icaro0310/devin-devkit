@@ -2,6 +2,7 @@
 
 // Minimal vscode stub injected before requiring the extension — enough for
 // the pure rendering paths to run outside the editor.
+const trustListeners = []; // onDidGrantWorkspaceTrust callbacks, per activate
 const vscodeStub = {
   ThemeColor: class {
     constructor(id) {
@@ -27,6 +28,10 @@ const vscodeStub = {
     workspaceFolders: [{ uri: { fsPath: "/repo" } }],
     getConfiguration: () => ({ get: (k, d) => (k in settings ? settings[k] : d) }),
     openTextDocument: () => Promise.resolve({}),
+    onDidGrantWorkspaceTrust: (cb) => {
+      trustListeners.push(cb);
+      return { dispose() {} };
+    },
   },
   commands: { registerCommand: () => ({ dispose() {} }) },
 };
@@ -171,11 +176,15 @@ test("activate never spawns the CLI in an untrusted workspace", async () => {
   settings = { checkOnStartup: true };
   vscodeStub.workspace.isTrusted = false;
   cpCalls.length = 0;
+  trustListeners.length = 0;
   ext.activate({ subscriptions: [] });
   await new Promise((r) => setImmediate(r));
   assert.strictEqual(cpCalls.length, 0);
+  // Granting trust mid-session fires the listener registered at activate —
+  // the skipped startup checks resume without a reload.
   vscodeStub.workspace.isTrusted = true;
-  ext.activate({ subscriptions: [] });
+  assert.strictEqual(trustListeners.length, 1);
+  for (const cb of trustListeners.splice(0)) cb();
   await new Promise((r) => setImmediate(r));
   assert.ok(cpCalls.length >= 1);
   settings = {};

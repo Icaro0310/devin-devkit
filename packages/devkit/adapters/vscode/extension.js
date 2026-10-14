@@ -28,11 +28,11 @@ const pkgRange = () =>
 // not-installed/unmanaged carry no verdict and don't count.
 const GATED_ACTIONS = new Set(["blocked", "environment-blocked", "unsupported"]);
 
-// First workspace folder, when one is open — used only to bound
-// resolveSafeExecutable's inside-workspace rejection, not as spawn cwd.
-function workspaceDir() {
-  const folders = vscode.workspace.workspaceFolders;
-  return folders && folders.length ? folders[0].uri.fsPath : null;
+// Every open workspace folder — used only to bound resolveSafeExecutable's
+// inside-workspace rejection (multi-root: a candidate inside ANY folder is
+// rejected), never as spawn cwd.
+function workspaceDirs() {
+  return (vscode.workspace.workspaceFolders || []).map((f) => f.uri.fsPath);
 }
 
 // Resolves {code, stdout, stderr}; never throws on non-zero exit —
@@ -40,7 +40,7 @@ function workspaceDir() {
 function runDevkit(args) {
   const exe = vscode.workspace.getConfiguration("devinDevkit").get("executable", "devin-devkit");
   const spec = resolveSafeExecutable(exe, {
-    workspaceDir: workspaceDir(),
+    workspaceDirs: workspaceDirs(),
     trusted: vscode.workspace.isTrusted,
     npmPackage: null,
   });
@@ -194,6 +194,14 @@ async function previewInstall() {
 
 const previewUpdate = () => previewPlan(["update", "--json"], "update");
 
+// The checks activation runs when trusted: the compat warn always, the
+// outdated run only when checkOnStartup is on. Kept as one function so the
+// trust-grant listener below resumes exactly what Restricted Mode skipped.
+function startupChecks() {
+  checkCliCompat();
+  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
+}
+
 function activate(context) {
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   statusBar.command = "devin-devkit.status";
@@ -205,10 +213,12 @@ function activate(context) {
   };
   context.subscriptions.push(statusBar,
     ...Object.entries(cmds).map(([id, fn]) => vscode.commands.registerCommand(id, fn)));
-  if (vscode.workspace.isTrusted) {
-    checkCliCompat();
-    if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
-  }
+  // isTrusted is read once at activation — without this listener the
+  // startup checks skipped under Restricted Mode would never resume when
+  // the user grants trust mid-session (the event only fires on grant).
+  context.subscriptions.push(
+    vscode.workspace.onDidGrantWorkspaceTrust(startupChecks));
+  if (vscode.workspace.isTrusted) startupChecks();
 }
 
 function deactivate() {}
