@@ -7,6 +7,11 @@
 
 const vscode = require("vscode");
 const cp = require("child_process");
+// Shared Restricted-Mode-safe executable resolver — byte-identical copy of
+// devin-powerups adapters/shared/safe-executable.cjs (lockstep enforced by
+// config-restricted-check). On Windows, CreateProcess searches cwd before
+// PATH: spawn only the absolute path this returns.
+const { resolveSafeExecutable } = require("./safe-executable.cjs");
 
 let statusBar;
 let statusSeq = 0; // monotonic — a slow check must not overwrite a newer verdict
@@ -23,12 +28,27 @@ const pkgRange = () =>
 // not-installed/unmanaged carry no verdict and don't count.
 const GATED_ACTIONS = new Set(["blocked", "environment-blocked", "unsupported"]);
 
+// Every open workspace folder — used only to bound resolveSafeExecutable's
+// inside-workspace rejection (multi-root: a candidate inside ANY folder is
+// rejected), never as spawn cwd.
+function workspaceDirs() {
+  return (vscode.workspace.workspaceFolders || []).map((f) => f.uri.fsPath);
+}
+
 // Resolves {code, stdout, stderr}; never throws on non-zero exit —
 // `install <p> --json` exits 2 on a blocked plan: a renderable result.
 function runDevkit(args) {
   const exe = vscode.workspace.getConfiguration("devinDevkit").get("executable", "devin-devkit");
+  const spec = resolveSafeExecutable(exe, {
+    workspaceDirs: workspaceDirs(),
+    trusted: vscode.workspace.isTrusted,
+    npmPackage: null,
+  });
   return new Promise((resolve, reject) => {
-    cp.execFile(exe, args, { timeout: 120000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+    if (!spec) return reject(new Error(
+      "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
+      "or set devinDevkit.executable."));
+    cp.execFile(spec.file, spec.argv.concat(args), { timeout: 120000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err && err.killed) return reject(new Error("devin-devkit timed out after 120s"));
       if (err && err.code === "ENOENT") return reject(new Error(
         "devin-devkit not found on PATH. Install it (uv tool install devin-devkit) " +
@@ -174,6 +194,14 @@ async function previewInstall() {
 
 const previewUpdate = () => previewPlan(["update", "--json"], "update");
 
+// The checks activation runs when trusted: the compat warn always, the
+// outdated run only when checkOnStartup is on. Kept as one function so the
+// trust-grant listener below resumes exactly what Restricted Mode skipped.
+function startupChecks() {
+  checkCliCompat();
+  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
+}
+
 function activate(context) {
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   statusBar.command = "devin-devkit.status";
@@ -185,8 +213,12 @@ function activate(context) {
   };
   context.subscriptions.push(statusBar,
     ...Object.entries(cmds).map(([id, fn]) => vscode.commands.registerCommand(id, fn)));
-  checkCliCompat();
-  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
+  // isTrusted is read once at activation — without this listener the
+  // startup checks skipped under Restricted Mode would never resume when
+  // the user grants trust mid-session (the event only fires on grant).
+  context.subscriptions.push(
+    vscode.workspace.onDidGrantWorkspaceTrust(startupChecks));
+  if (vscode.workspace.isTrusted) startupChecks();
 }
 
 function deactivate() {}

@@ -2,6 +2,14 @@
 
 ## [0.1.0]
 
+### Security
+
+- Declared `capabilities.untrustedWorkspaces` (`supported: "limited"`)
+  with `restrictedConfigurations` covering `devinDevkit.executable` and
+  `devinDevkit.checkOnStartup`; activation now skips both the compat
+  check and the startup run unless `vscode.workspace.isTrusted`, so no
+  CLI spawn happens in an untrusted folder.
+
 ### Added
 
 - Status bar verdict driven by `devin-devkit outdated --json`: pending

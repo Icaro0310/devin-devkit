@@ -27,6 +27,16 @@
     "onStartupFinished"
   ],
   "main": "./extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "restrictedConfigurations": [
+        "devinDevkit.executable",
+        "devinDevkit.checkOnStartup"
+      ],
+      "description": "Runs the user-installed devkit CLI on demand. In Restricted Mode the workspace-configured executable is ignored and the CLI never runs automatically (the startup compat check and checkOnStartup are skipped)."
+    }
+  },
   "contributes": {
     "commands": [
       {
