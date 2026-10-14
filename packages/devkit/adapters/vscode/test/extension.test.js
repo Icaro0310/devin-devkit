@@ -23,22 +23,37 @@ const vscodeStub = {
     showTextDocument: () => Promise.resolve({ edit: async () => true }),
   },
   workspace: {
-    getConfiguration: () => ({ get: (k, d) => d }),
+    isTrusted: true,
+    workspaceFolders: [{ uri: { fsPath: "/repo" } }],
+    getConfiguration: () => ({ get: (k, d) => (k in settings ? settings[k] : d) }),
     openTextDocument: () => Promise.resolve({}),
   },
   commands: { registerCommand: () => ({ dispose() {} }) },
 };
 
+const cpCalls = []; // { exe, args, opts } — every spawn the extension attempts
+const cpStub = {
+  execFile: (exe, args, opts, cb) => {
+    cpCalls.push({ exe, args, opts });
+    cb(null, "1.0.0", "");
+  },
+};
+let settings = {};
+
 const Module = require("module");
 const origRequire = Module.prototype.require;
 Module.prototype.require = function (id) {
   if (id === "vscode") return vscodeStub;
+  if (id === "child_process") return cpStub;
   return origRequire.apply(this, arguments);
 };
 
-const { __internals__ } = require("../extension.js");
+const ext = require("../extension.js");
+const { __internals__ } = ext;
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
 
 test("statusBadge renders update counts with warning color", () => {
   const badge = __internals__.statusBadge;
@@ -138,4 +153,30 @@ test("countActions/countGated count matching plan actions only", () => {
   assert.strictEqual(countGated(plan), 2);
   assert.strictEqual(countActions(null, "update"), 0);
   assert.strictEqual(countGated(undefined), 0);
+});
+
+test("manifest declares limited untrusted-workspace support", () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"),
+  );
+  const uw = manifest.capabilities.untrustedWorkspaces;
+  assert.strictEqual(uw.supported, "limited");
+  assert.deepStrictEqual(uw.restrictedConfigurations.sort(), [
+    "devinDevkit.checkOnStartup",
+    "devinDevkit.executable",
+  ]);
+});
+
+test("activate never spawns the CLI in an untrusted workspace", async () => {
+  settings = { checkOnStartup: true };
+  vscodeStub.workspace.isTrusted = false;
+  cpCalls.length = 0;
+  ext.activate({ subscriptions: [] });
+  await new Promise((r) => setImmediate(r));
+  assert.strictEqual(cpCalls.length, 0);
+  vscodeStub.workspace.isTrusted = true;
+  ext.activate({ subscriptions: [] });
+  await new Promise((r) => setImmediate(r));
+  assert.ok(cpCalls.length >= 1);
+  settings = {};
 });

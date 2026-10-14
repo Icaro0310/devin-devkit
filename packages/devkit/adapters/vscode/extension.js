@@ -205,8 +205,10 @@ function activate(context) {
   };
   context.subscriptions.push(statusBar,
     ...Object.entries(cmds).map(([id, fn]) => vscode.commands.registerCommand(id, fn)));
-  checkCliCompat();
-  if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
+  if (vscode.workspace.isTrusted) {
+    checkCliCompat();
+    if (vscode.workspace.getConfiguration("devinDevkit").get("checkOnStartup", false)) status();
+  }
 }
 
 function deactivate() {}
