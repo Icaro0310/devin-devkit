@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1]
+
+### Fixed
+
+- Repackaged release: the 0.1.0 build published to Open VSX predated the
+  `untrustedWorkspaces` declarations — this .vsix ships the Restricted
+  Mode behavior (no automatic CLI spawn, workspace-configured executable
+  ignored) that the 0.1.0 manifest announced.
+
 ## [0.1.0]
 
 ### Security

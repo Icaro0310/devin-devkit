@@ -1,0 +1,170 @@
+name: release-devkit
+
+# Extension + wheel release for the devkit package — both artifacts ship
+# under one version (pyproject X.Y.Z == adapters/vscode X.Y.Z). Tag
+# `devkit-vX.Y.Z` mints the GitHub release (wheel dist + SBOM + GPG
+# signatures + packaged .vsix) and fans out to the reusable
+# release.yml@v1: detect re-runs the tag↔manifest check → wheel verify
+# gate → vscode-ext lint → vsce package → VS Code Marketplace (Entra
+# OIDC) → Open VSX (OVSX_PAT). The PyPI upload itself stays in
+# pypi-publish.yml (its job_workflow_ref binding) — the reusable's
+# publish-pypi leg detects the cross-repo caller and skips the upload.
+#
+# Marketplace: needs federated credential `gh-devin-devkit-release` on
+# the devin-vscode-marketplace app registration (subject
+# repo:Icaro0310/devin-devkit:environment:release) — the Azure login
+# step fails loudly until it exists. skill-catalog releases keep the
+# legacy wheel-only path in release.yml.
+
+on:
+  push:
+    tags:
+      - "devkit-v*"
+  # workflow_dispatch exercises `validate` only — release and fanout are
+  # tag-push-only by design, so dispatch can never publish. End-to-end
+  # fan-out testing needs a real tag push (e.g. on a fork, where the
+  # Marketplace/PyPI legs also skip for missing secrets).
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: write   # dispatch pypi-publish.yml after the release — see below
+
+jobs:
+  # Shared prerequisite: a mistagged `devkit-vX.Y.Z` must fail HERE,
+  # before either the release job or the fan-out publishes anything.
+  # `release` and `fanout` both declare `needs: validate`, so the
+  # extension can never ship under a label that disagrees with the
+  # manifests.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # `<pkg>-vX.Y.Z` convention — the manifest and pyproject must
+      # agree (lockstep is also enforced by the reusable lint on the
+      # fanout leg).
+      - name: Check tag matches manifest versions
+        if: github.ref_type == 'tag'
+        run: |
+          want="${GITHUB_REF_NAME#devkit-v}"
+          if [ "$want" = "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' does not start with 'devkit-v'"
+            exit 1
+          fi
+          got_ext=$(python3 -c "import json; print(json.load(open('packages/devkit/adapters/vscode/package.json'))['version'])")
+          got_wheel=$(python3 -c "import tomllib; print(tomllib.load(open('packages/devkit/pyproject.toml','rb'))['project']['version'])")
+          if [ "$want" != "$got_ext" ] || [ "$want" != "$got_wheel" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' ($want) vs package.json $got_ext / pyproject $got_wheel"
+            exit 1
+          fi
+
+  release:
+    needs: validate
+    # GitHub release creation stays tag-push-only — a dispatch (even
+    # against an existing tag ref) only runs `validate`.
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Build and test the wheel
+        run: |
+          python -m pip install -e "packages/devkit[dev]" build
+          python -m pytest -q packages/devkit
+          python -m build packages/devkit --outdir packages/devkit/dist
+
+      - name: Generate SBOM
+        run: pipx run --spec cyclonedx-bom cyclonedx-py environment
+          "$(which python)" --pyproject packages/devkit/pyproject.toml --mc-type library
+          -o sbom.cdx.json
+
+      # No lockfile in the adapter — npm install mirrors the reusable's
+      # own packaging leg; `build --if-present` is a no-op for this
+      # plain-JS extension.
+      - name: Package .vsix
+        working-directory: packages/devkit/adapters/vscode
+        run: |
+          npm install --no-audit --no-fund
+          npm run build --if-present
+          npx @vscode/vsce package
+
+      - name: Sign artifacts
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "GPG_PRIVATE_KEY not configured; skipping signing"
+            exit 0
+          fi
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          KEYID=$(printf '%s' "$GPG_PRIVATE_KEY" | \
+            gpg --batch --show-keys --with-colons | \
+            awk -F: '/^fpr/{print $10; exit}')
+          for f in packages/devkit/dist/* sbom.cdx.json \
+              packages/devkit/adapters/vscode/*.vsix; do
+            gpg --batch --yes --pinentry-mode loopback \
+              --passphrase "$GPG_PASSPHRASE" \
+              --local-user "$KEYID" --armor --detach-sign "$f"
+          done
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          # Idempotent: a rerun after a partial failure uploads over the
+          # existing release instead of dying on `gh release create`.
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" \
+              packages/devkit/dist/* sbom.cdx.json* \
+              packages/devkit/adapters/vscode/*.vsix* --clobber
+          else
+            gh release create "$RELEASE_TAG" \
+              packages/devkit/dist/* sbom.cdx.json* \
+              packages/devkit/adapters/vscode/*.vsix* \
+              --verify-tag --generate-notes
+          fi
+
+      # `gh release create` with GITHUB_TOKEN does NOT emit a
+      # `release.published` event — GitHub blocks recursive workflow
+      # triggers from the same token — and pypi-publish.yml's tag
+      # trigger covers only the original push, not reruns from this
+      # workflow. Dispatch it explicitly on the tag instead; the
+      # version-exists check there keeps a double-fire idempotent.
+      - name: Trigger PyPI publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh workflow run pypi-publish.yml --ref "$RELEASE_TAG" -f package=devkit
+
+  fanout:
+    needs: [validate, release]
+    # Publish legs only ever run on a real tag push after the GitHub
+    # release succeeded — a workflow_dispatch must not publish to the
+    # registries (the reusable's own tag gate is tag-only too).
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    # Every scope the reusable requests must be granted here — a
+    # missing scope fails the whole run at startup_failure.
+    permissions:
+      contents: read
+      id-token: write   # Entra OIDC + cosign keyless
+      packages: write   # docker leg scope
+    uses: Icaro0310/devin-powerups/.github/workflows/release.yml@v1
+    # Explicit mapping, not `inherit`: forwards only the Open VSX token.
+    secrets:
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    with:
+      package-dir: packages/devkit
+      module: devin_devkit
+      pypi-environment: pypi-devkit
+      vscode-ext-dir: packages/devkit/adapters/vscode
