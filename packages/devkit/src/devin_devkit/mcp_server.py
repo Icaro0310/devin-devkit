@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from typing import Any
 
@@ -129,7 +130,11 @@ def build_server():
 
 
 def main() -> None:
-    build_server().run(transport="stdio")
+    try:
+        build_server().run(transport="stdio")
+    except ImportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
