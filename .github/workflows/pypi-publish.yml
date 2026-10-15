@@ -21,10 +21,33 @@ permissions:
   contents: read
 
 jobs:
+  # A mistagged push must not publish: the verify gate below checks wheel
+  # internals (__version__ == pyproject), not the tag — without this a
+  # `devkit-v9.9.9` push would still ship pyproject's version under a
+  # release label that never matched a manifest.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check tag matches manifest version
+        if: github.ref_type == 'tag'
+        run: |
+          pkg="${GITHUB_REF_NAME%%-v*}"
+          want="${GITHUB_REF_NAME##*-v}"
+          toml="packages/$pkg/pyproject.toml"
+          [ -f "$toml" ] || { echo "::error::tag prefix '$pkg' resolves to no package ($toml)"; exit 1; }
+          got=$(python3 -c "import tomllib,sys; print(tomllib.load(open(sys.argv[1],'rb'))['project']['version'])" "$toml")
+          if [ "$want" != "$got" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' ($want) vs $toml version $got — retag or bump"
+            exit 1
+          fi
+
   # Wheel __version__ gate lives in one place — verified before publish runs.
   # Scoped to the package this run is releasing (tag or dispatch input);
   # a mismatch in the other package must not block this release.
   verify:
+    needs: validate
     uses: Icaro0310/devin-powerups/.github/workflows/verify-wheel-version.yml@e2612c9e448a366a0539ea4593f70da47b4cec80 # v1
     with:
       package-dir: ${{ (inputs.package == 'devkit' || startsWith(github.ref_name, 'devkit-v')) && 'packages/devkit' || 'packages/skill-catalog' }}
