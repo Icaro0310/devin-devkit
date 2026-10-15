@@ -164,6 +164,7 @@ jobs:
     secrets:
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
     with:
+      azure-marketplace-required: true
       package-dir: packages/devkit
       module: devin_devkit
       pypi-environment: pypi-devkit
