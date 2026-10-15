@@ -247,7 +247,7 @@ wheels = [
 
 [[package]]
 name = "devin-devkit"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/devkit" }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },

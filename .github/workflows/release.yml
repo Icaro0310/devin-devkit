@@ -3,11 +3,15 @@ name: release
 # Per-package GitHub releases: a tag `<pkg>-vX.Y.Z` builds, signs and
 # publishes a release for packages/<pkg> only. PyPI publishing is a
 # separate workflow (publish-<pkg>.yml) triggered by the same tag.
+#
+# devkit tags (`devkit-v*`) moved to release-devkit.yml — the extension
+# + wheel release (VS Code Marketplace / Open VSX fan-out). This file
+# now covers skill-catalog only; re-adding `devkit-v*` here would race
+# the `gh release create` there.
 
 on:
   push:
     tags:
-      - "devkit-v*"
       - "skill-catalog-v*"
 
 permissions:
