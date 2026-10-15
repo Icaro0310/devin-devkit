@@ -20,6 +20,10 @@ on:
   push:
     tags:
       - "devkit-v*"
+  # workflow_dispatch exercises `validate` only — release and fanout are
+  # tag-push-only by design, so dispatch can never publish. End-to-end
+  # fan-out testing needs a real tag push (e.g. on a fork, where the
+  # Marketplace/PyPI legs also skip for missing secrets).
   workflow_dispatch: {}
 
 permissions:
