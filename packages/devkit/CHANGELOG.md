@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `devin-devkit-mcp` no longer reports a server startup `ImportError` as a
+  missing `mcp` extra: only failures while building the app get the
+  install hint; `.run()` failures keep their traceback.
+
+
 ## [0.1.1]
 
 ### Changed
