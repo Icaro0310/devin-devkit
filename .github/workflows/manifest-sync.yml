@@ -9,7 +9,13 @@ on:
   schedule:
     - cron: "44 7 * * 2"   # Tuesdays 07:44 UTC
   workflow_dispatch:
-  pull_request:  # drift sensor — the sync job can't push to protected main
+  # pull_request powers the drift sensor: every PR compares the committed
+  # manifest against the current registry export, so registry-side drift
+  # (which arrives with no event here) surfaces on the next PR. Drift that
+  # lands *after* a PR went green is covered by the weekly sync opening a
+  # fix PR — a green check cannot be invalidated retroactively, but the
+  # stale manifest cannot survive another cycle either.
+  pull_request:
   push:
     branches: [main]
     paths: ['packages/devkit/src/devin_devkit/manifest.json', '.github/workflows/manifest-sync.yml']
