@@ -67,6 +67,10 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: devin-devkit
+          # PR_BOT_TOKEN, not the default GITHUB_TOKEN: pushes made with
+          # GITHUB_TOKEN never trigger CI, which would leave a refreshed
+          # sync PR without checks on its new commit.
+          token: ${{ secrets.PR_BOT_TOKEN }}
 
       - name: Check out devin-powerups (public, read-only)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -93,6 +97,10 @@ jobs:
           # bot token — same fail-closed contract as open-pr-bot.
           GH_TOKEN: ${{ secrets.PR_BOT_TOKEN }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::PR_BOT_TOKEN is not set — cannot create a sync PR"
+            exit 1
+          fi
           if git diff --quiet packages/devkit/src/devin_devkit/manifest.json; then
             echo "manifest already current"
             exit 0
@@ -104,7 +112,11 @@ jobs:
           git add packages/devkit/src/devin_devkit/manifest.json
           git commit -m "chore: sync devkit manifest from registry"
           git push --force-with-lease origin chore/manifest-sync
-          if gh pr list --head chore/manifest-sync --state open --json number --jq 'length' | grep -q '^0$'; then
+          # Lookup must succeed before we can trust its answer — a failed
+          # `gh pr list` inside a condition would silently take the
+          # "already open" branch and strand the pushed commit.
+          existing="$(gh pr list --head chore/manifest-sync --state open --json number --jq length)"
+          if [ "$existing" = "0" ]; then
             gh pr create \
               --title "chore: sync devkit manifest from registry" \
               --body "Automated regeneration of \`packages/devkit/src/devin_devkit/manifest.json\` from the current devin-powerups registry. Created by manifest-sync because pushing to protected main is not allowed." \
