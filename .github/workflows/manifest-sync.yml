@@ -50,14 +50,19 @@ jobs:
           if ! diff -u \
             devin-devkit/packages/devkit/src/devin_devkit/manifest.json \
             /tmp/manifest.generated.json; then
-            echo "::error::manifest.json is stale — regenerate with:"
-            echo "::error::python3 tools/export_devkit_manifest.py --registry registry.json --out packages/devkit/src/devin_devkit/manifest.json  (in devin-powerups, then commit here)"
+            echo "::error::manifest.json is stale. From a checkout of devin-powerups run:"
+            echo "::error::  python3 tools/export_devkit_manifest.py --registry registry.json --out <devkit>/packages/devkit/src/devin_devkit/manifest.json"
+            echo "::error::then commit the result here."
             exit 1
           fi
           echo "manifest matches registry export"
 
   sync:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # push the chore/manifest-sync branch
+      pull-requests: write   # open/refresh the sync PR
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -79,8 +84,14 @@ jobs:
             --registry devin-powerups/registry.json \
             --out devin-devkit/packages/devkit/src/devin_devkit/manifest.json
 
-      - name: Commit manifest when it changed
+      # Protected main rejects a direct push (GH006), so drift reaches
+      # main through a sync PR instead — same channel a human regen uses.
+      - name: Open or refresh the sync PR when the manifest drifted
         working-directory: devin-devkit
+        env:
+          # GITHUB_TOKEN-authored PRs never trigger CI, so this needs the
+          # bot token — same fail-closed contract as open-pr-bot.
+          GH_TOKEN: ${{ secrets.PR_BOT_TOKEN }}
         run: |
           if git diff --quiet packages/devkit/src/devin_devkit/manifest.json; then
             echo "manifest already current"
@@ -88,6 +99,16 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin chore/manifest-sync || true
+          git checkout -B chore/manifest-sync
           git add packages/devkit/src/devin_devkit/manifest.json
           git commit -m "chore: sync devkit manifest from registry"
-          git push
+          git push --force-with-lease origin chore/manifest-sync
+          if gh pr list --head chore/manifest-sync --state open --json number --jq 'length' | grep -q '^0$'; then
+            gh pr create \
+              --title "chore: sync devkit manifest from registry" \
+              --body "Automated regeneration of \`packages/devkit/src/devin_devkit/manifest.json\` from the current devin-powerups registry. Created by manifest-sync because pushing to protected main is not allowed." \
+              --head chore/manifest-sync --base main
+          else
+            echo "sync PR already open — branch updated"
+          fi
