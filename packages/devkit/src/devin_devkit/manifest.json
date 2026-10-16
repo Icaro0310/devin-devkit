@@ -137,6 +137,29 @@
       ],
       "alias_of": "security"
     },
+    "agent-tools": {
+      "label": "Agent Tools",
+      "description": "Agent-agnostic toolset: multi-surface audit, surface health, multi-source index, agent-agnostic memory MCP, and typed decisions.",
+      "tools": [
+        "devin-assure",
+        "devin-explore",
+        "devin-search",
+        "devin-brain",
+        "devin-judge"
+      ]
+    },
+    "no-devin": {
+      "label": "No Devin",
+      "description": "Convenience alias for the agent-agnostic toolset.",
+      "tools": [
+        "devin-assure",
+        "devin-explore",
+        "devin-search",
+        "devin-brain",
+        "devin-judge"
+      ],
+      "alias_of": "agent-tools"
+    },
     "full": {
       "label": "Full",
       "description": "All installable public tools; source-only services are listed separately.",
