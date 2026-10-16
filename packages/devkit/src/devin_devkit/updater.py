@@ -132,7 +132,9 @@ def installed_uv_specs(
             name = req.get("name")
             if not name:
                 continue
-            specs[name] = req.get("url") or f"{name}{req.get('specifier', '')}"
+            extras = req.get("extras") or []
+            extras = f"[{','.join(sorted(extras))}]" if extras else ""
+            specs[name] = req.get("url") or f"{name}{extras}{req.get('specifier', '')}"
     return specs
 
 

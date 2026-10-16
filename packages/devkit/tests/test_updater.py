@@ -489,6 +489,19 @@ def test_installed_uv_specs_handles_field_order_and_extras(tmp_path):
     assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
 
 
+def test_installed_uv_specs_preserves_extras(tmp_path):
+    """A receipt's `extras` list must survive spec reconstruction —
+    dropping it makes extra-bearing installs look spec-changed on every
+    update (infinite reinstall)."""
+    (tmp_path / "poordjaevin").mkdir()
+    (tmp_path / "poordjaevin" / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "poordjaevin", '
+        'extras = ["local", "mcp"], specifier = "==0.1.2" }]\n'
+    )
+    specs = updater.installed_uv_specs(tmp_path)
+    assert specs["poordjaevin"] == "poordjaevin[local,mcp]==0.1.2"
+
+
 def test_installed_uv_specs_nested_table_and_index_url(tmp_path):
     """A requirement with an inline metadata table or an index-url field
     must not hide the real install source."""
