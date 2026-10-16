@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 24,
-  "generated": "2026-10-09",
+  "registry_version": 30,
+  "generated": "2026-10-16",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -39,9 +39,7 @@
       "description": "Restricted Windows execution that is intentionally self-contained: no VM, QwenPaw, Slack requirement, external delegation, or external compute."
     }
   },
-  "git_required_tools": [
-    "devin-skill-catalog"
-  ],
+  "git_required_tools": [],
   "catalog": {
     "tool_count": 19,
     "distribution_count": 1,
@@ -254,7 +252,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-internals-spec",
-      "version": "0.3.0",
+      "version": "0.3.2",
       "commands": [
         "devin-inspect"
       ],
@@ -267,7 +265,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-internals-spec==0.3.0"
+      "install_spec": "devin-internals-spec==0.3.2"
     },
     {
       "id": "devin-history",
@@ -280,7 +278,8 @@
       ],
       "audiences": [
         "operations",
-        "end-users"
+        "end-users",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -384,7 +383,8 @@
       ],
       "audiences": [
         "qa",
-        "operations"
+        "operations",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -409,7 +409,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-metrics",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "commands": [
         "devin-metrics",
         "devin-dashboard"
@@ -423,7 +423,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-metrics==0.2.0"
+      "install_spec": "devin-metrics==0.2.1"
     },
     {
       "id": "devin-backup",
@@ -487,7 +487,8 @@
       ],
       "audiences": [
         "developers",
-        "ai-engineers"
+        "ai-engineers",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -512,7 +513,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-search",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "commands": [
         "devin-search"
       ],
@@ -525,7 +526,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-search==0.1.2"
+      "install_spec": "devin-search==0.2.0"
     },
     {
       "id": "devin-graph",
@@ -539,7 +540,8 @@
       ],
       "audiences": [
         "developers",
-        "ai-engineers"
+        "ai-engineers",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -616,7 +618,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-evals",
-      "version": "0.2.0",
+      "version": "0.3.1",
       "commands": [
         "devin-evals"
       ],
@@ -629,7 +631,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-evals==0.2.0"
+      "install_spec": "devin-evals==0.3.1"
     },
     {
       "id": "devin-janitor",
@@ -695,7 +697,8 @@
       ],
       "audiences": [
         "security",
-        "ai-engineers"
+        "ai-engineers",
+        "devops"
       ],
       "environments": {
         "linux": {
@@ -862,7 +865,8 @@
       ],
       "audiences": [
         "operations",
-        "maintainers"
+        "maintainers",
+        "devops"
       ],
       "environments": {
         "linux": {
@@ -914,7 +918,8 @@
       ],
       "audiences": [
         "maintainers",
-        "ai-engineers"
+        "ai-engineers",
+        "developers"
       ],
       "environments": {
         "linux": {
@@ -937,7 +942,7 @@
         }
       },
       "manager": "uv",
-      "source": "github",
+      "source": "pypi",
       "package": "devin-skill-catalog",
       "version": "0.1.0",
       "commands": [
@@ -948,11 +953,11 @@
         "windows",
         "linux"
       ],
-      "requires_git": true,
-      "status": "source",
+      "requires_git": false,
+      "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "git+https://github.com/Icaro0310/devin-devkit.git@8d234ca40d6496b6930c15726d629e1bc97f4c81#subdirectory=packages/skill-catalog"
+      "install_spec": "devin-skill-catalog==0.1.0"
     },
     {
       "id": "devin-brain",
@@ -968,7 +973,8 @@
       ],
       "audiences": [
         "ai-engineers",
-        "developers"
+        "developers",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -1062,9 +1068,12 @@
       ],
       "requires_git": false,
       "status": "published",
-      "extras": [],
+      "extras": [
+        "local",
+        "mcp"
+      ],
       "manual_note": null,
-      "install_spec": "poordjaevin==0.1.2"
+      "install_spec": "poordjaevin[local,mcp]==0.1.2"
     },
     {
       "id": "devin-state",
@@ -1078,7 +1087,8 @@
       ],
       "audiences": [
         "security",
-        "developers"
+        "developers",
+        "devops"
       ],
       "environments": {
         "linux": {
@@ -1103,7 +1113,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-redact",
-      "version": "0.2.0",
+      "version": "0.2.2",
       "commands": [
         "devin-redact"
       ],
@@ -1116,7 +1126,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-redact==0.2.0"
+      "install_spec": "devin-redact==0.2.2"
     },
     {
       "id": "devin-assure",
@@ -1154,7 +1164,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-qa-pack",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "commands": [
         "devin-qa-pack"
       ],
@@ -1167,7 +1177,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-qa-pack==0.1.2"
+      "install_spec": "devin-qa-pack==0.2.0"
     },
     {
       "id": "devin-explore",
@@ -1180,7 +1190,8 @@
       ],
       "audiences": [
         "operations",
-        "end-users"
+        "end-users",
+        "data-scientists"
       ],
       "environments": {
         "linux": {
@@ -1205,7 +1216,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-doctor",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "commands": [
         "devin-doctor"
       ],
@@ -1218,7 +1229,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-doctor==0.2.0"
+      "install_spec": "devin-doctor==0.3.0"
     }
   ]
 }
