@@ -132,7 +132,9 @@ def installed_uv_specs(
             name = req.get("name")
             if not name:
                 continue
-            specs[name] = req.get("url") or f"{name}{req.get('specifier', '')}"
+            extras = req.get("extras") or []
+            extras = f"[{','.join(sorted(extras))}]" if extras else ""
+            specs[name] = req.get("url") or f"{name}{extras}{req.get('specifier', '')}"
     return specs
 
 
@@ -142,6 +144,12 @@ def _spec_channel(spec: str) -> str:
     if re.match(r"(https?://|git\+)", spec):
         return f"url:{spec}"
     return "pypi"
+
+
+def _spec_extras(spec: str) -> frozenset:
+    """Extras in a ``pkg[a,b]==ver`` spec; empty when none are declared."""
+    m = re.search(r"\[([^\]]*)\]", spec)
+    return frozenset(m.group(1).split(",")) if m else frozenset()
 
 
 def installed_npm_tools(
@@ -183,8 +191,9 @@ def build_update_plan(
     discovered via ``uv tool list`` and ``npm ls -g``.
     ``installed_specs`` maps package name to the requirement it was
     installed from (uv receipts); when None it is discovered via
-    ``installed_uv_specs``. A same-version channel change (git archive
-    -> PyPI pin) plans a reinstall rather than reporting ``current``.
+    ``installed_uv_specs``. A same-version spec change (git archive
+    -> PyPI pin, or a new extras set) plans a reinstall rather than
+    reporting ``current``.
     """
     if installed is None:
         installed = installed_uv_tools(runner)
@@ -230,12 +239,15 @@ def build_update_plan(
         local_version = installed[tool["package"]]
         remote_version = tool.get("version", "?")
         installed_spec = installed_specs.get(tool["package"])
-        channel_changed = (
+        spec_changed = (
             manager == "uv"
             and installed_spec is not None
-            and _spec_channel(installed_spec) != _spec_channel(spec)
+            and (
+                _spec_channel(installed_spec) != _spec_channel(spec)
+                or _spec_extras(installed_spec) != _spec_extras(spec)
+            )
         )
-        if not force and local_version == remote_version and not channel_changed:
+        if not force and local_version == remote_version and not spec_changed:
             actions.append({"tool": tool_id, "action": "current", "version": local_version})
             continue
         # Prerequisites gate an actual reinstall only — a tool already at
@@ -250,7 +262,7 @@ def build_update_plan(
                 "action": "update",
                 "from": local_version,
                 "to": remote_version,
-                "reason": "install source changed",
+                "reason": "install spec changed",
                 "command": ["uv", "tool", "install", "--force", spec],
             })
             continue

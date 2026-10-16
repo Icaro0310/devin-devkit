@@ -145,6 +145,36 @@ def test_current_tool_reports_current_without_prereqs():
     assert action["action"] == "current"
 
 
+def test_extras_change_reinstalls_same_version():
+    """A receipt without extras vs a spec with extras is a spec change —
+    'current' would leave the installed tool missing the extra deps."""
+    manifest = remote_manifest()
+    manifest["tools"][0]["install_spec"] = "devin-doctor[mcp]==0.2.0"
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={"devin-doctor": "devin-doctor==0.2.0"},
+        which=which_managers,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "update"
+    assert action["reason"] == "install spec changed"
+    assert action["command"] == ["uv", "tool", "install", "--force", "devin-doctor[mcp]==0.2.0"]
+
+
+def test_same_extras_stay_current():
+    manifest = remote_manifest()
+    manifest["tools"][0]["install_spec"] = "devin-doctor[mcp]==0.2.0"
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={"devin-doctor": "devin-doctor[mcp]==0.2.0"},
+        which=which_managers,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "current"
+
+
 def test_channel_change_without_manager_is_blocked():
     # A same-version source migration still needs the manager, so it
     # reports blocked rather than planning an update.
@@ -399,7 +429,7 @@ def test_same_version_channel_change_plans_reinstall():
     )
     action = next(a for a in plan["actions"] if a["tool"] == "devin-evals")
     assert action["action"] == "update"
-    assert action["reason"] == "install source changed"
+    assert action["reason"] == "install spec changed"
     assert action["command"] == ["uv", "tool", "install", "--force", "devin-evals==0.2.0"]
 
 
@@ -457,6 +487,19 @@ def test_installed_uv_specs_handles_field_order_and_extras(tmp_path):
     (tmp_path / "devin-evals" / "uv-receipt.toml").write_text(receipt)
     specs = updater.installed_uv_specs(tmp_path)
     assert specs["devin-evals"] == "https://example.com/evals.tar.gz"
+
+
+def test_installed_uv_specs_preserves_extras(tmp_path):
+    """A receipt's `extras` list must survive spec reconstruction —
+    dropping it makes extra-bearing installs look spec-changed on every
+    update (infinite reinstall)."""
+    (tmp_path / "poordjaevin").mkdir()
+    (tmp_path / "poordjaevin" / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "poordjaevin", '
+        'extras = ["local", "mcp"], specifier = "==0.1.2" }]\n'
+    )
+    specs = updater.installed_uv_specs(tmp_path)
+    assert specs["poordjaevin"] == "poordjaevin[local,mcp]==0.1.2"
 
 
 def test_installed_uv_specs_nested_table_and_index_url(tmp_path):

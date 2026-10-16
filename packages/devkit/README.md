@@ -59,7 +59,7 @@ The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `r
 | `full` / `all` | every automatically installable profile tool; `devin-office` remains a manual source-only service |
 | `agent-tools` / `no-devin` | the agent-agnostic toolset: qa-pack (multi-surface audit), doctor (surface health), search (multi-source index), memory (agent-agnostic MCP) and judge (typed decisions) |
 
-`agent-tools` (alias `no-devin`, for hosts where Devin is not the agent of choice) groups the five tools that are not tied to the Devin CLI and pass every environment gate, corporate Windows included. Note: multi-source surface support — reading Copilot, Codex and VS Code Chat surfaces in addition to Devin's — requires the packages' next releases; the manifest pins the latest versions published today, which predate it.
+`agent-tools` (alias `no-devin`, for hosts where Devin is not the agent of choice) groups the five tools that are not tied to the Devin CLI and pass every environment gate, corporate Windows included. The pinned releases carry multi-source surface support — reading Copilot, Codex and VS Code Chat surfaces in addition to Devin's.
 
 QwenPaw is an optional add-on and is not installed by these profiles. macOS is planned, not tested.
 
@@ -108,7 +108,7 @@ The manifest pins PyPI versions where available and GitHub source archives to im
 
 - Python tools: Python 3.10 or newer, installed in isolated environments managed by `uv`.
 - `devin-bridge`: Node.js 20 or newer and npm. Installed from the npm registry as `@icaro0310/devin-bridge`.
-- Most tools install from PyPI or HTTPS archives without Git. `devin-skill-catalog` currently installs from a `git+https` spec and requires `git` on `PATH`; Git is also needed for manual source checkouts such as `devin-office`.
+- All bundled Python tools install from PyPI or HTTPS archives without Git — `devin-bridge` comes from the npm registry, also without Git. Git is only needed for manual source checkouts such as `devin-office`.
 - Supported environments: Linux, Personal Windows and Corporate Windows. Linux and Personal Windows may use optional delegated runtime; Corporate Windows rejects registry entries that require external runtime, delegation or external integrations. macOS is planned but not claimed as tested.
 
 

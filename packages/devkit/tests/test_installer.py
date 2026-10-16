@@ -278,3 +278,22 @@ def test_agent_tools_plans_an_install_for_each_tool(system, environment):
     specs = {tool["id"]: tool["install_spec"] for tool in manifest["tools"]}
     for action in installs:
         assert action["command"] == ["uv", "tool", "install", specs[action["tool"]]]
+
+
+# Expected pins are written out literally on purpose — deriving them from
+# the manifest under test would make a wrong pin self-consistent.
+AGENT_TOOLS_PINS = {
+    "devin-assure": "devin-qa-pack==0.2.0",
+    "devin-explore": "devin-doctor==0.3.0",
+    "devin-search": "devin-search==0.2.0",
+    "devin-brain": "devin-memory[mcp]==0.3.1",
+    "devin-judge": "poordjaevin[local,mcp]==0.1.2",
+}
+
+
+def test_agent_tools_pin_the_multi_source_releases():
+    manifest = installer.load_manifest()
+    specs = {tool["id"]: tool["install_spec"] for tool in manifest["tools"]}
+
+    for tool_id, expected in AGENT_TOOLS_PINS.items():
+        assert specs[tool_id] == expected, tool_id
