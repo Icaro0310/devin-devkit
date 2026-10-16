@@ -223,3 +223,58 @@ def test_unsupported_environment_uses_registry_reason():
     plan = installer.build_plan(manifest, "all", system="Windows", environment="corporate-windows", which=lambda c: "C:/uv.exe" if c == "uv" else None)
     assert plan["errors"] == ["devin-doctor is unsupported in corporate_windows: requires an external runtime"]
     assert plan["actions"][0]["detail"] == "requires an external runtime"
+
+
+AGENT_TOOLS_IDS = [
+    "devin-assure",
+    "devin-explore",
+    "devin-search",
+    "devin-brain",
+    "devin-judge",
+]
+
+
+def _uv_only(command):
+    return "/tools/uv" if command == "uv" else None
+
+
+def _no_runner(*args, **kwargs):
+    pytest.fail("uv tools never shell out at plan time")
+
+
+def test_agent_tools_profile_resolves_to_the_agent_agnostic_set():
+    name, profile = installer.resolve_profile(installer.load_manifest(), "agent-tools")
+
+    assert name == "agent-tools"
+    assert profile["tools"] == AGENT_TOOLS_IDS
+
+
+def test_no_devin_alias_resolves_to_the_same_plan():
+    manifest = installer.load_manifest()
+
+    direct = installer.build_plan(manifest, "agent-tools", system="Linux", environment="linux", which=_uv_only, runner=_no_runner)
+    alias = installer.build_plan(manifest, "no-devin", system="Linux", environment="linux", which=_uv_only, runner=_no_runner)
+
+    assert alias["resolved_profile"] == "agent-tools"
+    assert alias["errors"] == direct["errors"] == []
+    assert alias["actions"] == direct["actions"]
+
+
+@pytest.mark.parametrize(
+    "system,environment",
+    [
+        ("Linux", "linux"),
+        ("Windows", "personal-windows"),
+        ("Windows", "corporate-windows"),
+    ],
+)
+def test_agent_tools_plans_an_install_for_each_tool(system, environment):
+    manifest = installer.load_manifest()
+    plan = installer.build_plan(manifest, "agent-tools", system=system, environment=environment, which=_uv_only, runner=_no_runner)
+
+    assert plan["errors"] == []
+    installs = [action for action in plan["actions"] if action["action"] == "install"]
+    assert [action["tool"] for action in installs] == AGENT_TOOLS_IDS
+    specs = {tool["id"]: tool["install_spec"] for tool in manifest["tools"]}
+    for action in installs:
+        assert action["command"] == ["uv", "tool", "install", specs[action["tool"]]]

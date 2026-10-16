@@ -57,6 +57,9 @@ The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `r
 | `memory` / `agent` | memory, graph, search, poordjaevin |
 | `operations` | backup, history, doctor, metrics, janitor, PM, orchestrator, switch and skill catalog |
 | `full` / `all` | every automatically installable profile tool; `devin-office` remains a manual source-only service |
+| `agent-tools` / `no-devin` | the agent-agnostic toolset: qa-pack (multi-surface audit), doctor (surface health), search (multi-source index), memory (agent-agnostic MCP) and judge (typed decisions) |
+
+`agent-tools` (alias `no-devin`, for hosts where Devin is not the agent of choice) groups the five tools that are not tied to the Devin CLI and pass every environment gate, corporate Windows included. Note: multi-source surface support — reading Copilot, Codex and VS Code Chat surfaces in addition to Devin's — requires the packages' next releases; the manifest pins the latest versions published today, which predate it.
 
 QwenPaw is an optional add-on and is not installed by these profiles. macOS is planned, not tested.
 

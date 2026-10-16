@@ -137,6 +137,29 @@
       ],
       "alias_of": "security"
     },
+    "agent-tools": {
+      "label": "Agent Tools",
+      "description": "Installs the agent-agnostic toolset: qa-pack, doctor, search, memory and judge — no Devin install required; Copilot, Codex and VS Code Chat store support is merged on main and lands in the next releases.",
+      "tools": [
+        "devin-assure",
+        "devin-explore",
+        "devin-search",
+        "devin-brain",
+        "devin-judge"
+      ]
+    },
+    "no-devin": {
+      "label": "No Devin",
+      "description": "Convenience alias for the agent-agnostic toolset.",
+      "tools": [
+        "devin-assure",
+        "devin-explore",
+        "devin-search",
+        "devin-brain",
+        "devin-judge"
+      ],
+      "alias_of": "agent-tools"
+    },
     "full": {
       "label": "Full",
       "description": "All installable public tools; source-only services are listed separately.",
@@ -489,7 +512,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-search",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-search"
       ],
@@ -502,7 +525,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-search==0.1.0"
+      "install_spec": "devin-search==0.1.2"
     },
     {
       "id": "devin-graph",
@@ -970,7 +993,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-memory",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "commands": [
         "devin-memory",
         "devin-learning",
@@ -987,7 +1010,7 @@
         "mcp"
       ],
       "manual_note": null,
-      "install_spec": "devin-memory[mcp]==0.3.0"
+      "install_spec": "devin-memory[mcp]==0.3.1"
     },
     {
       "id": "devin-judge",
@@ -1028,7 +1051,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "poordjaevin",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "commands": [
         "poordjaevin"
       ],
@@ -1041,7 +1064,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "poordjaevin==0.1.1"
+      "install_spec": "poordjaevin==0.1.2"
     },
     {
       "id": "devin-state",
@@ -1131,7 +1154,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-qa-pack",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-qa-pack"
       ],
@@ -1144,7 +1167,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-qa-pack==0.1.0"
+      "install_spec": "devin-qa-pack==0.1.2"
     },
     {
       "id": "devin-explore",
@@ -1182,7 +1205,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-doctor",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "commands": [
         "devin-doctor"
       ],
@@ -1195,7 +1218,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-doctor==0.1.0"
+      "install_spec": "devin-doctor==0.2.0"
     }
   ]
 }
