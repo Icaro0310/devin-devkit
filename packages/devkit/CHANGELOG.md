@@ -14,12 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (surface health), `devin-search` (multi-source index),
   `devin-memory[mcp]` (agent-agnostic MCP) and `poordjaevin` (typed
   decisions). All five install on Linux, Personal Windows and Corporate
-  Windows. Multi-source surface support (Copilot, Codex, VS Code Chat)
-  lands with the packages' next releases; the pins here are the latest
-  published versions.
+  Windows, and the pins resolve to the releases carrying multi-source
+  surface support (Copilot, Codex, VS Code Chat): `devin-qa-pack` 0.2.0,
+  `devin-doctor` 0.3.0, `devin-search` 0.2.0.
 
 ### Changed
 
+- Manifest regenerated from registry v30: `devin-qa-pack` 0.1.2 → 0.2.0,
+  `devin-doctor` 0.2.0 → 0.3.0, `devin-search` 0.1.2 → 0.2.0, plus
+  accumulated pin drift (`devin-internals-spec` 0.3.2,
+  `devin-metrics` 0.2.1, `devin-redact` 0.2.2), `data-scientists`
+  audiences and an empty `git_required_tools`.
+- `update` now plans a same-version reinstall when the remote spec gains
+  extras (e.g. `poordjaevin` → `poordjaevin[local,mcp]`), not just on a
+  channel change — an existing bare install would otherwise report
+  `current` while missing the extra dependencies.
 - Refreshed stale PyPI install pins for the agent-agnostic tools:
   `devin-qa-pack` 0.1.0 → 0.1.2, `devin-doctor` 0.1.0 → 0.2.0,
   `devin-search` 0.1.0 → 0.1.2, `devin-memory[mcp]` 0.3.0 → 0.3.1 and

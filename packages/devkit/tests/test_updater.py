@@ -145,6 +145,36 @@ def test_current_tool_reports_current_without_prereqs():
     assert action["action"] == "current"
 
 
+def test_extras_change_reinstalls_same_version():
+    """A receipt without extras vs a spec with extras is a spec change —
+    'current' would leave the installed tool missing the extra deps."""
+    manifest = remote_manifest()
+    manifest["tools"][0]["install_spec"] = "devin-doctor[mcp]==0.2.0"
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={"devin-doctor": "devin-doctor==0.2.0"},
+        which=which_managers,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "update"
+    assert action["reason"] == "install spec changed"
+    assert action["command"] == ["uv", "tool", "install", "--force", "devin-doctor[mcp]==0.2.0"]
+
+
+def test_same_extras_stay_current():
+    manifest = remote_manifest()
+    manifest["tools"][0]["install_spec"] = "devin-doctor[mcp]==0.2.0"
+    plan = updater.build_update_plan(
+        manifest,
+        installed={"devin-doctor": "0.2.0"},
+        installed_specs={"devin-doctor": "devin-doctor[mcp]==0.2.0"},
+        which=which_managers,
+    )
+    action = next(a for a in plan["actions"] if a["tool"] == "devin-doctor")
+    assert action["action"] == "current"
+
+
 def test_channel_change_without_manager_is_blocked():
     # A same-version source migration still needs the manager, so it
     # reports blocked rather than planning an update.
@@ -399,7 +429,7 @@ def test_same_version_channel_change_plans_reinstall():
     )
     action = next(a for a in plan["actions"] if a["tool"] == "devin-evals")
     assert action["action"] == "update"
-    assert action["reason"] == "install source changed"
+    assert action["reason"] == "install spec changed"
     assert action["command"] == ["uv", "tool", "install", "--force", "devin-evals==0.2.0"]
 
 
