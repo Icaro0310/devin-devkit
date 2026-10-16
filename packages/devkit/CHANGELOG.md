@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed stale PyPI install pins for the agent-agnostic tools:
+  `devin-qa-pack` 0.1.0 → 0.1.2, `devin-doctor` 0.1.0 → 0.2.0,
+  `devin-search` 0.1.0 → 0.1.2, `devin-memory[mcp]` 0.3.0 → 0.3.1 and
+  `poordjaevin` 0.1.1 → 0.1.2.
+
 ### Fixed
 
 - `devin-devkit-mcp` no longer reports a server startup `ImportError` as a
