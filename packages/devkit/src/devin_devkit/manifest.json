@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 30,
-  "generated": "2026-10-16",
+  "registry_version": 31,
+  "generated": "2026-10-17",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -513,7 +513,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-search",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "commands": [
         "devin-search"
       ],
@@ -526,7 +526,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-search==0.2.0"
+      "install_spec": "devin-search==0.2.1"
     },
     {
       "id": "devin-graph",
@@ -735,7 +735,7 @@
       "manager": "npm",
       "source": "npm",
       "package": "@icaro0310/devin-bridge",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "commands": [
         "devin-bridge"
       ],
@@ -748,7 +748,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "@icaro0310/devin-bridge@0.1.0"
+      "install_spec": "@icaro0310/devin-bridge@0.2.0"
     },
     {
       "id": "devin-orchestrator",
@@ -1057,7 +1057,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "poordjaevin",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "commands": [
         "poordjaevin"
       ],
@@ -1073,7 +1073,7 @@
         "mcp"
       ],
       "manual_note": null,
-      "install_spec": "poordjaevin[local,mcp]==0.1.2"
+      "install_spec": "poordjaevin[local,mcp]==0.1.3"
     },
     {
       "id": "devin-state",
@@ -1164,7 +1164,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-qa-pack",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "commands": [
         "devin-qa-pack"
       ],
@@ -1177,7 +1177,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-qa-pack==0.2.0"
+      "install_spec": "devin-qa-pack==0.2.1"
     },
     {
       "id": "devin-explore",
@@ -1216,7 +1216,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-doctor",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "commands": [
         "devin-doctor"
       ],
@@ -1229,7 +1229,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-doctor==0.3.0"
+      "install_spec": "devin-doctor==0.3.1"
     }
   ]
 }
