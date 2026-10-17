@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Corporate validation kit under
+  `environments/corporate-windows/validation-kit/`: a self-contained,
+  PowerShell 5.1-compatible `Invoke-CorporateValidation.ps1` that probes
+  the published distribution on a locked-down machine (proxy/TLS
+  inspection diagnostics, pinned package installs into an isolated venv,
+  synthetic-fixture functional checks, VS Code CLI presence, documented
+  Restricted Mode procedure) and emits a sanitized `results.json` +
+  `report.md` with explicit result classes (PASS / FAIL_PRODUCT /
+  BLOCKED_ENVIRONMENT / NOT_DETECTED_VALID / NOT_TESTED / UNVERIFIED).
 - `agent-tools` install profile (alias `no-devin`): the agent-agnostic
   toolset — `devin-qa-pack` (multi-surface audit), `devin-doctor`
   (surface health), `devin-search` (multi-source index),
