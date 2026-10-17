@@ -11,7 +11,9 @@ faked.
 
 from __future__ import annotations
 
+import glob
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -79,8 +81,57 @@ def test_sanitizer_present():
     src = SCRIPT.read_text(encoding="utf-8")
     assert "Protect-Text" in src
     assert "<REDACTED>" in src
-    # every result's evidence passes through the sanitizer
+    # every user-visible field passes through the sanitizer — including
+    # summary and command, so exception text in Invoke-Check's catch block
+    # cannot leak paths or tokens into the report
     assert "Protect-Text $Evidence" in src
+    assert "Protect-Text $Summary" in src
+    assert "Protect-Text $Command" in src
+
+
+def test_no_ps7_only_automatic_variables():
+    """$IsWindows/$IsLinux/$IsMacOS do not exist on Windows PowerShell 5.1 —
+    under Set-StrictMode reading them throws. OS detection must go through
+    a PS5.1-safe path."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    for var in ("$IsWindows", "$IsLinux", "$IsMacOS"):
+        assert var not in src, f"PS7-only automatic variable used: {var}"
+    assert "OSVersion.Platform" in src
+
+
+def test_cmd_shims_wrapped_on_windows():
+    """npm/code/package bins are .cmd shims on Windows; UseShellExecute=$false
+    cannot start batch files — they must go through cmd.exe."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "cmd.exe" in src or "ComSpec" in src
+    assert re.search(r"\.cmd\|\.bat|cmd\|bat", src)
+
+
+def test_tls_trust_decision_reported():
+    """The TLS probe may accept the handshake to read the issuer, but the
+    SslPolicyErrors must be captured and an untrusted chain must not PASS."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "SslPolicyErrors" in src
+    assert "-not $t.Trusted" in src
+
+
+def test_temp_root_is_per_run_and_cleaned():
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "corpval-" in src, "no dedicated per-run temp root"
+    assert re.search(r"Remove-Item\s+\$script:TmpRoot", src), "temp root never cleaned"
+    # cleanup must not delete a report written inside the temp root
+    assert "StartsWith($script:TmpRoot" in src
+
+
+def test_pins_come_from_bundled_manifest_when_present():
+    """The kit must validate the specs devkit installs (manifest), not an
+    unrelated pin set — with a documented standalone fallback."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "manifest.json" in src
+    assert "install_spec" in src
+    assert "PinSource" in src
+    doc = README.read_text(encoding="utf-8")
+    assert "manifest" in doc
 
 
 def test_documented_invocation_exists():
@@ -130,6 +181,14 @@ class TestPwshExecution:
             text = (tmp_path / "o" / name).read_text()
             assert "/home/" not in text, f"{name} leaks a user path"
             assert not re.search(r"Bearer\s+\S{8,}", text)
+
+    def test_temp_root_cleaned_after_run(self, tmp_path):
+        pattern = os.path.join(tempfile.gettempdir(), "corpval-*")
+        before = set(glob.glob(pattern))
+        r = self._run("-Only", "env.powershell", "-OutputDir", str(tmp_path / "o"))
+        assert r.returncode == 0
+        after = set(glob.glob(pattern))
+        assert after <= before, f"run leaked temp dirs: {sorted(after - before)}"
 
     def test_fail_product_drives_exit_code(self, tmp_path):
         """A FAIL_PRODUCT must flip the exit code to 1 — verified by the

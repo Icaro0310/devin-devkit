@@ -59,9 +59,18 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Continue'
 
-# Portable temp root — $env:TEMP does not exist on Linux/macOS.
-$script:TmpRoot = [System.IO.Path]::GetTempPath().TrimEnd([IO.Path]::DirectorySeparatorChar)
+# Portable per-run temp root — $env:TEMP does not exist on Linux/macOS.
+# A dedicated subdirectory lets the script remove everything it created
+# (venvs, npm trees, staged wheels) without touching shared temp content.
+$script:TmpRoot = Join-Path ([System.IO.Path]::GetTempPath().TrimEnd([IO.Path]::DirectorySeparatorChar)) ('corpval-' + [guid]::NewGuid().Guid)
+New-Item -ItemType Directory -Force -Path $script:TmpRoot | Out-Null
 $script:BridgeBin = $null
+$script:TlsPolicyErrors = [System.Net.Security.SslPolicyErrors]::None
+
+# OS detection that works on Windows PowerShell 5.1 — the PS7-only
+# automatic OS variables do not exist there and StrictMode turns reading
+# them into a hard error.
+$script:IsWindowsHost = ([System.Environment]::OSVersion.Platform -eq 'Win32NT')
 
 # Normalize list params: `pwsh -File` passes -Only a,b as ONE literal
 # string element — split embedded commas so both forms work.
@@ -87,9 +96,9 @@ function Add-Result {
     $script:Results.Add([pscustomobject]@{
         id          = $Id
         status      = $Status
-        summary     = $Summary
+        summary     = (Protect-Text $Summary)
         evidence    = (Protect-Text $Evidence)
-        command     = $Command
+        command     = (Protect-Text $Command)
         exit_code   = $ExitCode
         duration_ms = $DurationMs
     })
@@ -134,10 +143,20 @@ function Invoke-Proc {
     $out = Join-Path $script:TmpRoot ("cvout-" + [guid]::NewGuid().Guid + '.log')
     $err = $out + '.err'
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $File
-    $psi.Arguments = ($Arguments | ForEach-Object {
+    $argLine = ($Arguments | ForEach-Object {
         if ($_ -match '\s|"') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
     }) -join ' '
+    # Windows exposes npm, code and package bins as .cmd/.bat shims, which
+    # are batch scripts, not executables — UseShellExecute=$false cannot
+    # launch them directly, so route through cmd.exe.
+    if ($script:IsWindowsHost -and $File -match '\.(cmd|bat)$') {
+        $cmdExe = if ($env:ComSpec) { $env:ComSpec } else { 'cmd.exe' }
+        $psi.FileName = $cmdExe
+        $psi.Arguments = '/c "' + '"' + $File + '"' + $(if ($argLine) { ' ' + $argLine } else { '' }) + '"'
+    } else {
+        $psi.FileName = $File
+        $psi.Arguments = $argLine
+    }
     $psi.UseShellExecute = $false
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -194,24 +213,33 @@ function Test-Url {
 }
 
 function Get-TlsIssuer {
-    # Open a TLS connection and report the issuer of the leaf certificate.
-    # Detects TLS inspection (e.g. Zscaler) without changing the trust store.
+    # Open a TLS connection and report the leaf issuer plus the trust
+    # decision. The callback accepts the handshake so we can still read the
+    # certificate (that is how the Zscaler issuer is visible at all), but
+    # the SslPolicyErrors are captured and surfaced — an untrusted chain is
+    # reported as such, never silently PASS. The trust store is not changed.
     param([string]$HostName, [int]$Port = 443)
+    $result = [pscustomobject]@{ Issuer = ''; PolicyErrors = ''; Trusted = $false; Error = '' }
     try {
         $tcp = New-Object System.Net.Sockets.TcpClient
         $iar = $tcp.BeginConnect($HostName, $Port, $null, $null)
-        if (-not $iar.AsyncWaitHandle.WaitOne(8000)) { $tcp.Close(); return 'unreachable' }
+        if (-not $iar.AsyncWaitHandle.WaitOne(8000)) { $tcp.Close(); $result.Error = 'connect timeout'; return $result }
         $tcp.EndConnect($iar)
-        $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, { param($s,$c,$ch,$e) $true })
+        $script:TlsPolicyErrors = [System.Net.Security.SslPolicyErrors]::None
+        $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, {
+            param($s, $c, $ch, $e) $script:TlsPolicyErrors = $e; return $true
+        })
         $ssl.AuthenticateAsClient($HostName)
         $cert = $ssl.RemoteCertificate
         $x509 = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($cert)
-        $issuer = $x509.Issuer
+        $result.Issuer = $x509.Issuer
+        $result.PolicyErrors = "$script:TlsPolicyErrors"
+        $result.Trusted = ($script:TlsPolicyErrors -eq [System.Net.Security.SslPolicyErrors]::None)
         $ssl.Dispose(); $tcp.Close()
-        return $issuer
     } catch {
-        return 'error: ' + $_.Exception.Message
+        $result.Error = $_.Exception.Message
     }
+    return $result
 }
 
 # --------------------------------------------------------------------------
@@ -249,7 +277,7 @@ function New-QuestionsJson {
 Invoke-Check 'env.powershell' {
     $v = $PSVersionTable.PSVersion.ToString()
     $edition = $PSVersionTable.PSEdition
-    $os = if ($IsWindows -or $env:OS -match 'Windows') { 'Windows' } else { 'non-Windows' }
+    $os = if ($script:IsWindowsHost) { 'Windows' } else { 'non-Windows' }
     Add-Result 'env.powershell' 'PASS' "PowerShell $v ($edition) on $os" "PSVersion=$v; PSEdition=$edition; OS=$os"
 }
 
@@ -314,16 +342,19 @@ Invoke-Check 'net.github' {
 
 Invoke-Check 'net.tls_issuer' {
     if ($Offline) { Add-Result 'net.tls_issuer' 'NOT_TESTED' '-Offline requested'; return }
-    if ($IsLinux -or $IsMacOS -or ($env:OS -and $env:OS -notmatch 'Windows')) {
-        # Still meaningful on Linux: same MITM detection logic applies.
+    # Meaningful on any host: the same MITM-detection logic applies.
+    $t = Get-TlsIssuer 'pypi.org'
+    if ($t.Error -or -not $t.Issuer) {
+        Add-Result 'net.tls_issuer' 'BLOCKED_ENVIRONMENT' 'cannot open TLS to pypi.org' ($t.Error)
+        return
     }
-    $issuer = Get-TlsIssuer 'pypi.org'
-    if ($issuer -match 'unreachable|error') {
-        Add-Result 'net.tls_issuer' 'BLOCKED_ENVIRONMENT' 'cannot open TLS to pypi.org' $issuer
-    } elseif ($issuer -match 'Zscaler|BlueCoat|Forcepoint|McAfee|Netskope|Corporate') {
-        Add-Result 'net.tls_issuer' 'PASS' "TLS inspection detected — configure CA bundle" $issuer
+    $ev = "Issuer: $($t.Issuer)`nSslPolicyErrors: $($t.PolicyErrors)"
+    if (-not $t.Trusted) {
+        Add-Result 'net.tls_issuer' 'UNVERIFIED' "TLS chain NOT trusted by this host ($($t.PolicyErrors)) — trust/inspection state needs manual review" $ev
+    } elseif ($t.Issuer -match 'Zscaler|BlueCoat|Forcepoint|McAfee|Netskope|Corporate') {
+        Add-Result 'net.tls_issuer' 'PASS' "TLS inspection detected — configure CA bundle" $ev
     } else {
-        Add-Result 'net.tls_issuer' 'PASS' 'no known TLS inspector in chain' $issuer
+        Add-Result 'net.tls_issuer' 'PASS' 'no known TLS inspector in chain' $ev
     }
 }
 
@@ -349,13 +380,40 @@ foreach ($tool in @(
 # --------------------------------------------------------------------------
 # Published-package installation checks
 # --------------------------------------------------------------------------
+# Install pins. When the bundled devkit manifest is reachable the kit
+# validates exactly the specs `devin-devkit install` would install, so a
+# PASS means "the published channel serves what the devkit ships". In the
+# standalone ZIP the fallback pins are the latest published versions.
+$kitDir = $PSScriptRoot
+if (-not $kitDir) { $kitDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
 $PyPackages = @(
-    @{ Name = 'devin-search';  Want = '0.2.1'; Cmd = 'devin-search' },
-    @{ Name = 'devin-doctor';  Want = '0.3.1'; Cmd = 'devin-doctor' },
-    @{ Name = 'devin-qa-pack'; Want = '0.2.1'; Cmd = 'devin-qa-pack' },
-    @{ Name = 'poordjaevin';   Want = '0.1.3'; Cmd = 'poordjaevin' },
-    @{ Name = 'devin-memory';  Want = '0.3.1'; Cmd = 'devin-memory' }
+    @{ Name = 'devin-search';  Want = '0.2.1'; Spec = 'devin-search==0.2.1';      Cmd = 'devin-search' },
+    @{ Name = 'devin-doctor';  Want = '0.3.1'; Spec = 'devin-doctor==0.3.1';      Cmd = 'devin-doctor' },
+    @{ Name = 'devin-qa-pack'; Want = '0.2.1'; Spec = 'devin-qa-pack==0.2.1';     Cmd = 'devin-qa-pack' },
+    @{ Name = 'poordjaevin';   Want = '0.1.3'; Spec = 'poordjaevin==0.1.3';       Cmd = 'poordjaevin' },
+    @{ Name = 'devin-memory';  Want = '0.3.1'; Spec = 'devin-memory[mcp]==0.3.1'; Cmd = 'devin-memory' }
 )
+$BridgeSpec = '@icaro0310/devin-bridge@0.2.0'
+$PinSource = 'latest published (standalone kit)'
+foreach ($mc in @((Join-Path $kitDir 'manifest.json'), (Join-Path $kitDir '..\..\..\src\devin_devkit\manifest.json'))) {
+    if ($mc -and (Test-Path $mc)) {
+        try {
+            $mf = Get-Content $mc -Raw | ConvertFrom-Json
+            foreach ($t in @($mf.tools)) {
+                $spec = "$($t.install_spec)"
+                if ($spec -match '^@icaro0310/devin-bridge@\S+$') { $BridgeSpec = $spec; continue }
+                foreach ($pkg in $PyPackages) {
+                    if ($spec -match ('^' + [regex]::Escape($pkg.Name) + '(\[[^\]]*\])?==(\S+)$')) {
+                        $pkg.Spec = $spec
+                        $pkg.Want = $Matches[2]
+                    }
+                }
+            }
+            $PinSource = 'bundled devkit manifest'
+            break
+        } catch { }
+    }
+}
 
 $script:VenvDir = $null
 function Get-TestVenv {
@@ -398,7 +456,7 @@ Invoke-Check 'install.pypi_packages' {
     $lines = @()
     $allOk = $true
     foreach ($pkg in $PyPackages) {
-        $spec = "$($pkg.Name)==$($pkg.Want)"
+        $spec = $pkg.Spec
         if ($WheelDir -and (Test-Path $WheelDir)) {
             $args = @('-m', 'pip', 'install', '--no-index', '--find-links', $WheelDir, $spec)
             $r = Invoke-Proc $pyv $args 180
@@ -411,9 +469,9 @@ Invoke-Check 'install.pypi_packages' {
             $r = Invoke-Proc $pyv @('-m', 'pip', 'install', $spec) 300
         }
         if ($r.ExitCode -ne 0) {
-            $blocked = ($r.StdErr + $r.StdOut) -match 'SSL|CERTIFICATE|proxy|timed? ?out|unreachable|403|Failed to establish'
+            $blocked = ($r.StdErr + $r.StdOut) -match 'SSL|CERTIFICATE|proxy|timed? ?out|unreachable|403|Failed to establish|No matching distribution|Could not find a version'
             if ($blocked) {
-                Add-Result 'install.pypi_packages' 'BLOCKED_ENVIRONMENT' "pip cannot reach index ($($pkg.Name))" ($r.StdErr + $r.StdOut).Substring(0, [Math]::Min(500, ($r.StdErr + $r.StdOut).Length)) "pip install $spec" $r.ExitCode
+                Add-Result 'install.pypi_packages' 'BLOCKED_ENVIRONMENT' "index cannot serve $spec (unreachable or package absent — e.g. incomplete wheel bundle or filtered mirror)" ($r.StdErr + $r.StdOut).Substring(0, [Math]::Min(500, ($r.StdErr + $r.StdOut).Length)) "pip install $spec" $r.ExitCode
                 return
             }
             $allOk = $false
@@ -440,7 +498,7 @@ Invoke-Check 'install.pypi_packages' {
     }
     $status = if ($allOk) { 'PASS' } else { 'FAIL_PRODUCT' }
     if (-not $allOk -and ($lines -match 'SKIPPED')) { $status = 'UNVERIFIED' }
-    Add-Result 'install.pypi_packages' $status ('installed ' + ($lines.Count) + ' pkg results') ($lines -join "`n") 'pip/uv install pinned versions'
+    Add-Result 'install.pypi_packages' $status ('installed ' + ($lines.Count) + " pkg results (pins: $PinSource)") ($lines -join "`n") 'pip/uv install pinned versions'
 }
 
 Invoke-Check 'install.bridge_npm' {
@@ -455,11 +513,11 @@ Invoke-Check 'install.bridge_npm' {
     if ($Offline) { Add-Result 'install.bridge_npm' 'BLOCKED_ENVIRONMENT' '-Offline requested'; return }
     $dir = Join-Path $script:TmpRoot ('cv-npm-' + [guid]::NewGuid().Guid)
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $r = Invoke-Proc $npm @('install', '@icaro0310/devin-bridge@0.2.0', '--prefix', $dir, '--no-audit', '--no-fund') -TimeoutSec 300 -WorkingDir $dir
+    $r = Invoke-Proc $npm @('install', $BridgeSpec, '--prefix', $dir, '--no-audit', '--no-fund') -TimeoutSec 300 -WorkingDir $dir
     if ($r.ExitCode -ne 0) {
-        $blocked = ($r.StdErr + $r.StdOut) -match 'EAI_AGAIN|ECONN|403|407|SSL|CERT|proxy|ETIMEDOUT'
+        $blocked = ($r.StdErr + $r.StdOut) -match 'EAI_AGAIN|ECONN|403|407|404|SSL|CERT|proxy|ETIMEDOUT|No matching version'
         $cls = if ($blocked) { 'BLOCKED_ENVIRONMENT' } else { 'FAIL_PRODUCT' }
-        Add-Result 'install.bridge_npm' $cls "npm install failed" ($r.StdErr + $r.StdOut).Substring(0, [Math]::Min(500, ($r.StdErr + $r.StdOut).Length)) 'npm install @icaro0310/devin-bridge@0.2.0' $r.ExitCode
+        Add-Result 'install.bridge_npm' $cls "npm install failed" ($r.StdErr + $r.StdOut).Substring(0, [Math]::Min(500, ($r.StdErr + $r.StdOut).Length)) "npm install $BridgeSpec" $r.ExitCode
         return
     }
     $bin = @(
@@ -474,7 +532,7 @@ Invoke-Check 'install.bridge_npm' {
     }
     $hr = Invoke-Proc $bin @('--help') 30
     if ($hr.ExitCode -eq 0 -and ($hr.StdOut + $hr.StdErr) -match 'bridge|agent') {
-        Add-Result 'install.bridge_npm' 'PASS' '@icaro0310/devin-bridge 0.2.0 installed, --help works' $bin
+        Add-Result 'install.bridge_npm' 'PASS' "$BridgeSpec installed, --help works" $bin
     } else {
         Add-Result 'install.bridge_npm' 'FAIL_PRODUCT' 'devin-bridge --help failed' ($hr.StdErr + $hr.StdOut).Substring(0, [Math]::Min(400, ($hr.StdErr + $hr.StdOut).Length)) 'devin-bridge --help' $hr.ExitCode
     }
@@ -634,7 +692,9 @@ Invoke-Check 'offline.wheel_reinstall' {
     $pyv = if ($vd) { Get-VenvBin $vd 'python' } else { $null }
     if (-not $pyv) { Add-Result 'offline.wheel_reinstall' 'BLOCKED_ENVIRONMENT' 'no python'; return }
     $wheelDir = $WheelDir
-    if (-not $wheelDir -or -not (Test-Path $wheelDir)) {
+    $userWheels = ($wheelDir -and (Test-Path $wheelDir))
+    $docSpec = ($PyPackages | Where-Object { $_.Name -eq 'devin-doctor' }).Spec
+    if (-not $userWheels) {
         if ($Offline) { Add-Result 'offline.wheel_reinstall' 'BLOCKED_ENVIRONMENT' 'no -WheelDir provided'; return }
         # Stage wheels ourselves, then reinstall with --no-index to prove the
         # documented air-gap path.
@@ -642,7 +702,7 @@ Invoke-Check 'offline.wheel_reinstall' {
         New-Item -ItemType Directory -Force -Path $wheelDir | Out-Null
         # Stage WITH dependencies — the documented air-gap path copies the
         # full closure, not just the top-level wheel.
-        $r = Invoke-Proc $pyv @('-m', 'pip', 'download', 'devin-doctor==0.3.1', '-d', $wheelDir) 300
+        $r = Invoke-Proc $pyv @('-m', 'pip', 'download', $docSpec, '-d', $wheelDir) 300
         if ($r.ExitCode -ne 0) {
             Add-Result 'offline.wheel_reinstall' 'BLOCKED_ENVIRONMENT' 'cannot stage wheels (index unreachable)' $r.StdErr.Substring(0, [Math]::Min(300, $r.StdErr.Length))
             return
@@ -653,13 +713,16 @@ Invoke-Check 'offline.wheel_reinstall' {
     if ($uv) { $null = Invoke-Proc $uv @('venv', '--seed', $v2) 60 } else { $null = Invoke-Proc $pyv @('-m', 'venv', $v2) 120 }
     $py2 = Get-VenvBin $v2 'python'
     if (-not $py2) { Add-Result 'offline.wheel_reinstall' 'UNVERIFIED' 'second venv creation failed'; return }
-    $r2 = Invoke-Proc $py2 @('-m', 'pip', 'install', '--no-index', '--find-links', $wheelDir, 'devin-doctor==0.3.1') 120
+    $r2 = Invoke-Proc $py2 @('-m', 'pip', 'install', '--no-index', '--find-links', $wheelDir, $docSpec) 120
     if ($r2.ExitCode -eq 0) {
         $doc2 = Get-VenvBin $v2 'devin-doctor'
         $vr = if ($doc2) { Invoke-Proc $doc2 @('--version') 30 } else { $null }
         Add-Result 'offline.wheel_reinstall' 'PASS' "pip --no-index install from staged wheels works" "$(if ($vr) { ($vr.StdOut+$vr.StdErr).Trim() } else { 'installed' })"
     } else {
-        Add-Result 'offline.wheel_reinstall' 'FAIL_PRODUCT' 'offline reinstall failed' $r2.StdErr.Substring(0, [Math]::Min(400, $r2.StdErr.Length)) 'pip install --no-index' $r2.ExitCode
+        # A user-supplied bundle that misses a distribution is an incomplete
+        # staging artifact (environment), not a product defect.
+        $cls = if ($userWheels -and ($r2.StdErr + $r2.StdOut) -match 'No matching distribution|Could not find') { 'BLOCKED_ENVIRONMENT' } else { 'FAIL_PRODUCT' }
+        Add-Result 'offline.wheel_reinstall' $cls 'offline reinstall failed' $r2.StdErr.Substring(0, [Math]::Min(400, $r2.StdErr.Length)) "pip install --no-index $docSpec" $r2.ExitCode
     }
 }
 
@@ -778,5 +841,15 @@ Write-Host ""
 Write-Host "Validation complete: $($summary.total) checks — $($summary.pass) PASS, $($summary.fail_product) FAIL_PRODUCT, $($summary.blocked_environment) BLOCKED_ENVIRONMENT, $($summary.not_detected_valid) NOT_DETECTED_VALID, $($summary.not_tested) NOT_TESTED, $($summary.unverified) UNVERIFIED"
 Write-Host "Report: $mdPath"
 Write-Host "JSON:   $jsonPath"
+
+# Remove everything the run created (venvs, npm trees, staged wheels,
+# probe logs) — unless the caller pointed -OutputDir inside the temp root,
+# which would delete the report itself.
+$outFull = [System.IO.Path]::GetFullPath($OutputDir)
+if (-not $outFull.StartsWith($script:TmpRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    Remove-Item $script:TmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+} else {
+    Write-Host "Temp root kept (report lives inside it): $script:TmpRoot"
+}
 
 exit $(if ($hasFail) { 1 } else { 0 })

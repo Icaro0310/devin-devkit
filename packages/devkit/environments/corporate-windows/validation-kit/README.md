@@ -7,7 +7,9 @@ locked-down Windows machine?*
 Windows PowerShell **5.1** compatible. No admin rights. Read-only on the
 machine: it never touches proxy settings, the trust store, the registry,
 execution policy, or any credential. Every probe uses synthetic fixtures —
-no real transcripts, session stores or source code are opened.
+no real transcripts, session stores or source code are opened. Everything
+it creates lives under one per-run temp directory that is deleted when the
+run ends.
 
 ## Prerequisites
 
@@ -67,14 +69,27 @@ Exit code: `0` unless at least one check is `FAIL_PRODUCT` (then `1`).
 - `env.*` — PowerShell version, temp writability, MAX_PATH.
 - `net.*` — PyPI / npm / GitHub reachability and TLS-issuer inspection
   (detects Zscaler-style interception without trusting or modifying
-  anything).
+  anything). The probe accepts the TLS handshake only to read the leaf
+  issuer; a chain this host does not trust is reported as `UNVERIFIED`
+  with the captured `SslPolicyErrors`, never as `PASS`.
 - `tool.*` — python/uv/node/npm/code presence (`NOT_DETECTED_VALID` when
   absent).
-- `install.pypi_packages` — isolated venv; installs the exact published
-  pins `devin-search==0.2.1`, `devin-doctor==0.3.1`,
-  `devin-qa-pack==0.2.1`, `poordjaevin==0.1.3` and verifies `--version`.
-- `install.bridge_npm` — `npm install @icaro0310/devin-bridge@0.2.0`
-  into a temp prefix; verifies the binary runs.
+- `install.pypi_packages` — isolated venv; installs the pinned specs of
+  the five agent-agnostic packages (`devin-search`, `devin-doctor`,
+  `devin-qa-pack`, `poordjaevin`, `devin-memory[mcp]`) and verifies the
+  installed metadata plus a non-crashing `--help`.
+- `install.bridge_npm` — `npm install` of the pinned bridge spec into a
+  temp prefix; verifies the binary runs.
+
+**Which versions?** When run from a devkit checkout the kit reads the
+`install_spec` values from the bundled `manifest.json`, so a PASS means
+the channels serve exactly what `devin-devkit install` would install.
+In the standalone ZIP it falls back to the latest published versions
+(search 0.2.1, doctor 0.3.1, qa-pack 0.2.1, poordjaevin 0.1.3,
+memory 0.3.1, bridge 0.2.0). The pin source is recorded in the check
+evidence. An index that cannot serve a pinned spec (incomplete
+`-WheelDir` bundle, filtered mirror) is classified
+`BLOCKED_ENVIRONMENT`, not `FAIL_PRODUCT`.
 - `functional.*` — synthetic-fixture smoke tests:
   - `functional.doctor` — clean run on an empty env (absence must not
     crash or misreport);
