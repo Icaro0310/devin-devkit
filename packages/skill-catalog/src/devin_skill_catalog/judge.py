@@ -26,6 +26,7 @@ never a real model.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -80,11 +81,16 @@ def build_judge_client(*, backend=None, calibrator_path: Path | None = None):
     protocol (``entail_probs(pairs)``) — how tests run a scripted judge.
     Otherwise the backend resolves exactly like poordjaevin's own CLI:
     ``POORDJAEVIN_BACKEND`` selects it; unset means ``Client()``'s
-    default local NLI backend — keyless, offline.
+    default local NLI backend — keyless, offline. (poordjaevin's
+    ``build_client`` is deliberately *not* reused here: it defaults an
+    unset ``POORDJAEVIN_BACKEND`` to ``acp``, which would break the
+    keyless default.)
 
     ``calibrator_path`` points at a ``poordjaevin calibrate`` output and
-    applies its fitted temperature; absent it, the client reports raw
-    confidence with :data:`JUDGE_ABSTAIN` abstention.
+    applies its fitted temperature. The gate's abstain floor always
+    applies: the client keeps ``max(fitted, JUDGE_ABSTAIN)``, so an
+    abstaining answer — and therefore ``inconclusive`` — survives on the
+    calibrated path too.
     """
     try:
         from poordjaevin import Client
@@ -103,9 +109,46 @@ def build_judge_client(*, backend=None, calibrator_path: Path | None = None):
                 f"cannot resolve POORDJAEVIN_BACKEND: {exc}"
             ) from exc
     if calibrator_path is not None:
-        from poordjaevin.mcp_server import build_client
-
-        return build_client(str(calibrator_path), backend=backend)
+        calibrator_path = Path(calibrator_path)
+        try:
+            raw = json.loads(
+                calibrator_path.read_text(encoding="utf-8")
+            )
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise JudgeUnavailableError(
+                f"cannot read calibrator {calibrator_path}: {exc}"
+            ) from exc
+        if not isinstance(raw, dict):
+            raise JudgeUnavailableError(
+                f"calibrator {calibrator_path} is not a JSON object"
+            )
+        try:
+            from poordjaevin.mcp_server import load_calibration
+        except ImportError as exc:
+            raise JudgeUnavailableError(
+                "the G3 judge needs poordjaevin — install the 'judge' "
+                "extra: pip install 'devin-skill-catalog[judge]'"
+            ) from exc
+        calibration = load_calibration(str(calibrator_path))
+        # poordjaevin's build_client rule: a temperature fitted for one
+        # confidence source does not transfer to another — raw
+        # confidence is the honest answer on a mismatch.
+        source = (
+            "local_nli"
+            if backend is None
+            else getattr(backend, "confidence_source", "unknown")
+        )
+        if calibration["backend"] and calibration["backend"] != source:
+            temperature, fitted_abstain = 1.0, 0.0
+        else:
+            temperature = float(calibration["temperature"])
+            fitted_abstain = float(calibration["abstain_threshold"])
+        return Client(
+            backend=backend,
+            temperature=temperature,
+            abstain_threshold=max(fitted_abstain, JUDGE_ABSTAIN),
+            calibrated_source=source if calibration["backend"] else None,
+        )
     return Client(backend=backend, abstain_threshold=JUDGE_ABSTAIN)
 
 

@@ -369,7 +369,7 @@ def cmd_g3(args) -> int:
         client = judge.build_judge_client(
             calibrator_path=args.calibrator
         )
-    except Exception as exc:  # a bad calibrator file can raise any way
+    except Exception as exc:  # noqa: BLE001 — a bad calibrator file can raise any way
         print(f"error: {exc}", file=sys.stderr)
         return 1
     try:
@@ -381,7 +381,7 @@ def cmd_g3(args) -> int:
             client=client,
             source=str(args.evidence),
         )
-    except Exception as exc:  # the backend call can fail any way
+    except Exception as exc:  # noqa: BLE001 — the backend call can fail any way
         print(f"error: judge failed: {exc}", file=sys.stderr)
         return 1
     if args.out is not None:

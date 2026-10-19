@@ -25,7 +25,6 @@ import types
 from pathlib import Path
 
 import pytest
-
 from devin_skill_catalog import cli, gates, judge
 from devin_skill_catalog.model import STATE_APPROVED, STATE_QUARANTINED
 from devin_skill_catalog.paths import registry_path
@@ -482,11 +481,20 @@ def test_g3_bad_calibrator_is_clean_error(
 
 
 class _SpyClient:
-    """Records the backend / threshold it was built with."""
+    """Records the backend / calibration it was built with."""
 
-    def __init__(self, backend=None, abstain_threshold=0.0, **kw):
+    def __init__(
+        self,
+        backend=None,
+        temperature=1.0,
+        abstain_threshold=0.0,
+        calibrated_source=None,
+        **kw,
+    ):
         self.backend = backend
+        self.temperature = temperature
         self.abstain_threshold = abstain_threshold
+        self.calibrated_source = calibrated_source
 
 
 def test_backend_env_selects_via_poordjaevin(
@@ -524,6 +532,107 @@ def test_build_client_missing_extra(monkeypatch):
     monkeypatch.delenv("POORDJAEVIN_BACKEND", raising=False)
     with pytest.raises(judge.JudgeUnavailableError):
         judge.build_judge_client()
+
+
+# ---- calibrated path --------------------------------------------------------
+
+
+def _stub_calibrator(
+    monkeypatch, judge_stub, temperature=1.0, abstain=0.0,
+    backend="local_nli",
+):
+    """Register a fake ``poordjaevin.mcp_server`` whose
+    ``load_calibration`` returns the given fitted values, plus a spy
+    Client on the module stub."""
+    sub = types.ModuleType("poordjaevin.mcp_server")
+    sub.load_calibration = lambda path: {
+        "temperature": temperature,
+        "abstain_threshold": abstain,
+        "backend": backend,
+    }
+    monkeypatch.setitem(sys.modules, "poordjaevin.mcp_server", sub)
+    judge_stub.Client = _SpyClient
+
+
+def _calibrator_file(tmp_path: Path, text: str = "{}") -> Path:
+    p = tmp_path / "calibration.json"
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+def test_calibrator_applies_fitted_temperature(
+    judge_stub, monkeypatch, tmp_path
+):
+    _stub_calibrator(monkeypatch, judge_stub, temperature=2.5)
+    client = judge.build_judge_client(
+        calibrator_path=_calibrator_file(tmp_path)
+    )
+    assert client.temperature == 2.5
+
+
+def test_calibrator_keeps_abstain_floor(
+    judge_stub, monkeypatch, tmp_path
+):
+    """The gate's JUDGE_ABSTAIN floor survives the calibrated path —
+    poordjaevin's own ``build_client`` would drop it (abstention is
+    opt-in there), which would let an abstaining answer slide past
+    ``inconclusive``."""
+    cal = _calibrator_file(tmp_path)
+    _stub_calibrator(monkeypatch, judge_stub, abstain=0.0)
+    client = judge.build_judge_client(calibrator_path=cal)
+    assert client.abstain_threshold == judge.JUDGE_ABSTAIN
+    # a stricter fitted threshold still wins
+    _stub_calibrator(monkeypatch, judge_stub, abstain=0.8)
+    client = judge.build_judge_client(calibrator_path=cal)
+    assert client.abstain_threshold == 0.8
+
+
+def test_calibrator_unset_env_keeps_keyless_default(
+    judge_stub, monkeypatch, tmp_path
+):
+    """``build_client`` resolves an unset ``POORDJAEVIN_BACKEND`` to
+    ``acp`` — the calibrated path must keep ``backend=None`` (the
+    keyless local default) instead."""
+    _stub_calibrator(monkeypatch, judge_stub)
+    client = judge.build_judge_client(
+        calibrator_path=_calibrator_file(tmp_path)
+    )
+    assert client.backend is None
+
+
+def test_calibrator_backend_mismatch_uses_raw(
+    judge_stub, monkeypatch, tmp_path
+):
+    """A temperature fitted for another confidence source is not
+    applied — raw confidence is the honest answer."""
+    _stub_calibrator(
+        monkeypatch, judge_stub, temperature=2.5, backend="local_nli"
+    )
+
+    class _OtherSource:
+        confidence_source = "self_report"
+
+    client = judge.build_judge_client(
+        backend=_OtherSource(),
+        calibrator_path=_calibrator_file(tmp_path),
+    )
+    assert client.temperature == 1.0
+
+
+def test_calibrator_missing_or_invalid_is_clean(judge_stub, tmp_path):
+    judge_stub.Client = _SpyClient
+    with pytest.raises(judge.JudgeUnavailableError):
+        judge.build_judge_client(
+            calibrator_path=tmp_path / "nope.json"
+        )
+    bad = _calibrator_file(tmp_path, "{not json")
+    with pytest.raises(judge.JudgeUnavailableError):
+        judge.build_judge_client(calibrator_path=bad)
+    # JSON but the wrong shape — poordjaevin's own loader would raise
+    # AttributeError here; the gate reports a clean judge error
+    odd = _calibrator_file(tmp_path, "[1, 2, 3]")
+    with pytest.raises(judge.JudgeUnavailableError):
+        judge.build_judge_client(calibrator_path=odd)
 
 
 # ---- real poordjaevin (only when the extra is installed) --------------------
