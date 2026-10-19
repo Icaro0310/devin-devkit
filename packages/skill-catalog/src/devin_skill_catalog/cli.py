@@ -815,7 +815,9 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         metavar="PATH",
         help="where to look for the item (default: cwd + user dirs); "
-        "a registered item resolves to its quarantine-store copy",
+        "a registered item resolves to its quarantine-store copy. "
+        "List PATHs right after the item, before option flags — "
+        "argparse on Python <3.13 cannot pick up trailing positionals",
     )
     p.add_argument(
         "--no-user",

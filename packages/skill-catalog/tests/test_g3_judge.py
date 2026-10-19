@@ -133,10 +133,12 @@ def _quarantine(item: str, workspace: Path, config_dir: Path) -> None:
 
 
 def _g3(item: str, config_dir: Path, evidence: Path, *extra: str) -> int:
+    # extras go right after the item: argparse on Python <3.12 cannot
+    # fill a nargs="*" positional once an option flag was seen.
     return cli.main(
         [
-            "g3", item, "--judge", "--evidence", str(evidence),
-            "--config-dir", str(config_dir), *extra,
+            "g3", item, *extra, "--judge", "--evidence", str(evidence),
+            "--config-dir", str(config_dir),
         ]
     )
 
