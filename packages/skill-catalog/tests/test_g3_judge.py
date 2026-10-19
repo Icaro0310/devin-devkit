@@ -426,6 +426,58 @@ def test_g3_backend_failure_is_clean_error(
     assert "judge failed" in captured.err
 
 
+def test_g3_non_utf8_evidence_is_clean_error(
+    fake_judge, workspace: Path, devin_dir: Path, config_dir: Path,
+    tmp_path: Path, capsys,
+):
+    """Invalid UTF-8 in --evidence exits 1 with the evidence error —
+    UnicodeDecodeError is not an OSError."""
+    _quarantine("skill:good-skill", workspace, config_dir)
+    p = tmp_path / "evidence.bin"
+    p.write_bytes(b"\xff\xfe\x00not utf-8")
+    rc = _g3("skill:good-skill", config_dir, p)
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "cannot read evidence" in captured.err
+
+
+def test_g3_out_must_not_overwrite_evidence(
+    fake_judge, workspace: Path, devin_dir: Path, config_dir: Path,
+    tmp_path: Path, capsys,
+):
+    """--out equal to --evidence is refused before judging — writing the
+    report over the evidence would erase the source it judged."""
+    _quarantine("skill:good-skill", workspace, config_dir)
+    ev = _evidence(tmp_path)
+    original = ev.read_bytes()
+    rc = _g3(
+        "skill:good-skill", config_dir, ev, "--out", str(ev)
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "--out" in captured.err
+    assert "evidence" in captured.err
+    assert ev.read_bytes() == original  # evidence untouched
+
+
+def test_g3_bad_calibrator_is_clean_error(
+    judge_stub, workspace: Path, devin_dir: Path, config_dir: Path,
+    tmp_path: Path, capsys,
+):
+    """A --calibrator path the client builder cannot load exits 1 with
+    an error line, never a traceback — build_client failures are not
+    JudgeUnavailableError."""
+    _quarantine("skill:good-skill", workspace, config_dir)
+    rc = _g3(
+        "skill:good-skill", config_dir, _evidence(tmp_path),
+        "--calibrator", str(tmp_path / "missing.json"),
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert captured.err.startswith("error:")
+    assert "Traceback" not in captured.err
+
+
 # ---- backend resolution -----------------------------------------------------
 
 

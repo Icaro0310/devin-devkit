@@ -346,7 +346,7 @@ def cmd_g3(args) -> int:
         kind, name, sha256 = item.kind, item.name, item.sha256
     try:
         evidence = args.evidence.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         print(
             f"error: cannot read evidence {args.evidence}: {exc}",
             file=sys.stderr,
@@ -358,11 +358,18 @@ def cmd_g3(args) -> int:
             file=sys.stderr,
         )
         return 1
+    if args.out is not None and args.out.resolve() == args.evidence.resolve():
+        print(
+            "error: --out must not overwrite the --evidence file "
+            f"{args.evidence}",
+            file=sys.stderr,
+        )
+        return 1
     try:
         client = judge.build_judge_client(
             calibrator_path=args.calibrator
         )
-    except judge.JudgeUnavailableError as exc:
+    except Exception as exc:  # a bad calibrator file can raise any way
         print(f"error: {exc}", file=sys.stderr)
         return 1
     try:
