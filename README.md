@@ -10,6 +10,7 @@
 <a href="https://github.com/Icaro0310/devin-devkit/commits/main"><img src="https://img.shields.io/github/last-commit/Icaro0310/devin-devkit" alt="Last commit"/></a>
 <a href="https://github.com/Icaro0310/awesome-devin"><img src="https://img.shields.io/badge/part%20of-devin--*-ecosystem-7c3aed" alt="devin-* ecosystem"/></a>
 <a href="https://github.com/Icaro0310/devin-devkit/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome"/></a>
+<a href="packages/devkit/assets/demo.gif"><img src="packages/devkit/assets/demo.gif" alt="devin-devkit demo: list, outdated, doctor check" width="80%"/></a>
 </div>
 
 <!-- DEVIN-ECO:BEGIN -->
