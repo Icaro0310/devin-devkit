@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `g3 ITEM --judge --evidence PATH [--out PATH]` — produce a
+  `g3-report/0.1` document by asking poordjaevin (the optional `judge`
+  extra) three concrete yes/no questions about the promotion evidence.
+  A deterministic, fail-safe rule maps the calibrated answers to the
+  verdict: abstention, or insufficient/borderline evidence, is
+  `inconclusive`; a clear regression signal wins over a clear
+  improvement one. The report binds `candidate.sha256` to the
+  quarantine-store copy (falling back to the on-disk item) and feeds
+  `promote --g3-report` unchanged. The backend is never hardcoded —
+  `POORDJAEVIN_BACKEND` selects it (default: keyless local NLI); a
+  fitted calibrator can be applied with `--calibrator`.
 - Incremental `export-bundle --incremental`: a manifest-hash diff via
   the shared `devin_internals.cursor.Cursor` (`bundle-export` cursor at
   `.devin/bundle-export-state.json`, overridable with

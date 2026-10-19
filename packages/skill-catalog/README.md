@@ -86,6 +86,8 @@ devin-skill-catalog lint [PATH ...]              # structural findings
 devin-skill-catalog diff A B                     # inventory diff by sha256
 devin-skill-catalog gate g1 PATH                 # static hygiene gate
 devin-skill-catalog gate g2 PATH [--packs-dir D] # grounding gate
+devin-skill-catalog g3 ITEM --judge --evidence F [--out R.json]
+                                                 # judge-produced g3-report
 devin-skill-catalog quarantine ITEM [PATH ...]   # snapshot → quarantined
 devin-skill-catalog promote ITEM [--force]       # quarantined → approved (G1 + G3 policy)
               [--g3-report PATH]
@@ -197,6 +199,30 @@ e.g. devin-evals). Pass it with `promote --g3-report PATH`:
 - If the report's `candidate.sha256` does not match the stored copy,
   promote prints a warning but proceeds — the report may legitimately
   describe a pre-fix artifact.
+
+**Producing a report with the judge** (optional `judge` extra —
+`pip install "devin-skill-catalog[judge]"` pulls
+[poordjaevin](https://github.com/Icaro0310/devin-judge), a calibrated
+"System One" decision layer):
+
+```bash
+devin-skill-catalog g3 rule:my-rule --judge --evidence eval-summary.txt --out g3.json
+devin-skill-catalog promote rule:my-rule --g3-report g3.json --apply
+```
+
+`g3 --judge` asks the judge three concrete questions about the
+`--evidence` text — *is the evidence sufficient? does it show
+improvement? does it show regression?* — and maps the calibrated
+probabilities to the verdict with a deterministic, fail-safe rule:
+abstention, or insufficient/borderline evidence, is `inconclusive`; a
+clear regression signal beats a clear improvement one. Without `--out`
+the report JSON prints to stdout.
+
+The judge backend is never hardcoded: `POORDJAEVIN_BACKEND` selects it
+(`nli` / `vscode-lm` / `acp`, same convention as poordjaevin's own
+CLI); unset means the default local NLI model — keyless, offline after
+a one-time ~400 MB download. `--calibrator PATH` applies a fitted
+`poordjaevin calibrate` output.
 
 ## Adopting external skills
 
