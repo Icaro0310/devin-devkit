@@ -6,6 +6,7 @@ Subcommands::
     lint [PATH ...]                 structural lint findings
     diff A B                        inventory diff between two dirs
     gate g1|g2 PATH                 offline gates; --apply records result
+    g3 ITEM --judge --evidence F    produce a g3-report/0.1 via poordjaevin
     quarantine ITEM [PATH ...]      snapshot item into the quarantine store
     promote ITEM [PATH ...]         quarantined → approved (G1 + G3 policy)
     activate ITEM                   approved → active
@@ -35,7 +36,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from devin_skill_catalog import __version__, bundle, gates, lint, scan
+from devin_skill_catalog import (
+    __version__,
+    bundle,
+    gates,
+    judge,
+    lint,
+    scan,
+)
 from devin_skill_catalog.diffing import (
     DiffRow,
     DiffStatus,
@@ -274,6 +282,122 @@ def cmd_gate(args) -> int:
         reg.save()
         print(f"(recorded {gate} results in registry)")
     return _emit(args, findings)
+
+
+def cmd_g3(args) -> int:
+    """Produce a ``g3-report/0.1`` document — with ``--judge`` the
+    verdict comes from poordjaevin over the ``--evidence`` text. The
+    report is written to ``--out`` or printed; ``promote
+    --g3-report`` consumes it unchanged."""
+    kind, name = _parse_item_spec(args.item)
+    if not args.judge:
+        print(
+            "error: no G3 producer selected — pass --judge to evaluate "
+            "the evidence with poordjaevin",
+            file=sys.stderr,
+        )
+        return 2
+    if args.evidence is None:
+        print(
+            "error: --judge needs --evidence PATH — the promotion "
+            "evidence (e.g. an A/B eval summary) the judge reads",
+            file=sys.stderr,
+        )
+        return 2
+    # Resolve the item the report describes. The quarantine-store copy
+    # wins when registered — its sha256 is the canonical hash the
+    # promote-time candidate check compares against; otherwise scan.
+    reg, config_dir = _registry(args)
+    hits = [
+        (k, reg.get(k, name))
+        for k in ([kind] if kind else KINDS)
+        if reg.get(k, name) is not None
+    ]
+    if len(hits) > 1:
+        print(
+            f"error: {args.item!r} does not resolve to exactly one "
+            f"registry entry — use kind:name",
+            file=sys.stderr,
+        )
+        return 1
+    if hits:
+        kind, entry = hits[0]
+        stored = _stored_item(entry, config_dir)
+        sha256 = (
+            stored.sha256 if stored is not None else entry.get("sha256")
+        )
+    else:
+        item, matches = _find_one(args, kind, name)
+        if item is None:
+            if not matches:
+                print(
+                    f"error: item {args.item!r} not found — quarantine "
+                    f"it first or pass a PATH",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                f"error: {args.item!r} is ambiguous — matches:",
+                file=sys.stderr,
+            )
+            for m in matches:
+                print(f"  {m.key}  {m.path}", file=sys.stderr)
+            return 1
+        kind, name, sha256 = item.kind, item.name, item.sha256
+    try:
+        evidence = args.evidence.read_text(encoding="utf-8")
+    except OSError as exc:
+        print(
+            f"error: cannot read evidence {args.evidence}: {exc}",
+            file=sys.stderr,
+        )
+        return 1
+    if not evidence.strip():
+        print(
+            f"error: evidence file {args.evidence} is empty",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        client = judge.build_judge_client(
+            calibrator_path=args.calibrator
+        )
+    except judge.JudgeUnavailableError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    try:
+        report = judge.produce_g3_report(
+            kind,
+            name,
+            sha256,
+            evidence,
+            client=client,
+            source=str(args.evidence),
+        )
+    except Exception as exc:  # the backend call can fail any way
+        print(f"error: judge failed: {exc}", file=sys.stderr)
+        return 1
+    if args.out is not None:
+        try:
+            args.out.write_text(
+                json.dumps(report, indent=2) + "\n", encoding="utf-8"
+            )
+        except OSError as exc:
+            print(
+                f"error: cannot write {args.out}: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"g3 {item_key(kind, name)}: verdict "
+              f"'{report['verdict']}' → {args.out}")
+    else:
+        print(json.dumps(report, indent=2))
+        print(
+            f"g3 {item_key(kind, name)}: verdict "
+            f"'{report['verdict']}'",
+            file=sys.stderr,
+        )
+    return 0
 
 
 def _cmd_quarantine(args) -> int:
@@ -671,6 +795,63 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="emit JSON")
     p.set_defaults(func=cmd_gate)
+
+    p = sub.add_parser(
+        "g3",
+        help="produce a g3-report/0.1 document — --judge asks a "
+        "calibrated judge (poordjaevin, the 'judge' extra) to classify "
+        "the promotion evidence; promote --g3-report consumes it",
+    )
+    p.add_argument("item", help="kind:name or bare name")
+    p.add_argument(
+        "paths",
+        nargs="*",
+        metavar="PATH",
+        help="where to look for the item (default: cwd + user dirs); "
+        "a registered item resolves to its quarantine-store copy",
+    )
+    p.add_argument(
+        "--no-user",
+        action="store_true",
+        help="do not search user-level Devin dirs",
+    )
+    p.add_argument(
+        "--judge",
+        action="store_true",
+        help="evaluate the evidence with poordjaevin — backend via "
+        "POORDJAEVIN_BACKEND (default: keyless local NLI)",
+    )
+    p.add_argument(
+        "--evidence",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="promotion-evidence text file the judge reads (e.g. an "
+        "A/B eval summary)",
+    )
+    p.add_argument(
+        "--calibrator",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="poordjaevin calibration.json — applies the fitted "
+        "temperature/abstention to the judge",
+    )
+    p.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="write the g3-report here (default: print JSON to stdout)",
+    )
+    p.add_argument(
+        "--config-dir",
+        type=Path,
+        default=None,
+        help="Devin config dir for the registry (item resolution "
+        "prefers the stored copy)",
+    )
+    p.set_defaults(func=cmd_g3)
 
     p = sub.add_parser(
         "quarantine",
