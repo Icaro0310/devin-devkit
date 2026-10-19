@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `devin-qa-pack` 0.1.0 → 0.1.2, `devin-doctor` 0.1.0 → 0.2.0,
   `devin-search` 0.1.0 → 0.1.2, `devin-memory[mcp]` 0.3.0 → 0.3.1 and
   `poordjaevin` 0.1.1 → 0.1.2.
+- Docs: `environments/corporate-windows/README.md` banner now reads
+  "LOCAL RUNTIME" (was "LOCAL ONLY") and states that `install`/`update`
+  still download pinned specs from PyPI, npm or GitHub archives (and
+  `outdated`/`update` fetch the remote registry manifest); the
+  `README.windows.md` environment bullet is qualified the same way, and
+  the repository root README embeds the devkit demo gif.
 
 ### Fixed
 
