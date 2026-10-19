@@ -40,7 +40,7 @@ The DevKit does not change those directories or Devin settings. `uv` exposes ins
 ## Environment notes
 
 - Delegated runtime is optional; this guide installs local tooling only.
-- Corporate Windows is a separate local-only environment (runtime; install still needs package index access or a wheel bundle).
+- Corporate Windows is a separate local-only environment (runtime; `install`/`update` still reach PyPI, npm or GitHub archives).
 - macOS is planned but not claimed as tested.
 
 ## Personal Windows specifics

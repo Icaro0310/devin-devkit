@@ -17,8 +17,9 @@ Restricted Windows execution that is intentionally self-contained.
 - no external compute dependency;
 - unsupported tools require an explicit registry reason.
 
-Runtime is 100% local; `install`/`update` commands reach the package index
-(PyPI or npm) or a staged wheel directory. See the
+Runtime is 100% local; `install`/`update` download each tool's pinned spec
+from the package index (PyPI or npm) or a GitHub archive, and `outdated`/
+`update` also fetch the remote registry manifest. See the
 [Corporate Windows guide](../../README.corporate-windows.md).
 
 ## Install
