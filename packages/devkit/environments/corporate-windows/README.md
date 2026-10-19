@@ -18,8 +18,9 @@ Restricted Windows execution that is intentionally self-contained.
 - unsupported tools require an explicit registry reason.
 
 Runtime is 100% local; `install`/`update` download each tool's pinned spec
-from the package index (PyPI or npm) or a GitHub archive, and `outdated`/
-`update` also fetch the remote registry manifest. See the
+from the package index (PyPI or npm) or a GitHub archive, and `list`,
+`outdated` and `update` also fetch the remote registry manifest (the `list`
+freshness check honors `DEVIN_DEVKIT_OFFLINE=1`). See the
 [Corporate Windows guide](../../README.corporate-windows.md).
 
 ## Install
