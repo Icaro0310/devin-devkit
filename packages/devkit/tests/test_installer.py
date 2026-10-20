@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -94,6 +95,25 @@ def test_manual_service_is_reported_not_silently_installed():
     office = next(a for a in plan["actions"] if a["tool"] == "devin-office")
     assert office["action"] == "manual"
     assert office["detail"] == "source-only service"
+
+
+def test_bundled_manifest_plans_uv_install_for_devin_office():
+    """Registry v32 moved devin-office into installable profiles — the
+    bundled manifest must plan a uv install, not a manual action."""
+    manifest_path = (
+        Path(__file__).resolve().parents[1]
+        / "src" / "devin_devkit" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    which = lambda name: "/tools/uv" if name == "uv" else None
+    plan = installer.build_plan(
+        manifest, "full", system="linux", which=which)
+
+    office = next(a for a in plan["actions"] if a["tool"] == "devin-office")
+    assert office["action"] == "install"
+    assert office["command"] == [
+        "uv", "tool", "install", "devin-office==0.1.0"]
 
 
 def test_git_sources_block_before_any_installs_when_git_is_missing():

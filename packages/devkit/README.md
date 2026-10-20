@@ -56,7 +56,7 @@ The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `r
 | `security` | redact, bridge, janitor |
 | `memory` / `agent` | memory, graph, search, poordjaevin |
 | `operations` | backup, history, doctor, metrics, janitor, PM, orchestrator, switch and skill catalog |
-| `full` / `all` | every automatically installable profile tool; `devin-office` remains a manual source-only service |
+| `full` / `all` | every automatically installable profile tool, `devin-office` included (it ships on PyPI since 0.1.0) |
 | `agent-tools` / `no-devin` | the agent-agnostic toolset: qa-pack (multi-surface audit), doctor (surface health), search (multi-source index), memory (agent-agnostic MCP) and judge (typed decisions) |
 
 `agent-tools` (alias `no-devin`, for hosts where Devin is not the agent of choice) groups the five tools that are not tied to the Devin CLI and pass every environment gate, corporate Windows included. The pinned releases carry multi-source surface support — reading Copilot, Codex and VS Code Chat surfaces in addition to Devin's.
