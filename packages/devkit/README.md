@@ -108,7 +108,7 @@ The manifest pins PyPI versions where available and GitHub source archives to im
 
 - Python tools: Python 3.10 or newer, installed in isolated environments managed by `uv`.
 - `devin-bridge`: Node.js 20 or newer and npm. Installed from the npm registry as `@icaro0310/devin-bridge`.
-- All bundled Python tools install from PyPI or HTTPS archives without Git — `devin-bridge` comes from the npm registry, also without Git. Git is only needed for manual source checkouts such as `devin-office`.
+- All bundled Python tools install from PyPI or HTTPS archives without Git — `devin-bridge` comes from the npm registry, also without Git. Git is only needed for manual source checkouts (none of the bundled tools).
 - Supported environments: Linux, Personal Windows and Corporate Windows. Linux and Personal Windows may use optional delegated runtime; Corporate Windows rejects registry entries that require external runtime, delegation or external integrations. macOS is planned but not claimed as tested.
 
 
