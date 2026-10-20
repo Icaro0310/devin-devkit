@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 31,
-  "generated": "2026-10-17",
+  "registry_version": 32,
+  "generated": "2026-10-20",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -108,9 +108,7 @@
         "devin-pm",
         "devin-orchestrator",
         "devin-switch",
-        "devin-skill-catalog"
-      ],
-      "manual": [
+        "devin-skill-catalog",
         "devin-office"
       ]
     },
@@ -179,9 +177,7 @@
         "devin-orchestrator",
         "devin-switch",
         "devin-skill-catalog",
-        "devin-judge"
-      ],
-      "manual": [
+        "devin-judge",
         "devin-office"
       ]
     },
@@ -206,9 +202,7 @@
         "devin-orchestrator",
         "devin-switch",
         "devin-skill-catalog",
-        "devin-judge"
-      ],
-      "manual": [
+        "devin-judge",
         "devin-office"
       ],
       "alias_of": "full"
@@ -810,7 +804,8 @@
       "artifact": "tool",
       "interfaces": [
         "service",
-        "dashboard"
+        "dashboard",
+        "cli"
       ],
       "audiences": [
         "operations",
@@ -836,12 +831,16 @@
           "external_dependencies": false
         }
       },
-      "manager": "manual",
-      "source": "manual",
+      "manager": "uv",
+      "source": "pypi",
       "package": "devin-office",
       "version": "0.1.0",
       "commands": [
-        "python daemon.py"
+        "devin-office",
+        "devin-office-hub",
+        "devin-office-probe",
+        "devin-office-executor",
+        "devin-office-procmap"
       ],
       "runtime": "python>=3.10",
       "platforms": [
@@ -849,10 +848,10 @@
         "linux"
       ],
       "requires_git": false,
-      "status": "manual",
+      "status": "published",
       "extras": [],
-      "manual_note": "Source-only dashboard service; no distributable package metadata yet.",
-      "install_spec": null
+      "manual_note": null,
+      "install_spec": "devin-office==0.1.0"
     },
     {
       "id": "devin-switch",

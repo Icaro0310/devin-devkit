@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -94,6 +95,25 @@ def test_manual_service_is_reported_not_silently_installed():
     office = next(a for a in plan["actions"] if a["tool"] == "devin-office")
     assert office["action"] == "manual"
     assert office["detail"] == "source-only service"
+
+
+def test_bundled_manifest_plans_uv_install_for_devin_office():
+    """Registry v32 moved devin-office into installable profiles — the
+    bundled manifest must plan a uv install, not a manual action."""
+    manifest_path = (
+        Path(__file__).resolve().parents[1]
+        / "src" / "devin_devkit" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    which = lambda name: "/tools/uv" if name == "uv" else None
+    plan = installer.build_plan(
+        manifest, "full", system="linux", which=which)
+
+    office = next(a for a in plan["actions"] if a["tool"] == "devin-office")
+    assert office["action"] == "install"
+    assert office["command"] == [
+        "uv", "tool", "install", "devin-office==0.1.0"]
 
 
 def test_git_sources_block_before_any_installs_when_git_is_missing():
@@ -297,3 +317,27 @@ def test_agent_tools_pin_the_multi_source_releases():
 
     for tool_id, expected in AGENT_TOOLS_PINS.items():
         assert specs[tool_id] == expected, tool_id
+
+
+def test_bundled_manifest_installs_devin_office_via_uv():
+    # Regression for the office source_only → published flip: the bundled
+    # manifest must plan a uv install, not a manual action, in every
+    # profile that carries it.
+    manifest = installer.load_manifest()
+    office = next(t for t in manifest["tools"] if t["id"] == "devin-office")
+
+    assert office["manager"] == "uv" and office["source"] == "pypi"
+    assert office["install_spec"] == "devin-office==0.1.0"
+    for name, profile in manifest["profiles"].items():
+        if "devin-office" in profile.get("tools", []):
+            assert "devin-office" not in profile.get("manual", []), name
+
+    plan = installer.build_plan(
+        manifest, "operations", system="Linux", environment="linux",
+        which=_uv_only, runner=_no_runner,
+    )
+
+    assert plan["errors"] == []
+    office_action = next(a for a in plan["actions"] if a["tool"] == "devin-office")
+    assert office_action["action"] == "install"
+    assert office_action["command"] == ["uv", "tool", "install", "devin-office==0.1.0"]
