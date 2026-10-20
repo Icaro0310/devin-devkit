@@ -44,11 +44,8 @@ Use `--config-dir` for non-default locations.
 - Devin plugin + skill: `devin plugins install
   Icaro0310/devin-devkit#packages/skill-catalog/adapters`. The manifest
   launches the server through `uvx --from 'devin-skill-catalog[mcp]'
-  devin-skill-catalog-mcp`, which resolves once the first PyPI release ships.
-  Until then, an editable install does not change what `uvx --from`
-  resolves — either run the source-installed `devin-skill-catalog-mcp`
-  directly, or point a local manifest copy at the checkout:
-  `uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`.
+  devin-skill-catalog-mcp`, which resolves from 0.1.1 on (the 0.1.0 wheel
+  predates the console script).
 
 ## Troubleshooting
 
