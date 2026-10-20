@@ -68,7 +68,7 @@ content.
 
 ## Install
 
-Requires Python ≥ 3.10 and `pipx` or `uv`. Stdlib only — no dependencies.
+Requires Python ≥ 3.10 and `pipx` or `uv`.
 
 ```bash
 uv tool install devin-skill-catalog   # or: pipx install devin-skill-catalog
@@ -322,10 +322,8 @@ human.
 `devin plugins install
 Icaro0310/devin-devkit#packages/skill-catalog/adapters` — it ships in the repo,
 not inside the wheel. The manifest launches the server through
-`uvx --from 'devin-skill-catalog[mcp]' devin-skill-catalog-mcp`, which resolves once the
-first PyPI release ships; until then run the source-installed
-`devin-skill-catalog-mcp` directly or point a local manifest copy at the
-checkout (`uvx --from './packages/skill-catalog[mcp]' devin-skill-catalog-mcp`).
+`uvx --from 'devin-skill-catalog[mcp]' devin-skill-catalog-mcp`, which resolves
+from 0.1.1 on (the 0.1.0 wheel predates the console script).
 
 The same stdio server registers in other MCP hosts:
 

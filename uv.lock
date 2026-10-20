@@ -390,7 +390,7 @@ wheels = [
 
 [[package]]
 name = "devin-skill-catalog"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/skill-catalog" }
 dependencies = [
     { name = "devin-internals-spec" },

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "devin-skill-catalog"
-version = "0.1.0"
+version = "0.1.1"
 description = "Inventory, lint, quarantine and promote Devin skills and rules — with per-workspace diff and offline G1/G2 gates."
 readme = "README.md"
 license = { text = "MIT" }

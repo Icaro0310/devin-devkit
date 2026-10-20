@@ -70,6 +70,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `llms.txt` no longer states a hard-coded ecosystem size; the registry owns the count.
 
+## [0.1.1] - 2026-10-20
+
+### Fixed
+
+- Ship the `devin-skill-catalog-mcp` console script in the wheel: the
+  entry point has been declared in `[project.scripts]` since the MCP
+  server landed, but the published 0.1.0 wheel predates it, so
+  `uvx --from 'devin-skill-catalog[mcp]' devin-skill-catalog-mcp` had
+  nothing to resolve against PyPI.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added
