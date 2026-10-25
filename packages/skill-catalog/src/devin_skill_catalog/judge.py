@@ -8,8 +8,8 @@ and maps the typed answers to a verdict with a deterministic,
 fail-safe rule:
 
 - any abstention, an answer that is not a usable probability
-  (missing/non-numeric/NaN/out-of-range), or evidence not *clearly*
-  sufficient → ``inconclusive``;
+  (missing/non-numeric/NaN/out-of-range) or lacks a usable
+  confidence, or evidence not *clearly* sufficient → ``inconclusive``;
 - a clear regression signal → ``regresses`` (harm wins over help);
 - clear improvement **and** clearly no regression → ``improves``;
 - both effects clearly absent → ``no-detectable-effect``;
@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
@@ -207,9 +208,10 @@ def produce_g3_report(
     evidence (e.g. the file it was read from) for the audit trail.
 
     The producer is fail-closed like the verdict rule: an answer whose
-    ``prob`` is missing or not a real number drops out of the mapping
-    like an unanswered question — the report is ``inconclusive``, never
-    a crash — and is recorded in ``results`` with a null ``prob_true``.
+    ``prob`` or ``confidence`` is missing or not a real number drops
+    out of the mapping like an unanswered question — the report is
+    ``inconclusive``, never a crash — and the unusable field is
+    recorded as null in ``results``.
     """
     client = client if client is not None else build_judge_client()
     state = (
@@ -217,11 +219,14 @@ def produce_g3_report(
         f"Promotion evidence:\n{evidence.strip()}"
     )
     answers = client.ask(state, _g3_questions())
-    # A prob that does not convert to a real number is "cannot tell",
-    # not a crash: it drops out of the verdict mapping exactly like an
-    # unanswered question (→ inconclusive) and is recorded as null in
-    # the report. NaN/inf/out-of-range probs still convert and are
-    # rejected by verdict_from_probs' own range check.
+    # An answer feeds the verdict only when BOTH of its numbers are
+    # usable: a prob that does not convert — or a confidence that is
+    # missing, non-numeric or non-finite — is "cannot tell", not a
+    # crash. The answer drops out of the verdict mapping exactly like
+    # an unanswered question (→ inconclusive), so a garbage confidence
+    # can never ride a valid prob to 'improves'. NaN/inf/out-of-range
+    # probs still convert and are rejected by verdict_from_probs' own
+    # range check.
     probs: dict[str, float] = {}
     results: dict[str, dict] = {}
     for q, a in answers.items():
@@ -229,15 +234,18 @@ def produce_g3_report(
             p = float(getattr(a, "prob", None))
         except (TypeError, ValueError):
             p = None
-        else:
-            probs[q] = p
         try:
             c = float(getattr(a, "confidence", None))
         except (TypeError, ValueError):
             c = None
+        if p is not None and c is not None and math.isfinite(c):
+            probs[q] = p
         results[q] = {
             "prob_true": round(p, 4) if p is not None else None,
-            "confidence": round(c, 4) if c is not None else None,
+            "confidence": (
+                round(c, 4) if c is not None and math.isfinite(c)
+                else None
+            ),
             "abstained": bool(getattr(a, "abstained", False)),
         }
     abstained = any(

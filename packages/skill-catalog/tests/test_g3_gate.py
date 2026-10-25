@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import write
 from devin_skill_catalog import cli, gates, scan
 from devin_skill_catalog.model import STATE_APPROVED, STATE_QUARANTINED
 from devin_skill_catalog.paths import quarantine_item_dir, registry_path
@@ -475,3 +476,43 @@ def test_evaluate_g3_valid_verdicts_unchanged():
     no_report = gates.evaluate_g3("skill", None)
     assert no_report.allowed and no_report.verdict == "not-measured"
     assert not gates.evaluate_g3("rule", None).allowed
+
+
+# ---- fixture-backed: the fail-closed policy on a real .devin/ tree ----
+
+
+def test_fixture_skill_with_invalid_report_stays_quarantined(
+    workspace: Path, devin_dir: Path, config_dir: Path, tmp_path: Path,
+    capsys,
+):
+    """Fixtures-first coverage for the fail-closed policy change: the
+    synthetic ``.devin/skills/example`` fixture is quarantined for
+    real, then promotion is attempted with an invalid G3 report —
+    refused, and the registry stays quarantined.
+
+    ``promote`` always runs the report through ``load_g3_report``
+    first, so the file's non-enum verdict is rejected at the CLI
+    boundary. Feeding the same hostile verdict straight to
+    :func:`gates.evaluate_g3` — the only path a caller that skipped
+    the loader can reach — refuses identically in-policy."""
+    write(
+        devin_dir / "skills" / "example" / "SKILL.md",
+        "---\nname: example\ndescription: Synthetic fixture skill for "
+        "G3 gate coverage.\n---\n\n# Example\n",
+    )
+    _quarantine("skill:example", workspace, config_dir)
+    report = _write_report(tmp_path, "PROMOTE", name="promote")
+    rc = _promote(
+        "skill:example", config_dir, "--g3-report", str(report)
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "verdict 'PROMOTE'" in captured.err
+    # a caller that skipped the loader hits the same wall in-policy
+    decision = gates.evaluate_g3("skill", {"verdict": "PROMOTE"})
+    assert decision.allowed is False
+    assert "refusing fail-closed" in decision.reason
+    assert (
+        _reg(config_dir).state_of("skill", "example")
+        == STATE_QUARANTINED
+    )

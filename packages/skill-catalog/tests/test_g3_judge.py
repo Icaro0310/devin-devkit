@@ -259,6 +259,67 @@ def test_non_numeric_answer_produces_inconclusive_report(judge_stub):
     json.dumps(report)
 
 
+@pytest.mark.parametrize("bad_confidence", ["lots", None, float("nan")])
+def test_invalid_confidence_produces_inconclusive_report(
+    judge_stub, bad_confidence
+):
+    """A usable prob paired with an unusable confidence is still
+    "cannot tell": the answer drops out of the verdict mapping like an
+    unanswered question, so a promote-worthy prob set yields an
+    inconclusive report — never 'improves', which an always-on rule
+    could promote on. The garbage confidence is recorded as null."""
+
+    class _BadConfidence(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob=0.9,
+                    confidence=bad_confidence,
+                    abstained=False,
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=0.1, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_BadConfidence({})
+    )
+    # the exact report an always-on rule must not promote on
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["prob_true"] == 0.9
+    assert report["results"]["improves"]["confidence"] is None
+    json.dumps(report)
+
+
+def test_missing_confidence_produces_inconclusive_report(judge_stub):
+    """An answer with no ``confidence`` attribute at all is unusable —
+    the same drop-out as an invalid one."""
+
+    class _NoConfidence(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob=0.9, abstained=False
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=0.1, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_NoConfidence({})
+    )
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["confidence"] is None
+
+
 # ---- report production ------------------------------------------------------
 
 
