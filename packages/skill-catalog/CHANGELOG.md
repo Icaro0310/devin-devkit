@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- G3 verdict handling is fail-closed end to end: `gates.evaluate_g3` now
+  refuses a supplied report whose `verdict` is not a `g3-report/0.1`
+  verdict, for any kind — previously a skill promote could fall through
+  to *allow* on a verdict the loader never validated (e.g. `"not safe"`,
+  or a near-miss like `"REGRESSES"` / `"regresses "` which is not the
+  hard block). `judge.verdict_from_probs` now maps a missing,
+  non-numeric, NaN, infinite or out-of-`[0, 1]` judge answer to
+  `inconclusive` instead of letting it satisfy a threshold — a NaN on
+  `sufficient` could previously yield `improves`.
 - `devin-skill-catalog-mcp` no longer reports a server startup `ImportError` as a
   missing `mcp` extra: only failures while building the app get the
   install hint; `.run()` failures keep their traceback.

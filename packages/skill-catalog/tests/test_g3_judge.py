@@ -171,6 +171,62 @@ def test_verdict_rule(probs, abstained, expected):
     assert judge.verdict_from_probs(probs, abstained) == expected
 
 
+@pytest.mark.parametrize(
+    "probs",
+    [
+        {},  # no answers at all
+        {"sufficient": 0.9, "regresses": 0.1},  # an unanswered question
+        {"sufficient": 0.9, "improves": "high", "regresses": 0.1},
+        {"sufficient": 0.9, "improves": None, "regresses": 0.1},
+        {"sufficient": float("nan"), "improves": 0.9, "regresses": 0.1},
+        {"sufficient": 0.9, "improves": float("nan"), "regresses": 0.1},
+        {"sufficient": 0.9, "improves": 0.9, "regresses": float("nan")},
+        {"sufficient": 0.9, "improves": float("inf"), "regresses": 0.1},
+        {"sufficient": 0.9, "improves": 1.5, "regresses": 0.1},
+        {"sufficient": 0.9, "improves": -0.2, "regresses": 0.1},
+    ],
+)
+def test_verdict_rule_unusable_answer_is_inconclusive(probs):
+    """A judge answer that is not a usable probability — a missing
+    question, a non-numeric value, NaN, inf or a number outside
+    [0, 1] — is "cannot tell", never evidence: the verdict is
+    inconclusive. In particular a NaN on ``sufficient`` must not
+    satisfy the sufficiency gate and let ``improves`` through."""
+    assert judge.verdict_from_probs(probs) == "inconclusive"
+
+
+def test_partial_answers_produce_inconclusive_report(judge_stub):
+    """A client that answered only some of the questions yields an
+    honest inconclusive report instead of crashing the producer."""
+
+    class _Partial(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                name: _FakeAnswer(self.probs[name])
+                for name in questions
+                if name in self.probs
+            }
+
+    client = _Partial({"sufficient": 0.9, "improves": 0.8})
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=client
+    )
+    assert report["verdict"] == "inconclusive"
+    assert "regresses" not in report["results"]
+
+
+def test_nan_prob_produces_inconclusive_report(judge_stub):
+    """A NaN prob the client did not mark abstained still reads as
+    "cannot tell" — the produced report is inconclusive."""
+    client = _FakeClient(
+        {"sufficient": float("nan"), "improves": 0.9, "regresses": 0.1}
+    )
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=client
+    )
+    assert report["verdict"] == "inconclusive"
+
+
 # ---- report production ------------------------------------------------------
 
 

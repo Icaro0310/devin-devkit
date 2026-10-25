@@ -7,8 +7,9 @@ layer — three concrete yes/no questions about the promotion evidence
 and maps the typed answers to a verdict with a deterministic,
 fail-safe rule:
 
-- any abstention, or evidence not *clearly* sufficient →
-  ``inconclusive``;
+- any abstention, an answer that is not a usable probability
+  (missing/non-numeric/NaN/out-of-range), or evidence not *clearly*
+  sufficient → ``inconclusive``;
 - a clear regression signal → ``regresses`` (harm wins over help);
 - clear improvement **and** clearly no regression → ``improves``;
 - both effects clearly absent → ``no-detectable-effect``;
@@ -156,9 +157,22 @@ def verdict_from_probs(probs: dict[str, float], abstained: bool = False) -> str:
     """Map the judge's P(true) per question to a G3 verdict.
 
     Deterministic and fail-safe — see the module docstring for the
-    rule. ``probs`` keys are :data:`G3_QUESTIONS` names.
+    rule. ``probs`` keys are :data:`G3_QUESTIONS` names. An answer that
+    is not a usable probability — an unanswered question, a non-numeric
+    score, NaN, inf or a number outside [0, 1] — counts as "cannot
+    tell": ``inconclusive``, never a decision on garbage.
     """
     if abstained:
+        return "inconclusive"
+    try:
+        probs = {k: float(probs[k]) for k in G3_QUESTIONS}
+    except (KeyError, TypeError, ValueError):
+        # an unanswered question or a non-numeric score — nothing to
+        # decide on
+        return "inconclusive"
+    if not all(0.0 <= p <= 1.0 for p in probs.values()):
+        # NaN/inf/out-of-range is "cannot tell", not evidence for or
+        # against — never let it satisfy a threshold
         return "inconclusive"
     if probs["sufficient"] < _REVIEW_HIGH:
         # cannot tell whether the evidence suffices — or it clearly
