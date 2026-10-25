@@ -405,7 +405,10 @@ def test_adversarial_verdicts_are_rejected(
         rc = _promote(
             "skill:good-skill", config_dir, "--g3-report", str(report)
         )
+        captured = capsys.readouterr()
         assert rc == 1, bad
+        # pin the refusal to the enum rejection, not an unrelated check
+        assert f"verdict {bad!r}" in captured.err, bad
         assert (
             _reg(config_dir).state_of("skill", "good-skill")
             == STATE_QUARANTINED
