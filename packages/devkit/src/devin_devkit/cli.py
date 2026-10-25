@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -164,12 +165,30 @@ def main(argv: list[str] | None = None) -> int:
                 hint = freshness_hint(manifest, environment=plan["environment"])
                 if hint:
                     print(hint, file=sys.stderr)
-                if plan["errors"] or (envelope is not None and not envelope.get("ok")):
+                if plan["errors"]:
                     return 2
+                if envelope is not None and not envelope.get("ok"):
+                    return 1
                 return 0
             if plan["errors"]:
-                _print_plan(plan, args.json)
+                if args.json:
+                    print(json.dumps({"tools": plan, "switch": None},
+                                     ensure_ascii=False, indent=2))
+                else:
+                    _print_plan(plan, False)
                 return 2
+            # Preflight: if the plan itself does not install devin-switch, a
+            # missing binary must fail before any tool installation — not
+            # after the environment is already mutated.
+            installs_switch = any(
+                item.get("action") == "install" and item.get("tool") == "devin-switch"
+                for item in plan["actions"])
+            if (switch_name and not installs_switch
+                    and shutil.which("devin-switch") is None):
+                raise DevKitError(
+                    "devin-switch is not on PATH and this plan does not "
+                    "install it; install it first "
+                    "(e.g. `devin-devkit install operations`)")
             result = apply_plan(plan)
             envelope = switch_apply(switch_name, apply=True) if switch_name else None
             if args.json:

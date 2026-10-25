@@ -5,6 +5,7 @@ import platform as platform_module
 import re
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from importlib.resources import files
 from pathlib import Path
@@ -290,6 +291,17 @@ def switch_apply(
         raise DevKitError(
             f"unexpected devin-switch envelope schema: "
             f"{envelope.get('schema') if isinstance(envelope, dict) else envelope!r}")
+    if not isinstance(envelope.get("ok"), bool):
+        raise DevKitError(
+            "devin-switch envelope missing boolean 'ok' field "
+            f"(got {envelope.get('ok')!r})")
+    if envelope["ok"] and (
+        not isinstance(envelope.get("files"), list)
+        or not isinstance(envelope.get("actions"), dict)
+    ):
+        raise DevKitError(
+            "devin-switch success envelope malformed: 'files' must be a "
+            "list and 'actions' a dict")
     return envelope
 
 
@@ -301,13 +313,21 @@ def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run
         if action["action"] != "install":
             continue
         try:
-            result = runner(action["command"], check=False)
+            result = runner(action["command"], check=False,
+                            capture_output=True, text=True)
         except OSError as exc:
             raise DevKitError(f"failed to start {action['tool']}: {exc}") from exc
+        # Installers must not inherit stdout — `apply --json` prints one
+        # combined document and stray installer output would corrupt it.
+        # stderr is forwarded so diagnostics still reach the user.
+        stderr_tail = (getattr(result, "stderr", "") or "").strip()
         if result.returncode:
+            detail = f": {stderr_tail[-200:]}" if stderr_tail else ""
             raise DevKitError(
-                f"install failed for {action['tool']} (exit {result.returncode}); "
+                f"install failed for {action['tool']} (exit {result.returncode}){detail}; "
                 f"completed before failure: {completed}"
             )
+        if stderr_tail:
+            print(stderr_tail, file=sys.stderr)
         completed.append(action["tool"])
     return {"profile": plan["profile"], "installed": completed, "actions": plan["actions"]}

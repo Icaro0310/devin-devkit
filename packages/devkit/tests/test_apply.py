@@ -89,6 +89,25 @@ class TestSwitchApplyUnit:
                          which=lambda n: "/bin/devin-switch",
                          runner=runner)
 
+    def test_missing_ok_field_raises(self):
+        def runner(cmd, **kw):
+            return SimpleNamespace(
+                stdout='{"schema": "devin-switch/apply@1"}', returncode=0)
+        with pytest.raises(DevKitError, match="'ok'"):
+            switch_apply("qa", apply=False,
+                         which=lambda n: "/bin/devin-switch",
+                         runner=runner)
+
+    def test_malformed_success_fields_raise(self):
+        bad = {"schema": "devin-switch/apply@1", "ok": True,
+               "files": "x", "actions": {}}
+        def runner(cmd, **kw):
+            return SimpleNamespace(stdout=json.dumps(bad), returncode=0)
+        with pytest.raises(DevKitError, match="malformed"):
+            switch_apply("qa", apply=False,
+                         which=lambda n: "/bin/devin-switch",
+                         runner=runner)
+
 
 class TestApplyCommand:
     def _stubs(self, monkeypatch, manifest_profile=None):
@@ -175,3 +194,44 @@ class TestApplyCommand:
         monkeypatch.setattr(cli, "switch_apply",
                             lambda *a, **k: pytest.fail("must not switch"))
         assert cli.main(["apply", "operations", "--apply"]) == 2
+
+    def test_preview_switch_failure_returns_1(self, monkeypatch, capsys):
+        self._stubs(monkeypatch)
+        monkeypatch.setattr(
+            cli, "switch_apply",
+            lambda name, *, apply, **k: _envelope(name=name, ok=False))
+        assert cli.main(["apply", "operations"]) == 1
+        assert "unknown_profile" in capsys.readouterr().err
+
+    def test_apply_blocked_json_emits_combined_shape(self, monkeypatch, capsys):
+        self._stubs(monkeypatch)
+        monkeypatch.setattr(cli, "build_plan",
+                            lambda *a, **k: _plan(errors=["missing uv"]))
+        monkeypatch.setattr(cli, "switch_apply",
+                            lambda *a, **k: pytest.fail("must not switch"))
+        assert cli.main(["apply", "operations", "--apply", "--json"]) == 2
+        out = json.loads(capsys.readouterr().out)
+        assert out["tools"]["errors"] == ["missing uv"]
+        assert out["switch"] is None
+
+    def test_apply_preflights_missing_switch_binary(self, monkeypatch, capsys):
+        calls = []
+        plan = _plan()
+        plan["actions"] = [{
+            "tool": "devin-powerups", "action": "install",
+            "command": ["uv", "tool", "install", "devin-powerups"],
+        }]
+        self._stubs(monkeypatch)
+        monkeypatch.setattr(cli, "build_plan", lambda *a, **k: plan)
+        monkeypatch.setattr(
+            cli, "apply_plan",
+            lambda p: calls.append(p) or pytest.fail("must not install"))
+        monkeypatch.setattr(cli.shutil, "which", lambda n: None)
+        assert cli.main(["apply", "operations", "--apply"]) == 2
+        assert calls == []
+        assert "devin-switch is not on PATH" in capsys.readouterr().err
+
+    def test_apply_plan_installs_switch_skips_preflight(self, monkeypatch, capsys):
+        self._stubs(monkeypatch)
+        monkeypatch.setattr(cli.shutil, "which", lambda n: None)
+        assert cli.main(["apply", "operations", "--apply"]) == 0
