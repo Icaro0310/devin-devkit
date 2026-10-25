@@ -249,6 +249,50 @@ def build_plan(
     }
 
 
+SWITCH_SCHEMA = "devin-switch/apply@1"
+
+
+def switch_apply(
+    switch_name: str,
+    *,
+    apply: bool,
+    which: Callable[[str], str | None] = shutil.which,
+    runner: Callable[..., Any] = subprocess.run,
+) -> dict[str, Any]:
+    """Consume the ``devin-switch apply <name>`` machine contract.
+
+    stdout is always a single ``devin-switch/apply@1`` JSON document —
+    on dry-run, on a real apply and on failure — so the caller never
+    scrapes human output. Returns the parsed envelope; ``ok: false``
+    envelopes (``unknown_profile``, ``invalid_manifest``,
+    ``snapshot_failed``) are contract failures, not exceptions. Raises
+    DevKitError only for infrastructure failures: missing binary,
+    unparseable stdout or a foreign schema.
+    """
+    binary = which("devin-switch")
+    if binary is None:
+        raise DevKitError(
+            "devin-switch is not on PATH; install it first "
+            "(e.g. `devin-devkit install operations`)")
+    command = [binary, "apply", switch_name] + (["--apply"] if apply else [])
+    try:
+        result = runner(command, capture_output=True, text=True, check=False)
+    except OSError as exc:
+        raise DevKitError(f"failed to start devin-switch: {exc}") from exc
+    try:
+        envelope = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError):
+        raise DevKitError(
+            f"devin-switch returned unparseable output "
+            f"(exit {result.returncode}): {(result.stdout or '')[:200]}"
+        ) from None
+    if not isinstance(envelope, dict) or envelope.get("schema") != SWITCH_SCHEMA:
+        raise DevKitError(
+            f"unexpected devin-switch envelope schema: "
+            f"{envelope.get('schema') if isinstance(envelope, dict) else envelope!r}")
+    return envelope
+
+
 def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run) -> dict[str, Any]:
     if plan["errors"]:
         raise DevKitError("preflight failed: " + "; ".join(plan["errors"]))
