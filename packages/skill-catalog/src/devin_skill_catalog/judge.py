@@ -7,8 +7,9 @@ layer — three concrete yes/no questions about the promotion evidence
 and maps the typed answers to a verdict with a deterministic,
 fail-safe rule:
 
-- any abstention, or evidence not *clearly* sufficient →
-  ``inconclusive``;
+- any abstention, an answer that is not a usable probability
+  (missing/non-numeric/NaN/out-of-range) or lacks a usable
+  confidence, or evidence not *clearly* sufficient → ``inconclusive``;
 - a clear regression signal → ``regresses`` (harm wins over help);
 - clear improvement **and** clearly no regression → ``improves``;
 - both effects clearly absent → ``no-detectable-effect``;
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
@@ -156,9 +158,22 @@ def verdict_from_probs(probs: dict[str, float], abstained: bool = False) -> str:
     """Map the judge's P(true) per question to a G3 verdict.
 
     Deterministic and fail-safe — see the module docstring for the
-    rule. ``probs`` keys are :data:`G3_QUESTIONS` names.
+    rule. ``probs`` keys are :data:`G3_QUESTIONS` names. An answer that
+    is not a usable probability — an unanswered question, a non-numeric
+    score, NaN, inf or a number outside [0, 1] — counts as "cannot
+    tell": ``inconclusive``, never a decision on garbage.
     """
     if abstained:
+        return "inconclusive"
+    try:
+        probs = {k: float(probs[k]) for k in G3_QUESTIONS}
+    except (KeyError, TypeError, ValueError):
+        # an unanswered question or a non-numeric score — nothing to
+        # decide on
+        return "inconclusive"
+    if not all(0.0 <= p <= 1.0 for p in probs.values()):
+        # NaN/inf/out-of-range is "cannot tell", not evidence for or
+        # against — never let it satisfy a threshold
         return "inconclusive"
     if probs["sufficient"] < _REVIEW_HIGH:
         # cannot tell whether the evidence suffices — or it clearly
@@ -191,6 +206,12 @@ def produce_g3_report(
     questions)`` — a real Client or a scripted test double; ``None``
     builds one via :func:`build_judge_client`. ``source`` names the
     evidence (e.g. the file it was read from) for the audit trail.
+
+    The producer is fail-closed like the verdict rule: an answer whose
+    ``prob`` or ``confidence`` is missing or not a real number drops
+    out of the mapping like an unanswered question — the report is
+    ``inconclusive``, never a crash — and the unusable field is
+    recorded as null in ``results``.
     """
     client = client if client is not None else build_judge_client()
     state = (
@@ -198,7 +219,35 @@ def produce_g3_report(
         f"Promotion evidence:\n{evidence.strip()}"
     )
     answers = client.ask(state, _g3_questions())
-    probs = {q: float(a.prob) for q, a in answers.items()}
+    # An answer feeds the verdict only when BOTH of its numbers are
+    # usable: a prob that does not convert — or a confidence that is
+    # missing, non-numeric or non-finite — is "cannot tell", not a
+    # crash. The answer drops out of the verdict mapping exactly like
+    # an unanswered question (→ inconclusive), so a garbage confidence
+    # can never ride a valid prob to 'improves'. NaN/inf/out-of-range
+    # probs still convert and are rejected by verdict_from_probs' own
+    # range check.
+    probs: dict[str, float] = {}
+    results: dict[str, dict] = {}
+    for q, a in answers.items():
+        try:
+            p = float(getattr(a, "prob", None))
+        except (TypeError, ValueError):
+            p = None
+        try:
+            c = float(getattr(a, "confidence", None))
+        except (TypeError, ValueError):
+            c = None
+        if p is not None and c is not None and math.isfinite(c):
+            probs[q] = p
+        results[q] = {
+            "prob_true": round(p, 4) if p is not None else None,
+            "confidence": (
+                round(c, 4) if c is not None and math.isfinite(c)
+                else None
+            ),
+            "abstained": bool(getattr(a, "abstained", False)),
+        }
     abstained = any(
         bool(getattr(a, "abstained", False)) for a in answers.values()
     )
@@ -212,14 +261,7 @@ def produce_g3_report(
                 evidence.encode("utf-8")
             ).hexdigest(),
         },
-        "results": {
-            q: {
-                "prob_true": round(probs[q], 4),
-                "confidence": round(float(a.confidence), 4),
-                "abstained": bool(getattr(a, "abstained", False)),
-            }
-            for q, a in answers.items()
-        },
+        "results": results,
         "candidate": {"kind": kind, "name": name},
     }
     if source:

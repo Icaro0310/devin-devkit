@@ -171,6 +171,155 @@ def test_verdict_rule(probs, abstained, expected):
     assert judge.verdict_from_probs(probs, abstained) == expected
 
 
+@pytest.mark.parametrize(
+    "probs",
+    [
+        {},  # no answers at all
+        {"sufficient": 0.9, "regresses": 0.1},  # an unanswered question
+        {"sufficient": 0.9, "improves": "high", "regresses": 0.1},
+        {"sufficient": 0.9, "improves": None, "regresses": 0.1},
+        {"sufficient": float("nan"), "improves": 0.9, "regresses": 0.1},
+        {"sufficient": 0.9, "improves": float("nan"), "regresses": 0.1},
+        {"sufficient": 0.9, "improves": 0.9, "regresses": float("nan")},
+        {"sufficient": 0.9, "improves": float("inf"), "regresses": 0.1},
+        {"sufficient": 0.9, "improves": 1.5, "regresses": 0.1},
+        {"sufficient": 0.9, "improves": -0.2, "regresses": 0.1},
+    ],
+)
+def test_verdict_rule_unusable_answer_is_inconclusive(probs):
+    """A judge answer that is not a usable probability — a missing
+    question, a non-numeric value, NaN, inf or a number outside
+    [0, 1] — is "cannot tell", never evidence: the verdict is
+    inconclusive. In particular a NaN on ``sufficient`` must not
+    satisfy the sufficiency gate and let ``improves`` through."""
+    assert judge.verdict_from_probs(probs) == "inconclusive"
+
+
+def test_partial_answers_produce_inconclusive_report(judge_stub):
+    """A client that answered only some of the questions yields an
+    honest inconclusive report instead of crashing the producer."""
+
+    class _Partial(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                name: _FakeAnswer(self.probs[name])
+                for name in questions
+                if name in self.probs
+            }
+
+    client = _Partial({"sufficient": 0.9, "improves": 0.8})
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=client
+    )
+    assert report["verdict"] == "inconclusive"
+    assert "regresses" not in report["results"]
+
+
+def test_nan_prob_produces_inconclusive_report(judge_stub):
+    """A NaN prob the client did not mark abstained still reads as
+    "cannot tell" — the produced report is inconclusive."""
+    client = _FakeClient(
+        {"sufficient": float("nan"), "improves": 0.9, "regresses": 0.1}
+    )
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=client
+    )
+    assert report["verdict"] == "inconclusive"
+
+
+def test_non_numeric_answer_produces_inconclusive_report(judge_stub):
+    """A prob/confidence that is not a number used to raise in the
+    producer's own conversion, before the verdict rule could map it —
+    now it is "cannot tell": an inconclusive report with the garbage
+    recorded as null, never a crash."""
+
+    class _Garbage(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob="high", confidence="lots", abstained=False
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=None, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_Garbage({})
+    )
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["prob_true"] is None
+    assert report["results"]["improves"]["confidence"] is None
+    assert report["results"]["regresses"]["prob_true"] is None
+    assert report["results"]["sufficient"]["prob_true"] == 0.9
+    # the report still serializes as plain JSON
+    json.dumps(report)
+
+
+@pytest.mark.parametrize("bad_confidence", ["lots", None, float("nan")])
+def test_invalid_confidence_produces_inconclusive_report(
+    judge_stub, bad_confidence
+):
+    """A usable prob paired with an unusable confidence is still
+    "cannot tell": the answer drops out of the verdict mapping like an
+    unanswered question, so a promote-worthy prob set yields an
+    inconclusive report — never 'improves', which an always-on rule
+    could promote on. The garbage confidence is recorded as null."""
+
+    class _BadConfidence(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob=0.9,
+                    confidence=bad_confidence,
+                    abstained=False,
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=0.1, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_BadConfidence({})
+    )
+    # the exact report an always-on rule must not promote on
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["prob_true"] == 0.9
+    assert report["results"]["improves"]["confidence"] is None
+    json.dumps(report)
+
+
+def test_missing_confidence_produces_inconclusive_report(judge_stub):
+    """An answer with no ``confidence`` attribute at all is unusable —
+    the same drop-out as an invalid one."""
+
+    class _NoConfidence(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob=0.9, abstained=False
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=0.1, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_NoConfidence({})
+    )
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["confidence"] is None
+
+
 # ---- report production ------------------------------------------------------
 
 

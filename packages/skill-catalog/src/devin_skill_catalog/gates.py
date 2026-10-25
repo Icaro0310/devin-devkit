@@ -581,6 +581,9 @@ def evaluate_g3(
 
     - ``regresses`` refuses **any** kind — a hard block that ``--force``
       does not override: a regressed artifact must not be promoted.
+    - a supplied report whose ``verdict`` is not a ``g3-report/0.1``
+      verdict refuses for any kind — the policy is fail-closed for
+      callers that did not validate with :func:`load_g3_report` first;
     - always-on rules (``kind == "rule"``) **require** a report whose
       verdict is ``improves`` or ``no-detectable-effect``; a missing
       report or an ``inconclusive`` one refuses.
@@ -588,7 +591,7 @@ def evaluate_g3(
       ``inconclusive`` report needs a non-empty ``inconclusive_reason``
       (recorded in the registry).
     """
-    verdict = report.get("verdict") if report else None
+    verdict = report.get("verdict") if isinstance(report, dict) else None
     if verdict == "regresses":
         return G3Decision(
             False,
@@ -596,6 +599,16 @@ def evaluate_g3(
             "G3 verdict 'regresses' — a regressed artifact must not be "
             "promoted (hard block; --force does not override it)",
             hard=True,
+        )
+    if report is not None and verdict not in G3_VERDICTS:
+        # A report that never went through load_g3_report can carry
+        # anything — an unrecognized verdict must refuse, never fall
+        # through to the skill branch's permissive default.
+        return G3Decision(
+            False,
+            str(verdict),
+            f"G3 report verdict {verdict!r} is not one of "
+            f"{', '.join(G3_VERDICTS)} — refusing fail-closed",
         )
     if kind == KIND_RULE:
         if report is None:
