@@ -227,6 +227,38 @@ def test_nan_prob_produces_inconclusive_report(judge_stub):
     assert report["verdict"] == "inconclusive"
 
 
+def test_non_numeric_answer_produces_inconclusive_report(judge_stub):
+    """A prob/confidence that is not a number used to raise in the
+    producer's own conversion, before the verdict rule could map it —
+    now it is "cannot tell": an inconclusive report with the garbage
+    recorded as null, never a crash."""
+
+    class _Garbage(_FakeClient):
+        def ask(self, state, questions):
+            return {
+                "sufficient": types.SimpleNamespace(
+                    prob=0.9, confidence=0.9, abstained=False
+                ),
+                "improves": types.SimpleNamespace(
+                    prob="high", confidence="lots", abstained=False
+                ),
+                "regresses": types.SimpleNamespace(
+                    prob=None, confidence=0.9, abstained=False
+                ),
+            }
+
+    report = judge.produce_g3_report(
+        "skill", "x", "0" * 64, "eval summary", client=_Garbage({})
+    )
+    assert report["verdict"] == "inconclusive"
+    assert report["results"]["improves"]["prob_true"] is None
+    assert report["results"]["improves"]["confidence"] is None
+    assert report["results"]["regresses"]["prob_true"] is None
+    assert report["results"]["sufficient"]["prob_true"] == 0.9
+    # the report still serializes as plain JSON
+    json.dumps(report)
+
+
 # ---- report production ------------------------------------------------------
 
 

@@ -205,6 +205,11 @@ def produce_g3_report(
     questions)`` — a real Client or a scripted test double; ``None``
     builds one via :func:`build_judge_client`. ``source`` names the
     evidence (e.g. the file it was read from) for the audit trail.
+
+    The producer is fail-closed like the verdict rule: an answer whose
+    ``prob`` is missing or not a real number drops out of the mapping
+    like an unanswered question — the report is ``inconclusive``, never
+    a crash — and is recorded in ``results`` with a null ``prob_true``.
     """
     client = client if client is not None else build_judge_client()
     state = (
@@ -212,7 +217,29 @@ def produce_g3_report(
         f"Promotion evidence:\n{evidence.strip()}"
     )
     answers = client.ask(state, _g3_questions())
-    probs = {q: float(a.prob) for q, a in answers.items()}
+    # A prob that does not convert to a real number is "cannot tell",
+    # not a crash: it drops out of the verdict mapping exactly like an
+    # unanswered question (→ inconclusive) and is recorded as null in
+    # the report. NaN/inf/out-of-range probs still convert and are
+    # rejected by verdict_from_probs' own range check.
+    probs: dict[str, float] = {}
+    results: dict[str, dict] = {}
+    for q, a in answers.items():
+        try:
+            p = float(getattr(a, "prob", None))
+        except (TypeError, ValueError):
+            p = None
+        else:
+            probs[q] = p
+        try:
+            c = float(getattr(a, "confidence", None))
+        except (TypeError, ValueError):
+            c = None
+        results[q] = {
+            "prob_true": round(p, 4) if p is not None else None,
+            "confidence": round(c, 4) if c is not None else None,
+            "abstained": bool(getattr(a, "abstained", False)),
+        }
     abstained = any(
         bool(getattr(a, "abstained", False)) for a in answers.values()
     )
@@ -226,14 +253,7 @@ def produce_g3_report(
                 evidence.encode("utf-8")
             ).hexdigest(),
         },
-        "results": {
-            q: {
-                "prob_true": round(probs[q], 4),
-                "confidence": round(float(a.confidence), 4),
-                "abstained": bool(getattr(a, "abstained", False)),
-            }
-            for q, a in answers.items()
-        },
+        "results": results,
         "candidate": {"kind": kind, "name": name},
     }
     if source:

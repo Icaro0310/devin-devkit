@@ -17,7 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hard block). `judge.verdict_from_probs` now maps a missing,
   non-numeric, NaN, infinite or out-of-`[0, 1]` judge answer to
   `inconclusive` instead of letting it satisfy a threshold — a NaN on
-  `sufficient` could previously yield `improves`.
+  `sufficient` could previously yield `improves`. `judge.produce_g3_report`
+  likewise yields an `inconclusive` report (with the value recorded as
+  null in `results`) when an answer's `prob`/`confidence` is missing or
+  non-numeric, instead of raising in the producer's own conversion.
 - `devin-skill-catalog-mcp` no longer reports a server startup `ImportError` as a
   missing `mcp` extra: only failures while building the app get the
   install hint; `.run()` failures keep their traceback.
