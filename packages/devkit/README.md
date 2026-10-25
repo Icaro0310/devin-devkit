@@ -83,6 +83,16 @@ devin-devkit install qa --apply
 devin-devkit install full --apply
 ```
 
+`install` covers tools only. `apply` unifies install with config-profile selection: it resolves the devkit profile (following `alias_of` chains), installs the tool list, then shells out to `devin-switch apply <name> --apply` for the config half, consuming its `devin-switch/apply@1` JSON contract — never scraping human output:
+
+```bash
+devin-devkit apply operations            # dry-run: tool plan + switch plan
+devin-devkit apply operations --apply    # installs tools, then applies config
+devin-devkit apply operations --json     # combined {"tools": ..., "switch": ...}
+```
+
+The switch profile is looked up by the resolved devkit name unless the manifest profile declares `switch_profile` — a string overrides the name, `false` marks the profile as tools-only (as `agent-tools`/`no-devin` do for machines without a Devin install). `apply` requires `devin-switch` on `PATH` and fails closed if it is missing, its output is unparseable, or the envelope reports an error; profiles with no matching switch profile should keep using `install`. Tools install before the config half, and a blocked plan stops before either side writes.
+
 Install specs are pinned (PyPI versions or GitHub archive SHAs), so an install never drifts on its own. To move forward:
 
 ```bash

@@ -5,6 +5,7 @@ import platform as platform_module
 import re
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from importlib.resources import files
 from pathlib import Path
@@ -249,6 +250,61 @@ def build_plan(
     }
 
 
+SWITCH_SCHEMA = "devin-switch/apply@1"
+
+
+def switch_apply(
+    switch_name: str,
+    *,
+    apply: bool,
+    which: Callable[[str], str | None] = shutil.which,
+    runner: Callable[..., Any] = subprocess.run,
+) -> dict[str, Any]:
+    """Consume the ``devin-switch apply <name>`` machine contract.
+
+    stdout is always a single ``devin-switch/apply@1`` JSON document —
+    on dry-run, on a real apply and on failure — so the caller never
+    scrapes human output. Returns the parsed envelope; ``ok: false``
+    envelopes (``unknown_profile``, ``invalid_manifest``,
+    ``snapshot_failed``) are contract failures, not exceptions. Raises
+    DevKitError only for infrastructure failures: missing binary,
+    unparseable stdout or a foreign schema.
+    """
+    binary = which("devin-switch")
+    if binary is None:
+        raise DevKitError(
+            "devin-switch is not on PATH; install it first "
+            "(e.g. `devin-devkit install operations`)")
+    command = [binary, "apply", switch_name] + (["--apply"] if apply else [])
+    try:
+        result = runner(command, capture_output=True, text=True, check=False)
+    except OSError as exc:
+        raise DevKitError(f"failed to start devin-switch: {exc}") from exc
+    try:
+        envelope = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError):
+        raise DevKitError(
+            f"devin-switch returned unparseable output "
+            f"(exit {result.returncode}): {(result.stdout or '')[:200]}"
+        ) from None
+    if not isinstance(envelope, dict) or envelope.get("schema") != SWITCH_SCHEMA:
+        raise DevKitError(
+            f"unexpected devin-switch envelope schema: "
+            f"{envelope.get('schema') if isinstance(envelope, dict) else envelope!r}")
+    if not isinstance(envelope.get("ok"), bool):
+        raise DevKitError(
+            "devin-switch envelope missing boolean 'ok' field "
+            f"(got {envelope.get('ok')!r})")
+    if envelope["ok"] and (
+        not isinstance(envelope.get("files"), list)
+        or not isinstance(envelope.get("actions"), dict)
+    ):
+        raise DevKitError(
+            "devin-switch success envelope malformed: 'files' must be a "
+            "list and 'actions' a dict")
+    return envelope
+
+
 def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run) -> dict[str, Any]:
     if plan["errors"]:
         raise DevKitError("preflight failed: " + "; ".join(plan["errors"]))
@@ -257,13 +313,21 @@ def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run
         if action["action"] != "install":
             continue
         try:
-            result = runner(action["command"], check=False)
+            result = runner(action["command"], check=False,
+                            capture_output=True, text=True)
         except OSError as exc:
             raise DevKitError(f"failed to start {action['tool']}: {exc}") from exc
+        # Installers must not inherit stdout — `apply --json` prints one
+        # combined document and stray installer output would corrupt it.
+        # stderr is forwarded so diagnostics still reach the user.
+        stderr_tail = (getattr(result, "stderr", "") or "").strip()
         if result.returncode:
+            detail = f": {stderr_tail[-200:]}" if stderr_tail else ""
             raise DevKitError(
-                f"install failed for {action['tool']} (exit {result.returncode}); "
+                f"install failed for {action['tool']} (exit {result.returncode}){detail}; "
                 f"completed before failure: {completed}"
             )
+        if stderr_tail:
+            print(stderr_tail, file=sys.stderr)
         completed.append(action["tool"])
     return {"profile": plan["profile"], "installed": completed, "actions": plan["actions"]}

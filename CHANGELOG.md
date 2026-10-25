@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **devkit** — `apply --apply` hardening on the `devin-switch/apply@1`
+  contract: missing `devin-switch` binary now preflights *before* tool
+  installation (no more partial installs); preview switch failures exit
+  1 like the write path (was 2); installer stdout is captured so
+  `--apply --json` stays a single parseable document (stderr still
+  reaches the user); blocked `--apply --json` emits the same
+  `{"tools", "switch"}` envelope as success; and `switch_apply`
+  validates required envelope fields (`ok` boolean, `files`/`actions`
+  on success) instead of treating contract violations as switch
+  failures.
 - **skill-catalog** — `export-bundle --incremental`: manifest-hash diff via the shared `bundle-export` cursor (`devin-internals-spec`, `DEVIN_CURSOR_DIR` override); unchanged items are skipped (`N exported, M unchanged`), stale items pruned, cursor committed after atomic bundle writes; corrupt/missing cursor fails open to a full export.
 - **Adapters** — read-only MCP servers, Devin skills and `adapters/` plugin roots for `devin-devkit` and `devin-skill-catalog`.
 - **Pre-commit hook** — new `devin-skill-catalog-gate` repo hook

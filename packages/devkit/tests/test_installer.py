@@ -188,6 +188,33 @@ def test_apply_fails_closed_on_preflight_errors():
         installer.apply_plan(plan, runner=lambda *args, **kwargs: pytest.fail("must not run"))
 
 
+def test_apply_captures_installer_stdout():
+    # Installer stdout must not leak into `apply --json` combined output.
+    seen = {}
+    plan = {"profile": "qa", "errors": [], "actions": [
+        {"tool": "devin-doctor", "action": "install", "command": ["uv", "tool", "install", "devin-doctor==0.1.0"]},
+    ]}
+    def runner(cmd, **kwargs):
+        seen.update(kwargs)
+        return SimpleNamespace(returncode=0, stdout="install progress noise", stderr="")
+
+    result = installer.apply_plan(plan, runner=runner)
+
+    assert result["installed"] == ["devin-doctor"]
+    assert seen.get("capture_output") is True
+
+
+def test_apply_forwards_installer_stderr(capsys):
+    plan = {"profile": "qa", "errors": [], "actions": [
+        {"tool": "devin-doctor", "action": "install", "command": ["uv", "tool", "install", "devin-doctor==0.1.0"]},
+    ]}
+    runner = lambda cmd, **kwargs: SimpleNamespace(returncode=0, stdout="", stderr="uv: downloaded 3 packages")
+
+    installer.apply_plan(plan, runner=runner)
+
+    assert "downloaded 3 packages" in capsys.readouterr().err
+
+
 def test_load_manifest_from_file(tmp_path: Path):
     manifest = sample_manifest()
     path = tmp_path / "manifest.json"

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `devin-devkit apply <profile>`: the consumer half of the
+  `devin-switch/apply@1` contract. Resolves the profile in the devkit
+  manifest (following `alias_of` chains), installs the tool list, then
+  shells out to `devin-switch apply <resolved-name> [--apply]` and
+  parses the JSON envelope from stdout — dry-run previews both halves,
+  `--apply` writes tools then config, `--json` emits a combined
+  `{"tools", "switch"}` document. Profiles may declare `switch_profile`
+  in the manifest: a string overrides the switch profile name, `false`
+  marks the profile as tools-only (`agent-tools`/`no-devin` use it).
+  Fails closed on a missing `devin-switch` binary, unparseable output,
+  a foreign envelope schema, or a switch-side `ok: false` (exit 1).
 - Corporate validation kit under
   `environments/corporate-windows/validation-kit/`: a self-contained,
   PowerShell 5.1-compatible `Invoke-CorporateValidation.ps1` that probes
