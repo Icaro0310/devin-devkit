@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **CI** — repin the shared `pr-approve` gate to `devin-powerups` `@v1.9`
+  (self-cancel fix so a successful approval no longer renders as a
+  failed check; fresh-head recheck + paginated dedup).
 - **devkit** — `apply --apply` hardening on the `devin-switch/apply@1`
   contract: missing `devin-switch` binary now preflights *before* tool
   installation (no more partial installs); preview switch failures exit
