@@ -4,6 +4,8 @@ Subcommands::
 
     scan [PATH ...]                 inventory skills/rules (read-only)
     lint [PATH ...]                 structural lint findings
+                                    (--slop: deterministic anti-slop
+                                    content rules on item markdown)
     diff A B                        inventory diff between two dirs
     gate g1|g2 PATH                 offline gates; --apply records result
     g3 ITEM --judge --evidence F    produce a g3-report/0.1 via poordjaevin
@@ -15,6 +17,9 @@ Subcommands::
                                     (--incremental: manifest-hash diff
                                     via the bundle-export cursor)
     import-bundle PATH              land items quarantined (never active)
+                                    (--clean: replace the catalog copies
+                                    the bundle carries — snapshot first,
+                                    atomic swap, --restore recovers)
 
 Lifecycle mutations are **plan-first**: without ``--apply`` the command
 prints what it would do and writes nothing. The registry lives at
@@ -43,6 +48,7 @@ from devin_skill_catalog import (
     judge,
     lint,
     scan,
+    slop,
 )
 from devin_skill_catalog.diffing import (
     DiffRow,
@@ -229,7 +235,17 @@ def cmd_scan(args) -> int:
 
 
 def cmd_lint(args) -> int:
-    return _emit(args, lint.lint_items(_scan(args)))
+    if args.warn_only and not args.slop:
+        print(
+            "error: --warn-only only applies to --slop mode",
+            file=sys.stderr,
+        )
+        return 2
+    if not args.slop:
+        return _emit(args, lint.lint_items(_scan(args)))
+    return _emit(
+        args, slop.slop_items(_scan(args), warn_only=args.warn_only)
+    )
 
 
 def cmd_diff(args) -> int:
@@ -664,6 +680,28 @@ def cmd_export(args) -> int:
 
 
 def cmd_import(args) -> int:
+    if args.restore is not None:
+        if args.clean:
+            print(
+                "error: --clean and --restore are mutually exclusive",
+                file=sys.stderr,
+            )
+            return 2
+        if args.bundle is not None:
+            print(
+                "error: --restore takes a snapshot dir — the bundle "
+                "path must be omitted",
+                file=sys.stderr,
+            )
+            return 2
+        return _cmd_restore(args)
+    if args.bundle is None:
+        print(
+            "error: a bundle path is required (or pass "
+            "--restore SNAPSHOT_DIR)",
+            file=sys.stderr,
+        )
+        return 2
     path = Path(args.bundle)
     try:
         with bundle.BundleReader(path) as reader:
@@ -682,15 +720,43 @@ def cmd_import(args) -> int:
                     "active/approved"
                 ),
             ]
+            if args.clean:
+                lines.append(
+                    "--clean: the stored copy of every listed item is "
+                    "REPLACED (pre-clean snapshot → "
+                    "skill-catalog/import-snapshots/, atomic swap, "
+                    "rollback on failure)"
+                )
             for p in plans:
                 cur = reg.state_of(p["kind"], p["name"]) or "new"
-                lines.append(
-                    f"{p['key']}  ({len(p['files'])} file(s), "
-                    f"currently {cur}) → quarantined"
-                )
+                if args.clean and cur == "retired":
+                    lines.append(
+                        f"{p['key']}  ({len(p['files'])} file(s), "
+                        f"currently {cur}) → skipped — retired (a "
+                        f"clean import does not resurrect it)"
+                    )
+                elif args.clean and cur != "new":
+                    lines.append(
+                        f"{p['key']}  ({len(p['files'])} file(s), "
+                        f"currently {cur}) → replaced (pre-clean copy "
+                        f"snapshotted) → quarantined"
+                    )
+                else:
+                    lines.append(
+                        f"{p['key']}  ({len(p['files'])} file(s), "
+                        f"currently {cur}) → quarantined"
+                    )
             if not _plan(lines, args.apply):
                 return 0
-            results = bundle.apply_import(reader, reg, config_dir, plans)
+            snapshot = None
+            if args.clean:
+                results, snapshot = bundle.apply_clean_import(
+                    reader, reg, config_dir, plans, note=args.note
+                )
+            else:
+                results = bundle.apply_import(
+                    reader, reg, config_dir, plans
+                )
     except bundle.BundleError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -700,6 +766,62 @@ def cmd_import(args) -> int:
             print(f"quarantined {r['key']}")
         else:
             print(f"skipped    {r['key']} — {r['reason']}")
+    if snapshot is not None:
+        print(f"pre-clean snapshot: {snapshot}")
+        print(
+            f"  recover with: import-bundle --restore {snapshot} "
+            f"--config-dir {config_dir} --apply"
+        )
+    return 0
+
+
+def _cmd_restore(args) -> int:
+    """Restore a pre-clean snapshot written by ``--clean`` — plan-first
+    like every mutation."""
+    reg, config_dir = _registry(args)
+    snap = Path(args.restore)
+    try:
+        meta = bundle.load_clean_snapshot(snap)
+    except bundle.BundleError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    entries = meta["entries"]
+    lines = [
+        f"restore pre-clean snapshot {snap}",
+        f"snapshot created at {meta.get('created_at', '?')}",
+    ]
+    for key in sorted(entries):
+        entry = entries[key]
+        kind, _, name = key.partition(":")
+        if kind not in KINDS or not name or (
+            entry is not None and not isinstance(entry, dict)
+        ):
+            print(
+                f"error: snapshot entry {key!r} is malformed",
+                file=sys.stderr,
+            )
+            return 1
+        cur = reg.state_of(kind, name) or "unregistered"
+        if entry is None:
+            lines.append(
+                f"{key}: remove entry + store copy (unregistered "
+                f"pre-clean; currently {cur})"
+            )
+        else:
+            lines.append(
+                f"{key}: restore entry + store copy (currently {cur} "
+                f"→ {entry.get('state')})"
+            )
+    if not _plan(lines, args.apply):
+        return 0
+    try:
+        restored = bundle.restore_clean_snapshot(snap, reg, config_dir)
+    except bundle.BundleError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    reg.save()
+    for key in restored:
+        print(f"restored {key}")
     return 0
 
 
@@ -768,6 +890,21 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("lint", help="structural lint findings per item")
     _add_scan_args(p)
+    p.add_argument(
+        "--slop",
+        action="store_true",
+        help="content-slop mode: run the deterministic anti-slop rules "
+        "(slop-fingerprint, slop-emdash, slop-sycophancy, "
+        "slop-not-just-but, slop-filler) over each item's markdown "
+        "instead of the structural checks; a 'slop-allow[:<rule-id>]' "
+        "comment suppresses a line, 'slop-allow-file' the whole file",
+    )
+    p.add_argument(
+        "--warn-only",
+        action="store_true",
+        help="(--slop only) report findings as WARN and exit 0 even "
+        "when they exist",
+    )
     p.set_defaults(func=cmd_lint)
 
     p = sub.add_parser(
@@ -975,7 +1112,30 @@ def build_parser() -> argparse.ArgumentParser:
         "import-bundle",
         help="import a bundle — items land quarantined, never active",
     )
-    p.add_argument("bundle", type=Path, help="bundle dir or .tar[.gz]")
+    p.add_argument(
+        "bundle",
+        type=Path,
+        nargs="?",
+        help="bundle dir or .tar[.gz] (omitted with --restore)",
+    )
+    p.add_argument(
+        "--clean",
+        action="store_true",
+        help="replace the stored copy of every item the bundle carries "
+        "instead of merging: the pre-clean state is snapshotted to "
+        ".devin-ecosystem/skill-catalog/import-snapshots/ first, each "
+        "store copy is swapped atomically and a mid-run failure rolls "
+        "back — retired items are skipped, items absent from the bundle "
+        "are untouched",
+    )
+    p.add_argument(
+        "--restore",
+        type=Path,
+        default=None,
+        metavar="SNAPSHOT_DIR",
+        help="restore a pre-clean snapshot written by --clean "
+        "(mutually exclusive with --clean and a bundle path)",
+    )
     _add_mutation_args(p)
     p.set_defaults(func=cmd_import)
 

@@ -148,6 +148,38 @@ class Registry:
         )
         return entry
 
+    def replace(
+        self,
+        kind: str,
+        name: str,
+        *,
+        note: str = "",
+        sha256: str | None = None,
+        origin: str | None = None,
+        store: str | None = None,
+    ) -> dict:
+        """Rewrite an entry's recorded fields without changing its state
+        — a same-state content swap (``import-bundle --clean`` replacing
+        the stored copy of an already-quarantined item). History records
+        a ``from == to`` entry so the swap stays auditable."""
+        entry = self._touch(kind, name)
+        current = entry["state"]
+        if sha256:
+            entry["sha256"] = sha256
+        if origin:
+            entry["origin"] = origin
+        if store:
+            entry["store"] = store
+        entry["history"].append(
+            {
+                "at": utc_now_iso(),
+                "from": current,
+                "to": current,
+                "note": note,
+            }
+        )
+        return entry
+
     def record_gate(self, kind: str, name: str, gate: str, status: str) -> None:
         entry = self._touch(kind, name)
         entry.setdefault("gates", {})[gate] = {

@@ -16,6 +16,13 @@ imported items are registered ``quarantined`` — never ``approved`` or
 ``active``. Promotion still requires the gates. Every file's sha256 is
 verified against the manifest before it lands in the store.
 
+``import-bundle --clean`` *replaces* the catalog content for the
+bundle's scope instead of merging: the pre-clean state is snapshotted
+to ``import-snapshots/`` first, each store copy is swapped atomically,
+and a mid-run failure rolls back — ``--restore`` recovers a snapshot
+manually. ``retired`` items are skipped and items absent from the
+bundle are untouched.
+
 **Incremental export** (``--incremental``) is a manifest-hash diff: a
 shared ``devin_internals.cursor.Cursor`` named ``bundle-export`` stores
 the per-item sha256 map of the last committed export, and items whose
@@ -33,6 +40,7 @@ import writes only into the catalog store under the config dir.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import io
 import json
@@ -48,16 +56,20 @@ from devin_skill_catalog import __version__, frontmatter, scan
 from devin_skill_catalog.model import (
     EXPORTABLE_STATES,
     KINDS,
+    STATE_PROPOSED,
     STATE_QUARANTINED,
+    STATE_RETIRED,
     Item,
     item_key,
 )
-from devin_skill_catalog.paths import quarantine_item_dir
+from devin_skill_catalog.paths import quarantine_item_dir, store_dir
 from devin_skill_catalog.registry import Registry, utc_now_iso
 
 BUNDLE_VERSION = 1
 MANIFEST_NAME = "manifest.json"
 ITEMS_DIRNAME = "items"
+SNAPSHOT_MANIFEST_NAME = "snapshot.json"
+IMPORT_SNAPSHOTS_DIRNAME = "import-snapshots"
 
 _TAR_SUFFIXES = (".tar", ".tar.gz", ".tgz")
 
@@ -584,3 +596,284 @@ def apply_import(
         )
         results.append({"key": plan["key"], "action": "quarantined"})
     return results
+
+
+# --------------------------------------------------------------------------
+# clean import — replace, recoverably
+# --------------------------------------------------------------------------
+#
+# ``import-bundle --clean`` replaces the catalog content for the bundle's
+# scope (the items the bundle carries) instead of merging. The safety
+# envelope is fail-closed:
+#
+# 1. ``snapshot_clean_scope`` copies every pre-existing store copy and
+#    registry entry the bundle touches into
+#    ``skill-catalog/import-snapshots/<ts>-<pid>/`` BEFORE anything is
+#    mutated.
+# 2. Each item's new content is staged in a sibling dir and swapped in
+#    with ``os.rename`` — a crash never leaves a half-written store copy.
+# 3. Any failure rolls the touched items back from the snapshot; if the
+#    rollback itself fails, ``import-bundle --restore <snapshot>``
+#    recovers the same state. Snapshots are kept until manually pruned —
+#    recovery data is never deleted automatically.
+#
+# Items still land ``quarantined``: new/proposed, approved and active
+# items transition; an already-quarantined item keeps its state
+# (``Registry.replace`` records the swap in history). ``retired`` items
+# are skipped — a deliberate end-state a clean import does not
+# resurrect. Items absent from the bundle are untouched.
+
+
+def _new_snapshot_dir(config_dir: Path) -> Path:
+    """A fresh ``import-snapshots/<ts>-<pid>[-n]`` path — never reused."""
+    base = store_dir(config_dir) / IMPORT_SNAPSHOTS_DIRNAME
+    stamp = utc_now_iso().replace("-", "").replace(":", "")
+    cand = base / f"{stamp}-{os.getpid()}"
+    n = 0
+    while cand.exists():
+        n += 1
+        cand = base / f"{stamp}-{os.getpid()}-{n}"
+    return cand
+
+
+def _entry_store_dir(
+    entry: dict | None, config_dir: Path, kind: str, name: str
+) -> Path | None:
+    """The dir holding the item's current stored copy — the recorded
+    ``store`` path wins; else the canonical quarantine dir when it holds
+    files."""
+    if entry and entry.get("store"):
+        p = Path(entry["store"])
+        if p.is_dir():
+            return p
+    p = quarantine_item_dir(config_dir, kind, name)
+    return p if p.is_dir() else None
+
+
+def snapshot_clean_scope(
+    config_dir: Path, registry: Registry, plans: list[dict]
+) -> Path:
+    """Snapshot the pre-clean state of every item the plans touch —
+    the store copy (recorded ``store`` path or canonical quarantine dir)
+    plus a deep copy of each registry entry — into
+    ``import-snapshots/<ts>-<pid>/``. Entries that did not exist
+    pre-clean are recorded as ``null`` so restore removes them."""
+    snap = _new_snapshot_dir(config_dir)
+    entries: dict[str, dict | None] = {}
+    for plan in plans:
+        kind, name = plan["kind"], plan["name"]
+        entry = registry.get(kind, name)
+        entries[plan["key"]] = copy.deepcopy(entry) if entry else None
+        src = _entry_store_dir(entry, config_dir, kind, name)
+        if src is not None:
+            shutil.copytree(src, snap / "items" / kind / name)
+    snap.mkdir(parents=True, exist_ok=True)
+    _atomic_write_bytes(
+        snap / SNAPSHOT_MANIFEST_NAME,
+        (
+            json.dumps(
+                {
+                    "version": 1,
+                    "created_at": utc_now_iso(),
+                    "tool": "devin-skill-catalog",
+                    "tool_version": __version__,
+                    "entries": entries,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        ).encode("utf-8"),
+    )
+    return snap
+
+
+def load_clean_snapshot(snapshot_dir: Path) -> dict:
+    """Read a snapshot's manifest — raises ``BundleError`` when the dir
+    is not a readable pre-clean snapshot."""
+    snap = Path(snapshot_dir)
+    try:
+        raw = (snap / SNAPSHOT_MANIFEST_NAME).read_bytes()
+    except OSError as exc:
+        raise BundleError(
+            f"{snap} is not a readable pre-clean snapshot"
+        ) from exc
+    try:
+        meta = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise BundleError(
+            f"snapshot manifest in {snap} is not valid JSON"
+        ) from exc
+    if not isinstance(meta, dict) or not isinstance(
+        meta.get("entries"), dict
+    ):
+        raise BundleError(
+            f"{snap} is not a pre-clean snapshot (no entries map)"
+        )
+    return meta
+
+
+def restore_clean_snapshot(
+    snapshot_dir: Path, registry: Registry, config_dir: Path
+) -> list[str]:
+    """Restore the pre-clean state captured by
+    :func:`snapshot_clean_scope`: the current store copy of every
+    snapshotted item is removed and its pre-clean copy put back (items
+    with no prior copy keep none), and registry entries return to their
+    pre-clean content with a ``restored`` history note appended.
+    Returns the restored keys."""
+    meta = load_clean_snapshot(snapshot_dir)
+    snap = Path(snapshot_dir)
+    restored: list[str] = []
+    for key in sorted(meta["entries"]):
+        entry = meta["entries"][key]
+        kind, _, name = key.partition(":")
+        if kind not in KINDS or not name or (
+            entry is not None and not isinstance(entry, dict)
+        ):
+            raise BundleError(f"snapshot entry {key!r} is malformed")
+        canon = quarantine_item_dir(config_dir, kind, name)
+        snap_copy = snap / "items" / kind / name
+        try:
+            if canon.is_dir():
+                shutil.rmtree(canon)
+            if snap_copy.is_dir():
+                dest = (
+                    Path(entry["store"])
+                    if entry and entry.get("store")
+                    else canon
+                )
+                if dest.exists():
+                    shutil.rmtree(dest)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(snap_copy, dest)
+        except OSError as exc:
+            raise BundleError(
+                f"restore of {key} failed — snapshot {snap} is intact, "
+                f"re-run --restore: {exc}"
+            ) from exc
+        if entry is None:
+            registry.entries().pop(key, None)
+        else:
+            prev_state = (registry.get(kind, name) or {}).get("state")
+            restored_entry = copy.deepcopy(entry)
+            restored_entry.setdefault("history", []).append(
+                {
+                    "at": utc_now_iso(),
+                    "from": prev_state or entry.get("state"),
+                    "to": entry.get("state"),
+                    "note": f"restored from pre-clean snapshot {snap}",
+                }
+            )
+            registry.entries()[key] = restored_entry
+        restored.append(key)
+    return restored
+
+
+def _swap_store_copy(
+    reader: BundleReader, config_dir: Path, plan: dict
+) -> Path:
+    """Stage the item's bundle files in a sibling dir and atomically
+    replace its quarantine-store copy. Returns the store path."""
+    kind, name = plan["kind"], plan["name"]
+    store = quarantine_item_dir(config_dir, kind, name)
+    stage = store.with_name(f"{store.name}.new-{os.getpid()}")
+    prev = store.with_name(f"{store.name}.prev-{os.getpid()}")
+    store.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        if stage.exists():  # stale leftover from a crashed run
+            shutil.rmtree(stage)
+        stage.mkdir(parents=True)  # an empty plan swaps to an empty dir
+        for fspec in plan["files"]:
+            data = reader.read_bytes(
+                f"{ITEMS_DIRNAME}/{kind}/{name}/{fspec['path']}"
+            )
+            dest = stage / fspec["path"]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+    except BaseException:
+        shutil.rmtree(stage, ignore_errors=True)
+        raise
+    had_prev = store.exists()
+    if had_prev:
+        if prev.exists():  # stale leftover from a crashed run
+            shutil.rmtree(prev)
+        os.rename(store, prev)
+    try:
+        os.rename(stage, store)
+    except OSError:
+        if had_prev:
+            os.rename(prev, store)  # put the old copy back
+        raise
+    if had_prev:
+        shutil.rmtree(prev, ignore_errors=True)
+    return store
+
+
+def apply_clean_import(
+    reader: BundleReader,
+    registry: Registry,
+    config_dir: Path,
+    plans: list[dict],
+    *,
+    note: str = "",
+) -> tuple[list[dict], Path | None]:
+    """The ``--clean`` import: REPLACE the stored copy of each item the
+    bundle carries instead of merging. Returns ``(results, snapshot)`` —
+    the same per-item result dicts as :func:`apply_import` plus the
+    pre-clean snapshot dir (``None`` for an empty plan; kept for
+    ``--restore`` after success).
+
+    Fail-closed: a raised error means the touched items were rolled back
+    to the snapshot (or the error text carries the snapshot path for a
+    manual ``--restore``)."""
+    if not plans:
+        return [], None
+    snapshot = snapshot_clean_scope(config_dir, registry, plans)
+    results: list[dict] = []
+    try:
+        for plan in plans:
+            kind, name = plan["kind"], plan["name"]
+            state = registry.state_of(kind, name) or STATE_PROPOSED
+            if state == STATE_RETIRED:
+                results.append(
+                    {
+                        "key": plan["key"],
+                        "action": "skipped",
+                        "reason": "retired — a clean import does not "
+                        "resurrect it",
+                    }
+                )
+                continue
+            store = _swap_store_copy(reader, config_dir, plan)
+            hist_note = (
+                note
+                or f"clean import — pre-clean snapshot {snapshot}"
+            )
+            if state == STATE_QUARANTINED:
+                registry.replace(
+                    kind, name, note=hist_note, store=str(store)
+                )
+            else:
+                registry.transition(
+                    kind,
+                    name,
+                    STATE_QUARANTINED,
+                    note=hist_note,
+                    store=str(store),
+                )
+            results.append({"key": plan["key"], "action": "quarantined"})
+    except BaseException as exc:  # noqa: BLE001 — an interrupted clean
+        # must roll back too; re-raised below
+        try:
+            restore_clean_snapshot(snapshot, registry, config_dir)
+            tail = f"pre-clean state restored from {snapshot}"
+        except (OSError, BundleError) as rb_exc:
+            tail = (
+                f"rollback failed ({rb_exc}) — recover with "
+                f"import-bundle --restore {snapshot}"
+            )
+        raise BundleError(
+            f"clean import failed — {tail}: {exc}"
+        ) from exc
+    return results, snapshot

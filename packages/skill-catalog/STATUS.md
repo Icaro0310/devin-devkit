@@ -16,6 +16,10 @@
   block scalars), degrades gracefully.
 - `lint.py` — structural findings: frontmatter block, `name` vs dir,
   real `description`, `# ` title on rules.
+- `slop.py` — deterministic anti-slop rules (`slop-fingerprint`,
+  `slop-emdash`, `slop-sycophancy`, `slop-not-just-but`, `slop-filler`)
+  over item markdown; fenced code skipped; `slop-allow[:<rule-id>]` /
+  `slop-allow-file` allowlist markers.
 - `gates.py` — G1 (lint + injection/exfil/`curl|sh`/destructive-shell
   phrasing + secret-shaped strings, values suppressed) and G2 (declared
   files/commands grounded, body references WARN, `--packs-dir` verifies
@@ -36,23 +40,28 @@
 - `bundle.py` — export `approved` items to dir/`.tar[.gz]` with
   `manifest.json` (items, per-file sha256, source profile); import
   verifies checksums and lands items `quarantined`, never active.
-- `cli.py` — `scan`, `lint`, `diff`, `gate g1|g2`, `g3 --judge`,
+  `--clean` replaces the store copies the bundle carries (pre-clean
+  snapshot to `import-snapshots/`, atomic `os.rename` swap, rollback on
+  failure); `--restore` recovers a snapshot.
+- `cli.py` — `scan`, `lint` (structural + `--slop` anti-slop mode),
+  `diff`, `gate g1|g2`, `g3 --judge`,
   `quarantine`,
   `promote` (runs G1 on the stored copy, `--force` overrides G1;
   enforces the G3 policy — always-on rules require a `g3-report` with
   `improves`/`no-detectable-effect`, `regresses` hard-blocks every kind
   even under `--force`, `inconclusive` skills need
   `--g3-inconclusive-reason`), `activate`, `retire`, `export-bundle`,
-  `import-bundle`. Mutations are plan-first: no writes without
+  `import-bundle` (`--clean` safe replacement, `--restore` recovery).
+  Mutations are plan-first: no writes without
   `--apply`.
-- Tests: 123 (+1 when the `judge` extra is installed), all on
+- Tests: 216 (+1 when the `judge` extra is installed), all on
   synthetic `.devin/` fixture trees; judge tests use scripted
   clients/backends — never a real model.
 
 ## Verified
 
-- `python -m pytest packages/skill-catalog` — 124 passed (Linux /
-  Python 3.14, poordjaevin installed), 123 + 1 skip without it.
+- `python -m pytest packages/skill-catalog` — 217 passed (Linux /
+  Python 3.14, poordjaevin installed), 216 + 1 skip without it.
 - Manual end-to-end: scan → quarantine --apply → promote --apply
   (G1 pass) → export-bundle → import-bundle --apply lands quarantined.
 - Manual `g3 --judge --evidence` run through a real poordjaevin
