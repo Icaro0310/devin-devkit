@@ -10,7 +10,7 @@ Corporate Windows is a local-only environment: no Devin VM, QwenPaw, Slack depen
 
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
-- Git only for manual source checkouts; installable profiles use HTTPS archives.
+- Git on `PATH` for the `git+` DevKit installation below and for manual source checkouts; installable profile tools use HTTPS archives.
 
 ## Install
 
@@ -56,14 +56,14 @@ The DevKit does not change those directories or Devin settings. `uv` exposes ins
 - **Blocked installers:** if winget/Store are disabled by policy, `uv` installs as a standalone binary, download the GitHub release zip, extract to `%LOCALAPPDATA%\bin`, add it to PATH.
 - **Long paths:** keep checkout/install roots short (`C:\dev`), MAX_PATH (260 chars) can still bite inside virtualenvs; `LongPathsEnabled` needs admin, short roots do not.
 - **EDR/antivirus:** if a scan kills the install, retry with an exclusion or ask IT to allowlist `%LOCALAPPDATA%\uv` and `%USERPROFILE%\.local\bin`. These tools never elevate or listen on the network by default.
-- **Offline/air-gapped:** `pip download <package> -d wheels\` on a connected machine, copy the folder, then `pip install --no-index --find-links wheels\` on the target (pure-Python tools; native deps need a matching platform wheel). For `source_only` tools installed from a copied checkout, stage the build backend too (`pip download setuptools wheel -d wheels\`, into the folder being copied) and install it first (`pip install --no-index --find-links wheels\ setuptools wheel`; `--no-build-isolation` needs the backend installed, not only staged), then install with `pip install --no-index --find-links wheels\ --no-build-isolation .` inside the checkout.
-- **Fully local runtime:** the DevKit is the installer, it cannot be local-only in the package sense: `install`/`update` fetch each tool's pinned spec (PyPI or GitHub archive), and `outdated`/`update` fetch the remote `manifest.json` to compare pins. Separately, `list` and dry-run `install` call `freshness_hint()`, which fetches `manifest.json` from `raw.githubusercontent.com` to warn when the bundled manifest is stale, it self-skips on failure (15s timeout) but still opens the connection. Since `devkit-v0.1.1` the off-switch ships in the published release: `DEVIN_DEVKIT_OFFLINE=1` skips the fetch for `list` and dry-run `install`, and a resolved `corporate_windows` environment suppresses the hint entirely. On a machine where any connection attempt is logged, export `DEVIN_DEVKIT_OFFLINE=1` or stage a fresh manifest locally. What the DevKit installs then runs under each tool's own local-only contract.
+- **Offline/air-gapped:** `pip download <package> -d wheels\` on a connected machine, copy the folder, then `pip install --no-index --find-links wheels\` on the target (pure-Python tools; native deps need a matching platform wheel). For `source_only` tools installed from a copied checkout, stage the build backend too (`pip download setuptools wheel`), then install with `pip install --no-index --find-links wheels\ --no-build-isolation .` inside the checkout.
+- **Fully local runtime:** the DevKit is the installer, it cannot be local-only in the package sense: `install`/`update` fetch each tool's pinned spec (PyPI or GitHub archive), and `outdated`/`update` fetch the remote `manifest.json` to compare pins. Separately, `list` and dry-run `install` call `freshness_hint()`, which fetches `manifest.json` from `raw.githubusercontent.com` to warn when the bundled manifest is stale, it self-skips on failure (15s timeout) but still opens the connection, and the published release has no off-switch (the `DEVIN_DEVKIT_OFFLINE=1` skip lands with the environment-gate PR). On a machine where any connection attempt is logged, avoid those commands or stage a fresh manifest locally. What the DevKit installs then runs under each tool's own local-only contract.
 
 ## Zscaler
 
 Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy genérico. Dois produtos importam aqui: **Zscaler Internet Access (ZIA)**, proxy com inspeção de TLS, e **Zscaler Private Access (ZPA)**, túnel/VPN para aplicações internas.
 
-- **Certificado raiz:** a inspeção de TLS da ZIA substitui o certificado dos sites pelo da Zscaler. Sem a raiz no bundle correto, `pip`/`uv`/`npm`/`git` falham com `SSL: CERTIFICATE_VERIFY_FAILED`. A raiz vive no repositório de certificados do Windows (instalada por política ou pelo Client Connector), e o bundle das variáveis abaixo precisa ser PEM (Base-64), não DER. Pelo GUI, exporte via Trusted Root Certification Authorities → Zscaler → Export escolhendo "Base-64 encoded X.509 (.CER)": `certmgr.msc` abre apenas o store do usuário atual; raízes instaladas por política na máquina aparecem no `certlm.msc`. Via PowerShell, `Get-ChildItem Cert:\LocalMachine\Root | ? Subject -like "*Zscaler*"` + `Export-Certificate` gera DER; converta para PEM com `certutil -encode zscaler-root.cer zscaler-root.pem`. Em alternativa peça o PEM ao TI. Cada ferramenta lê a raiz de um lugar diferente:
+- **Certificado raiz:** a inspeção de TLS da ZIA substitui o certificado dos sites pelo da Zscaler. Sem a raiz no bundle correto, `pip`/`uv`/`npm`/`git` falham com `SSL: CERTIFICATE_VERIFY_FAILED`. A raiz vive no repositório de certificados do Windows (instalada por política ou pelo Client Connector), que tem duas lojas: `certmgr.msc` cobre o usuário atual e `certlm.msc` cobre a máquina; a raiz pode estar em só uma delas. Exporte pelo assistente (Trusted Root Certification Authorities → Zscaler → Export) escolhendo "Base-64 encoded X.509 (.CER)", que já sai em PEM; via PowerShell, `Get-ChildItem Cert:\CurrentUser\Root, Cert:\LocalMachine\Root | ? Subject -like "*Zscaler*"` acha o cert nas duas lojas, mas `Export-Certificate` grava DER, não PEM; converta com `certutil -encode zscaler-root.cer zscaler-root.pem`. Em alternativa peça o PEM ao TI. Cada ferramenta lê a raiz de um lugar diferente:
   ```powershell
   $env:REQUESTS_CA_BUNDLE="C:\path\zscaler-root.pem"   # pip e ferramentas baseadas em requests
   $env:SSL_CERT_FILE="C:\path\zscaler-root.pem"        # uv, urllib do Python (inclui o check de manifest do DevKit)
@@ -78,9 +78,10 @@ Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy g
 
 ## Compatibility
 
-Shared behavior, see the [Compatibility](README.md#compatibility)
-section in README.md; the generated matrix at the repository root
-applies to every platform.
+The generated [compatibility matrix](COMPATIBILITY.md) comes from
+`devin-powerups/registry.json`. Entries marked `Local only` install
+without VM, QwenPaw, external compute, workload delegation, or
+required external integrations; other entries carry a registry reason.
 
 ## Offline / air-gapped
 
@@ -94,28 +95,16 @@ manifest.
 
 For a package such as `devin-doctor`, keep the published version
 constraint in its `pyproject.toml`; install sibling sources editably
-only in the development environment:
+only in the development environment. With `devin-explore` and
+`devin-internals-spec` checked out next to this repository, run
+from the `devin-devkit` repository root:
 
 ```powershell
 cd ..\devin-explore\packages\doctor
 uv venv
-uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
+uv pip install --python .venv\Scripts\python.exe -e ..\..\..\devin-internals-spec -e .
 ```
 
-
-
-## Adapters (MCP / Devin skill / plugin)
-
-- MCP server: `pip install 'devin-devkit[mcp]'` then run
-  `devin-devkit-mcp` (stdio). Read-only tools only.
-- Devin plugin + skill: `devin plugins install
-  Icaro0310/devin-devkit#packages/devkit/adapters`. The manifest
-  launches the server through `uvx --from 'devin-devkit[mcp]'
-  devin-devkit-mcp`, which resolves once the first PyPI release ships.
-  Until then, an editable install does not change what `uvx --from`
-  resolves — either run the source-installed `devin-devkit-mcp`
-  directly, or point a local manifest copy at the checkout:
-  `uvx --from './packages/devkit[mcp]' devin-devkit-mcp`.
 
 ## Troubleshooting
 

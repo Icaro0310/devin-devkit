@@ -35,17 +35,6 @@ Use `--config-dir` for non-default locations.
 - **WSL:** treat it as a Linux machine, follow [README.linux.md](README.linux.md) inside it.
 - **Uninstall:** `uv tool uninstall <package>` (or `npm uninstall -g` for a Node.js tool) removes the CLI; delete `%APPDATA%\devin` to remove local data. No services or scheduled tasks are left behind.
 
-
-## Adapters (MCP / Devin skill / plugin)
-
-- MCP server: `pip install 'devin-skill-catalog[mcp]'` then run
-  `devin-skill-catalog-mcp` (stdio). Read-only tools only.
-- Devin plugin + skill: `devin plugins install
-  Icaro0310/devin-devkit#packages/skill-catalog/adapters`. The manifest
-  launches the server through `uvx --from 'devin-skill-catalog[mcp]'
-  devin-skill-catalog-mcp`, which resolves from 0.1.1 on (the 0.1.0 wheel
-  predates the console script).
-
 ## Troubleshooting
 
 - If a command is not found, reopen PowerShell and run `uv tool update-shell`.

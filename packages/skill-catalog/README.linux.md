@@ -36,17 +36,6 @@ Use `--config-dir` for non-default locations.
 - **Permissions:** tools read Devin data under `$XDG_DATA_HOME/devin` and write only their own config/state, no root or sudo is required.
 - **Scheduling:** optional recurring work belongs to `systemd --user` timers or cron; installation never creates jobs.
 
-
-## Adapters (MCP / Devin skill / plugin)
-
-- MCP server: `pip install 'devin-skill-catalog[mcp]'` then run
-  `devin-skill-catalog-mcp` (stdio). Read-only tools only.
-- Devin plugin + skill: `devin plugins install
-  Icaro0310/devin-devkit#packages/skill-catalog/adapters`. The manifest
-  launches the server through `uvx --from 'devin-skill-catalog[mcp]'
-  devin-skill-catalog-mcp`, which resolves from 0.1.1 on (the 0.1.0 wheel
-  predates the console script).
-
 ## Troubleshooting
 
 - If a command is not found, ensure the `uv` tools directory is on `PATH` and run `uv tool update-shell`.
