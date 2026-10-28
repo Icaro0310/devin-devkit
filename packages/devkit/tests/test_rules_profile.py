@@ -151,7 +151,7 @@ def test_missing_bundled_rule_fails_closed(tmp_path, monkeypatch):
 
 def test_default_rules_dir_honours_env_override(monkeypatch):
     monkeypatch.setenv("DEVIN_DEVKIT_RULES_DIR", "/tmp/x-rules")
-    assert str(installer.default_rules_dir()) == "/tmp/x-rules"
+    assert installer.default_rules_dir() == Path("/tmp/x-rules")
     monkeypatch.delenv("DEVIN_DEVKIT_RULES_DIR")
     resolved = installer.default_rules_dir()
     assert resolved.name == "rules"
