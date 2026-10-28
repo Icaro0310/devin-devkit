@@ -2,7 +2,7 @@
   "name": "devin-devkit",
   "displayName": "devin-devkit",
   "description": "Install-plan previews and update checks from devin-devkit, inside the editor. Read-only thin adapter: the extension shells out to the devin-devkit CLI and renders plans — it never passes the apply/force flags, so previews stay dry-runs.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "icaro0310",
   "license": "MIT",
   "devin-devkit-cli": ">=0.1.0,<0.2.0",

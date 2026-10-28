@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2]
+
+### Changed
+
+- Version bump in lockstep with devkit 0.1.2 (`devin-devkit apply
+  <profile>` consumer); no extension-side changes.
+
 ## [0.1.1]
 
 ### Fixed
