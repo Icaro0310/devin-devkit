@@ -11,10 +11,11 @@
 ## Key commands
 - `devin-skill-catalog scan [PATH ...]`: inventory skills/rules (read-only)
 - `devin-skill-catalog lint|gate g1|gate g2 PATH`: findings, exit 1 on FAIL
+- `devin-skill-catalog lint --slop PATH`: deterministic anti-slop rules (`slop-fingerprint|emdash|sycophancy|not-just-but|filler`; `slop-allow[:<id>]`/`slop-allow-file` markers suppress; `--warn-only` exits 0)
 - `devin-skill-catalog g3 ITEM --judge --evidence FILE [--out R.json]`: produce a g3-report via poordjaevin (optional `judge` extra; `POORDJAEVIN_BACKEND` selects the backend, default keyless local NLI)
 - `devin-skill-catalog quarantine|promote|activate|retire ITEM --apply`: lifecycle mutations (plan printed without `--apply`)
 - `devin-skill-catalog diff A B`: inventory diff by content hash
-- `devin-skill-catalog export-bundle --out DIR` / `import-bundle PATH --apply`: move approved items, import lands quarantined
+- `devin-skill-catalog export-bundle --out DIR` / `import-bundle PATH --apply`: move approved items, import lands quarantined (`--clean` replaces the copies the bundle carries — pre-clean snapshot + atomic swap + rollback; `--restore SNAP` recovers)
 - `pipx install "devin-skill-catalog @ git+https://github.com/Icaro0310/devin-devkit.git#subdirectory=packages/skill-catalog"`: install the CLI
 - `python -m pytest`: run the test suite (synthetic fixtures only)
 

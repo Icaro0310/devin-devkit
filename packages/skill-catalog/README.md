@@ -53,7 +53,9 @@ content.
   `.devin/rules/*.md`, hashes each item (sha256), annotates it with its
   registry state.
 - **Lint** — structural checks: frontmatter presence, `name` matching
-  the directory, a real `description`, `# ` titles on rules.
+  the directory, a real `description`, `# ` titles on rules. `lint
+  --slop` adds a deterministic content pass: five regex heuristics for
+  LLM-flavored prose, each with a per-line/per-file allowlist escape.
 - **Gates** — two offline evidence gates (G1/G2, below) plus a G3
   promotion gate driven by `g3-report` verdicts. G1/G2 are heuristics,
   **not proof**.
@@ -83,6 +85,7 @@ PyPI install produce the same CLI.
 ```bash
 devin-skill-catalog scan [PATH ...]              # inventory (read-only)
 devin-skill-catalog lint [PATH ...]              # structural findings
+                    [--slop] [--warn-only]       # deterministic anti-slop rules
 devin-skill-catalog diff A B                     # inventory diff by sha256
 devin-skill-catalog gate g1 PATH                 # static hygiene gate
 devin-skill-catalog gate g2 PATH [--packs-dir D] # grounding gate
@@ -96,6 +99,8 @@ devin-skill-catalog activate ITEM                # approved → active
 devin-skill-catalog retire ITEM                  # any state → retired
 devin-skill-catalog export-bundle --out DIR      # pack approved items
 devin-skill-catalog import-bundle PATH           # land items quarantined
+                    [--clean]                    # replace item copies the bundle carries
+                    [--restore SNAP]             # recover a pre-clean snapshot
 ```
 
 `ITEM` is `kind:name` (`skill:foo`, `rule:bar`) or a bare name when it
@@ -123,6 +128,44 @@ nothing written — re-run with --apply to execute
 The only write targets are the registry file and quarantine store under
 the Devin config dir, plus whatever you point `--out` at. Quarantine
 snapshots the item; removing the original from `.devin/` is your call.
+
+**Clean imports.** `import-bundle` merges by default: an item that is
+already registered keeps its stored copy and the import skips it.
+`import-bundle --clean` *replaces* the catalog content for the bundle's
+scope instead — the stored copy of every item the bundle carries is
+swapped for the bundle's version. Safely, in order:
+
+1. the pre-clean state (store copies + registry entries) is snapshotted
+   to `.devin-ecosystem/skill-catalog/import-snapshots/<ts>/` first;
+2. each new copy is staged in a sibling dir and swapped in with
+   `os.rename` — no half-written stores;
+3. a mid-run failure rolls the touched items back, and
+   `import-bundle --restore <snapshot> --apply` recovers the same state
+   manually. Snapshots are kept until you prune them.
+
+Clean still lands everything `quarantined` (`approved`/`active` items
+are demoted; `retired` items are skipped — a clean import does not
+resurrect a deliberate end-state), and items absent from the bundle are
+untouched.
+
+**Slop lint.** `lint --slop PATH` runs the deterministic anti-slop
+rules over each item's markdown (SKILL.md, rule files, bundled `.md`s):
+
+| rule | what it flags |
+|------|---------------|
+| `slop-fingerprint` | stock LLM phrases — `delve into`, `seamless`, `robust`, `comprehensive`, `it's worth noting`, `in summary`/`in conclusion`, sentence-initial `Additionally,`/`Moreover,`/`Furthermore,` |
+| `slop-emdash` | `—` (and spaced `–`) used as a clause separator — not en-dashes in ranges like `3.10–3.14` |
+| `slop-sycophancy` | assistant-style openers/closers — `Great question`, `Happy to help`, `Hope this helps`, `Let me know`, `You're absolutely right` |
+| `slop-not-just-but` | the `not just X but Y` escalation (also `not only/merely/simply`) |
+| `slop-filler` | hype/throat-clearing — `in today's fast-paced world`, `cutting-edge`, `game-changer`, `a testament to`, `plays a vital role`, `at the end of the day`, `first and foremost`, `when it comes to`, `in the world of` |
+
+Lines inside fenced code blocks are skipped (examples are not prose),
+and every rule honors the same allowlist escapes — a finding is
+suppressed when its line carries `slop-allow`, `slop-allow:<rule-id>`,
+or the file carries `slop-allow-file` (put the marker in an HTML
+comment: `<!-- slop-allow:slop-emdash -->`). Findings print with the
+rule id and line number and exit 1; `--warn-only` reports them as WARN
+and exits 0.
 
 ## Lifecycle
 
@@ -271,9 +314,10 @@ Rules of the road:
   quarantine on the receiving side.
 - On upstream changes, re-vendor by **replacing** the staged item dir
   (delete it, then copy) and re-quarantining from scratch — copying over
-  the old tree leaves files upstream deleted, and the quarantine store
-  merges rather than replaces, so stale files would survive the
-  re-review.
+  the old tree leaves files upstream deleted, and the plain
+  `import-bundle` merges rather than replaces, so stale files would
+  survive the re-review (`import-bundle --clean` is the replacing
+  variant).
 
 Worked example: 25 skills from `addyosmani/agent-skills` (MIT), 6 from
 `DietrichGebert/ponytail` (MIT) and a local `graphify` install were

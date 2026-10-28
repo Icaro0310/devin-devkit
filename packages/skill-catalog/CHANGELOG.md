@@ -28,6 +28,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `import-bundle --clean`: replace the catalog content for the bundle's
+  scope instead of merging. The pre-clean state (store copies +
+  registry entries) is snapshotted to
+  `.devin-ecosystem/skill-catalog/import-snapshots/` first, each store
+  copy is staged and swapped atomically (`os.rename`), and a mid-run
+  failure rolls the touched items back — fail-closed, never a
+  half-replaced catalog. `import-bundle --restore SNAPSHOT_DIR`
+  recovers a snapshot manually (plan-first like every mutation);
+  snapshots are kept until pruned. Items still land `quarantined`:
+  `approved`/`active` items are demoted, already-quarantined items get
+  a same-state `Registry.replace` history entry, `retired` items are
+  skipped, and items absent from the bundle are untouched.
+- `lint --slop`: a deterministic content pass over each item's markdown
+  (SKILL.md, rule files, bundled `.md`s) with five regex rules —
+  `slop-fingerprint` (stock LLM phrases), `slop-emdash` (dash clause
+  separators; ranges like `3.10–3.14` exempt), `slop-sycophancy`
+  (assistant openers/closers), `slop-not-just-but` and `slop-filler`.
+  Fenced code blocks are skipped; `slop-allow` / `slop-allow:<rule-id>`
+  line markers and `slop-allow-file` suppress findings so legitimate
+  content is never blocked by a bare denylist. Findings carry rule id +
+  line refs and exit 1; `--warn-only` reports WARN and exits 0.
 - `g3 ITEM --judge --evidence PATH [--out PATH]` — produce a
   `g3-report/0.1` document by asking poordjaevin (the optional `judge`
   extra) three concrete yes/no questions about the promotion evidence.
