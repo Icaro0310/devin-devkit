@@ -58,8 +58,23 @@ The generated [compatibility matrix](../../COMPATIBILITY.md) is rendered from `r
 | `operations` | backup, history, doctor, metrics, janitor, PM, orchestrator, switch and skill catalog |
 | `full` / `all` | every automatically installable profile tool, `devin-office` included (it ships on PyPI since 0.1.0) |
 | `agent-tools` / `no-devin` | the agent-agnostic toolset: qa-pack (multi-surface audit), doctor (surface health), search (multi-source index), memory (agent-agnostic MCP) and judge (typed decisions) |
+| `ecosystem-rules` | bundled agent conduct rules written to the Devin rules dir — not a tool profile (see below) |
 
 `agent-tools` (alias `no-devin`, for hosts where Devin is not the agent of choice) groups the five tools that are not tied to the Devin CLI and pass every environment gate, corporate Windows included. The pinned releases carry multi-source surface support — reading Copilot, Codex and VS Code Chat surfaces in addition to Devin's.
+
+### `ecosystem-rules`: agent conduct rules
+
+`ecosystem-rules` is bundled with the package rather than exported from the registry: its payloads are the rule files themselves, which ship inside the wheel under `devin_devkit/rules/`. `devin-devkit install ecosystem-rules` previews the writes; `--apply` drops three always-on conduct rules into the Devin rules directory:
+
+| Rule file | Mandate |
+|---|---|
+| `ecosystem-state.md` | before any release/distribution/audit claim, read `devin-powerups/reports/current-state.md` (generated weekly by `ecosystem_sync`) or query public APIs — never claim publish state from memory; extensions are already live on **both** VS Code Marketplace and Open VSX (never a blocker); no new repos; merges run autonomously through the review pipeline; PR status is checked only via `gh` |
+| `workflow-via-ssh.md` | creating or editing `.github/workflows/` files requires `git push` over SSH — never `gh api` contents PUT (the OAuth token lacks the `workflow` scope and the API masks the failure as a 404; HTTPS push is rejected explicitly) |
+| `no-git-add-a.md` | never `git add -A`/`git add .` — stage explicit paths so stray scratch files are not committed |
+
+Existing rule files are never overwritten silently: an identical file reports `preexisting`, a file whose content differs reports `skipped` — re-run with `--force` to overwrite. `apply` also works (`devin-devkit apply ecosystem-rules --apply`) and skips the `devin-switch` config half, since this profile is files-only.
+
+**Platform support:** Linux (`~/.devin/rules/`) and Windows (`%USERPROFILE%\.devin\rules`), same support matrix as every other profile; `DEVIN_DEVKIT_RULES_DIR` overrides the target directory. macOS is planned, not claimed.
 
 QwenPaw is an optional add-on and is not installed by these profiles. macOS is planned, not tested.
 
@@ -83,7 +98,7 @@ devin-devkit install qa --apply
 devin-devkit install full --apply
 ```
 
-`install` covers tools only. `apply` unifies install with config-profile selection: it resolves the devkit profile (following `alias_of` chains), installs the tool list, then shells out to `devin-switch apply <name> --apply` for the config half, consuming its `devin-switch/apply@1` JSON contract — never scraping human output:
+`install` covers tools and bundled rule profiles (like `ecosystem-rules` above). `apply` unifies install with config-profile selection: it resolves the devkit profile (following `alias_of` chains), installs the tool list, then shells out to `devin-switch apply <name> --apply` for the config half, consuming its `devin-switch/apply@1` JSON contract — never scraping human output:
 
 ```bash
 devin-devkit apply operations            # dry-run: tool plan + switch plan
