@@ -26,7 +26,7 @@ devin-devkit-mcp = "devin_devkit.mcp_server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-devin_devkit = ["manifest.json"]
+devin_devkit = ["manifest.json", "rules/ecosystem/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

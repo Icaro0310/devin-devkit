@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import platform as platform_module
 import re
 import shutil
@@ -8,7 +9,7 @@ import subprocess
 import sys
 from collections.abc import Callable
 from importlib.resources import files
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import Any
 
 
@@ -16,13 +17,72 @@ class DevKitError(RuntimeError):
     pass
 
 
+# Profiles defined by the package itself rather than the generated
+# manifest: their payloads (rule files under ``devin_devkit/rules/``)
+# ship inside the wheel, so the registry export cannot describe them.
+# ``load_manifest`` merges these under the manifest's own profiles — a
+# same-named registry profile always wins.
+BUNDLED_PROFILES: dict[str, dict[str, Any]] = {
+    "ecosystem-rules": {
+        "label": "Ecosystem Rules",
+        "description": (
+            "Install the ecosystem conduct rules into ~/.devin/rules: "
+            "current-state mandate, workflows over SSH only, never git add -A."
+        ),
+        "tools": [],
+        "rules": ["ecosystem-state", "workflow-via-ssh", "no-git-add-a"],
+        "switch_profile": False,
+    },
+}
+
+_RULE_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
 def load_manifest(path: Path | None = None) -> dict[str, Any]:
     source = path if path is not None else files("devin_devkit").joinpath("manifest.json")
     try:
         text = Path(source).read_text(encoding="utf-8") if path else source.read_text(encoding="utf-8")
-        return json.loads(text)
+        manifest = json.loads(text)
     except (OSError, json.JSONDecodeError) as exc:
         raise DevKitError(f"cannot load manifest {source}: {exc}") from exc
+    profiles = manifest.setdefault("profiles", {})
+    for name, profile in BUNDLED_PROFILES.items():
+        profiles.setdefault(name, profile)
+    return manifest
+
+
+def default_rules_dir(os_name: str | None = None) -> PurePath:
+    """Where agent rule files are installed: ``$DEVIN_DEVKIT_RULES_DIR``,
+    else ``%USERPROFILE%\\.devin\\rules`` on Windows and
+    ``~/.devin/rules`` on POSIX hosts. ``Path.home()`` already resolves
+    the per-OS home root — the ``os_name`` seam only swaps the path
+    flavour so tests can assert separators."""
+    resolved = os_name or os.name
+    if os_name is None:
+        path_type: type[PurePath] = Path
+    elif resolved == "nt":
+        path_type = PureWindowsPath
+    else:
+        path_type = PurePosixPath
+    override = os.environ.get("DEVIN_DEVKIT_RULES_DIR")
+    if override:
+        return path_type(override)
+    return path_type(Path.home()) / ".devin" / "rules"
+
+
+def _rule_text(name: str) -> str | None:
+    """Bundled rule source for ``name`` (kebab-case, without ``.md``),
+    or None when the package does not ship it."""
+    resource = (
+        files("devin_devkit")
+        .joinpath("rules")
+        .joinpath("ecosystem")
+        .joinpath(f"{name}.md")
+    )
+    try:
+        return resource.read_text(encoding="utf-8")
+    except OSError:
+        return None
 
 
 def platform_name(system: str | None = None) -> str:
@@ -175,6 +235,8 @@ def build_plan(
     environment: str | None = None,
     which: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = subprocess.run,
+    force: bool = False,
+    rules_dir: Path | None = None,
 ) -> dict[str, Any]:
     resolved_name, profile = resolve_profile(manifest, profile_name)
     host = platform_name(system)
@@ -238,6 +300,44 @@ def build_plan(
         for name in profile.get("manual", [])
     ]
     actions.extend(manual)
+
+    rules_base = Path(rules_dir) if rules_dir is not None else Path(default_rules_dir())
+    for rule_name in profile.get("rules", []):
+        if not _RULE_NAME.fullmatch(rule_name):
+            errors.append(
+                f"profile {resolved_name!r} declares invalid rule name {rule_name!r}")
+            continue
+        text = _rule_text(rule_name)
+        if text is None:
+            errors.append(
+                f"profile {resolved_name!r} references missing bundled rule {rule_name!r}")
+            continue
+        target = rules_base / f"{rule_name}.md"
+        try:
+            existing = target.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            existing = None
+        except OSError as exc:
+            errors.append(f"cannot inspect existing rule file {target}: {exc}")
+            continue
+        if existing is None:
+            actions.append({"rule": rule_name, "action": "install", "target": str(target)})
+        elif existing == text:
+            actions.append({
+                "rule": rule_name, "action": "preexisting",
+                "detail": "identical rule already installed", "target": str(target),
+            })
+        elif force:
+            actions.append({
+                "rule": rule_name, "action": "overwrite",
+                "detail": "existing file differs; --force given", "target": str(target),
+            })
+        else:
+            actions.append({
+                "rule": rule_name, "action": "skipped",
+                "detail": "existing file differs; re-run with --force to overwrite",
+                "target": str(target),
+            })
     return {
         "profile": profile_name,
         "resolved_profile": resolved_name,
@@ -309,7 +409,31 @@ def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run
     if plan["errors"]:
         raise DevKitError("preflight failed: " + "; ".join(plan["errors"]))
     completed: list[str] = []
+    written: list[str] = []
+    skipped: list[str] = []
     for action in plan["actions"]:
+        if "rule" in action:
+            # Rule actions carry no command: the bundled source is the
+            # payload. ``skipped`` was decided at plan time (no --force)
+            # and is only surfaced, never written.
+            verb = action["action"]
+            if verb == "skipped":
+                skipped.append(action["rule"])
+                continue
+            if verb not in {"install", "overwrite"}:
+                continue
+            text = _rule_text(action["rule"])
+            if text is None:
+                raise DevKitError(
+                    f"bundled rule {action['rule']!r} is missing from the package")
+            target = Path(action["target"])
+            try:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(text, encoding="utf-8")
+            except OSError as exc:
+                raise DevKitError(f"cannot write rule file {target}: {exc}") from exc
+            written.append(action["rule"])
+            continue
         if action["action"] != "install":
             continue
         try:
@@ -330,4 +454,10 @@ def apply_plan(plan: dict[str, Any], runner: Callable[..., Any] = subprocess.run
         if stderr_tail:
             print(stderr_tail, file=sys.stderr)
         completed.append(action["tool"])
-    return {"profile": plan["profile"], "installed": completed, "actions": plan["actions"]}
+    return {
+        "profile": plan["profile"],
+        "installed": completed,
+        "written": written,
+        "skipped": skipped,
+        "actions": plan["actions"],
+    }

@@ -30,14 +30,31 @@ def _print_plan(plan: dict[str, Any], as_json: bool) -> None:
         return
     print(f"Profile: {plan['profile']} ({plan['platform']}; environment={plan['environment']}; runtime={plan['runtime']})")
     for item in plan["actions"]:
+        name = item.get("tool") or item.get("rule")
         command = " ".join(item.get("command", []))
         detail = item.get("detail", "")
         suffix = f" — {detail}" if detail else ""
-        print(f"- {item['tool']}: {item['action']}{suffix}{': ' + command if command else ''}")
+        line = f"- {name}: {item['action']}{suffix}"
+        if command:
+            line += f": {command}"
+        elif item.get("target"):
+            line += f" -> {item['target']}"
+        print(line)
     for error in plan["errors"]:
         print(f"BLOCKED: {error}", file=sys.stderr)
     if not plan["errors"] and any(item["action"] == "install" for item in plan["actions"]):
         print("Dry run only. Re-run with --apply to install.")
+
+
+def _print_rule_result(result: dict[str, Any]) -> None:
+    for name in result.get("written", []):
+        print(f"- rule {name}: written")
+    for name in result.get("skipped", []):
+        print(
+            f"- rule {name}: SKIPPED — file differs on disk; "
+            f"re-run with --force to overwrite",
+            file=sys.stderr,
+        )
 
 
 def _print_switch(switch_name: str, envelope: dict[str, Any]) -> None:
@@ -66,6 +83,7 @@ def _build_parser() -> argparse.ArgumentParser:
     install = sub.add_parser("install", help="preview a profile; pass --apply to install")
     install.add_argument("profile")
     install.add_argument("--apply", action="store_true", help="install the selected profile")
+    install.add_argument("--force", action="store_true", help="overwrite existing rule files that differ from the bundled version")
     install.add_argument("--json", action="store_true", help="print the plan as JSON")
     install.add_argument(
         "--environment",
@@ -78,6 +96,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     apply.add_argument("profile")
     apply.add_argument("--apply", action="store_true", help="install tools and apply the config profile")
+    apply.add_argument("--force", action="store_true", help="overwrite existing rule files that differ from the bundled version")
     apply.add_argument("--json", action="store_true", help="print the combined result as JSON")
     apply.add_argument(
         "--environment",
@@ -147,7 +166,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.action == "apply":
             resolved_name, profile = resolve_profile(manifest, args.profile)
             switch_name = profile.get("switch_profile", resolved_name)
-            plan = build_plan(manifest, args.profile, environment=args.environment)
+            plan = build_plan(
+                manifest, args.profile,
+                environment=args.environment, force=args.force)
             if not args.apply:
                 envelope = switch_apply(switch_name, apply=False) if switch_name else None
                 if args.json:
@@ -198,8 +219,10 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Installed: {', '.join(result['installed']) or 'nothing new'}")
                 for item in result["actions"]:
                     if item["action"] in {"preexisting", "manual", "unsupported"}:
+                        name = item.get("tool") or item.get("rule")
                         detail = item.get("detail", ", ".join(item.get("commands", [])))
-                        print(f"- {item['tool']}: {item['action']} — {detail}")
+                        print(f"- {name}: {item['action']} — {detail}")
+                _print_rule_result(result)
                 if switch_name:
                     _print_switch(switch_name, envelope)
                 else:
@@ -224,7 +247,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(hint, file=sys.stderr)
             return 0
 
-        plan = build_plan(manifest, args.profile, environment=args.environment)
+        plan = build_plan(
+            manifest, args.profile,
+            environment=args.environment, force=args.force)
         if not args.apply:
             _print_plan(plan, args.json)
             hint = freshness_hint(manifest, environment=plan["environment"])
@@ -238,8 +263,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else f"Installed: {', '.join(result['installed']) or 'nothing new'}")
         for item in result["actions"]:
             if item["action"] in {"preexisting", "manual", "unsupported"}:
+                name = item.get("tool") or item.get("rule")
                 detail = item.get("detail", ", ".join(item.get("commands", [])))
-                print(f"- {item['tool']}: {item['action']} — {detail}")
+                print(f"- {name}: {item['action']} — {detail}")
+        _print_rule_result(result)
         return 0
     except DevKitError as exc:
         print(f"error: {exc}", file=sys.stderr)

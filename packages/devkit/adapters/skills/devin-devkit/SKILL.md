@@ -29,7 +29,10 @@ and `devkit_install(profile, environment)` — the same payloads.
   per-tool `action` (`install` with its `command`, `preexisting`,
   `manual`, `unsupported`, `blocked`) and `errors[]` holds every
   blocking reason — PATH collisions, missing `uv`/`npm`/`git`,
-  Node < 20, environment violations.
+  Node < 20, environment violations. Bundled rule profiles
+  (`ecosystem-rules`) add per-rule actions instead — `install`,
+  `preexisting`, `skipped` or `overwrite`, each with its `target`
+  path under the Devin rules dir.
 - `error` at the top level means the plan itself could not be built
   (unknown profile, unsupported platform or environment) — report that,
   do not guess.
