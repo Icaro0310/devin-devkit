@@ -8,7 +8,7 @@ Linux uses the extended runtime: local execution plus optional Devin VM/QwenPaw 
 
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
-- Git only for manual source checkouts; installable profiles use HTTPS archives.
+- Git on `PATH` for the `git+` DevKit installation below and for manual source checkouts; installable profile tools use HTTPS archives.
 
 ## Install
 
@@ -52,20 +52,23 @@ The DevKit does not change those directories or Devin settings. `uv` exposes ins
 
 ## Compatibility
 
-Shared behavior, see the [Compatibility](README.md#compatibility)
-section in README.md; the generated matrix at the repository root
-applies to every platform.
+The generated [compatibility matrix](COMPATIBILITY.md) comes from
+`devin-powerups/registry.json`. Entries marked `Local only` install
+without VM, QwenPaw, external compute, workload delegation, or
+required external integrations; other entries carry a registry reason.
 
 ## Local development with sibling checkouts
 
 For a package such as `devin-doctor`, keep the published version
 constraint in its `pyproject.toml`; install sibling sources editably
-only in the development environment:
+only in the development environment. With `devin-explore` and
+`devin-internals-spec` checked out next to this repository, run
+from the `devin-devkit` repository root:
 
 ```bash
 cd ../devin-explore/packages/doctor
 uv venv
-uv pip install --python .venv/bin/python -e ../devin-internals-spec -e .
+uv pip install --python .venv/bin/python -e ../../../devin-internals-spec -e .
 ```
 
 

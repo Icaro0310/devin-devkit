@@ -10,7 +10,7 @@ Corporate Windows is a local-only environment: no Devin VM, QwenPaw, Slack depen
 
 - `uv`, installed from the [official uv guide](https://docs.astral.sh/uv/getting-started/installation/). It can manage a compatible Python interpreter.
 - Node.js 20 or newer and npm only when installing a profile containing `devin-bridge`.
-- Git only for manual source checkouts; installable profiles use HTTPS archives.
+- Git on `PATH` for the `git+` DevKit installation below and for manual source checkouts; installable profile tools use HTTPS archives.
 
 ## Install
 
@@ -63,7 +63,7 @@ The DevKit does not change those directories or Devin settings. `uv` exposes ins
 
 Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy genérico. Dois produtos importam aqui: **Zscaler Internet Access (ZIA)**, proxy com inspeção de TLS, e **Zscaler Private Access (ZPA)**, túnel/VPN para aplicações internas.
 
-- **Certificado raiz:** a inspeção de TLS da ZIA substitui o certificado dos sites pelo da Zscaler. Sem a raiz no bundle correto, `pip`/`uv`/`npm`/`git` falham com `SSL: CERTIFICATE_VERIFY_FAILED`. A raiz vive no repositório de certificados do Windows (instalada por política ou pelo Client Connector), e o bundle das variáveis abaixo precisa ser PEM (Base-64), não DER. Pelo GUI, exporte via Trusted Root Certification Authorities → Zscaler → Export escolhendo "Base-64 encoded X.509 (.CER)": `certmgr.msc` abre apenas o store do usuário atual; raízes instaladas por política na máquina aparecem no `certlm.msc`. Via PowerShell, `Get-ChildItem Cert:\LocalMachine\Root | ? Subject -like "*Zscaler*"` + `Export-Certificate` gera DER; converta para PEM com `certutil -encode zscaler-root.cer zscaler-root.pem`. Em alternativa peça o PEM ao TI. Cada ferramenta lê a raiz de um lugar diferente:
+- **Certificado raiz:** a inspeção de TLS da ZIA substitui o certificado dos sites pelo da Zscaler. Sem a raiz no bundle correto, `pip`/`uv`/`npm`/`git` falham com `SSL: CERTIFICATE_VERIFY_FAILED`. A raiz vive no repositório de certificados do Windows (instalada por política ou pelo Client Connector), que tem duas lojas: `certmgr.msc` cobre o usuário atual e `certlm.msc` cobre a máquina; a raiz pode estar em só uma delas. Exporte pelo assistente (Trusted Root Certification Authorities → Zscaler → Export) escolhendo "Base-64 encoded X.509 (.CER)", que já sai em PEM; via PowerShell, `Get-ChildItem Cert:\CurrentUser\Root, Cert:\LocalMachine\Root | ? Subject -like "*Zscaler*"` acha o cert nas duas lojas, mas `Export-Certificate` grava DER, não PEM; converta com `certutil -encode zscaler-root.cer zscaler-root.pem`. Em alternativa peça o PEM ao TI. Cada ferramenta lê a raiz de um lugar diferente:
   ```powershell
   $env:REQUESTS_CA_BUNDLE="C:\path\zscaler-root.pem"   # pip e ferramentas baseadas em requests
   $env:SSL_CERT_FILE="C:\path\zscaler-root.pem"        # uv, urllib do Python (inclui o check de manifest do DevKit)
@@ -78,9 +78,10 @@ Zscaler é comum em ambientes corporativos e se comporta diferente de um proxy g
 
 ## Compatibility
 
-Shared behavior, see the [Compatibility](README.md#compatibility)
-section in README.md; the generated matrix at the repository root
-applies to every platform.
+The generated [compatibility matrix](COMPATIBILITY.md) comes from
+`devin-powerups/registry.json`. Entries marked `Local only` install
+without VM, QwenPaw, external compute, workload delegation, or
+required external integrations; other entries carry a registry reason.
 
 ## Offline / air-gapped
 
@@ -94,12 +95,14 @@ manifest.
 
 For a package such as `devin-doctor`, keep the published version
 constraint in its `pyproject.toml`; install sibling sources editably
-only in the development environment:
+only in the development environment. With `devin-explore` and
+`devin-internals-spec` checked out next to this repository, run
+from the `devin-devkit` repository root:
 
 ```powershell
 cd ..\devin-explore\packages\doctor
 uv venv
-uv pip install --python .venv\Scripts\python.exe -e ..\devin-internals-spec -e .
+uv pip install --python .venv\Scripts\python.exe -e ..\..\..\devin-internals-spec -e .
 ```
 
 
