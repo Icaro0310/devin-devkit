@@ -340,7 +340,7 @@ nvtx = [
 
 [[package]]
 name = "devin-devkit"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "packages/devkit" }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
@@ -390,7 +390,7 @@ wheels = [
 
 [[package]]
 name = "devin-skill-catalog"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "packages/skill-catalog" }
 dependencies = [
     { name = "devin-internals-spec" },
