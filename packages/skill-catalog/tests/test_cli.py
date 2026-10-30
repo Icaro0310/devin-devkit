@@ -105,4 +105,6 @@ def test_version(capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main(["--version"])
     assert exc.value.code == 0
-    assert "0.1.1" in capsys.readouterr().out
+    from devin_skill_catalog import __version__
+
+    assert __version__ in capsys.readouterr().out
