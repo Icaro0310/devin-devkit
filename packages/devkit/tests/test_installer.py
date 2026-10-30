@@ -334,7 +334,7 @@ AGENT_TOOLS_PINS = {
     "devin-explore": "devin-doctor==0.3.1",
     "devin-search": "devin-search==0.2.1",
     "devin-brain": "devin-memory[mcp]==0.3.1",
-    "devin-judge": "poordjaevin[local,mcp]==0.1.3",
+    "devin-judge": "devin-judge[local,mcp]==0.1.3",
 }
 
 
