@@ -6,10 +6,7 @@ on:
     paths:
       - 'packages/skill-catalog/**'
       - '.github/workflows/test-skill-catalog.yml'
-  pull_request:
-    paths:
-      - 'packages/skill-catalog/**'
-      - '.github/workflows/test-skill-catalog.yml'
+  # pull_request testing now lives in ci.yml (job-level path gating + ci-gate aggregator)
 
 permissions:
   contents: read
