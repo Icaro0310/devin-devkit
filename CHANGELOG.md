@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **CI** — repin the shared `pr-approve` gate to `devin-powerups`
+  `@v1.14`: the gate arms auto-merge (`gh pr merge --auto`) after
+  approval, which requires `contents: write` in the caller — both
+  workflow- and job-level `contents` permissions raised from `read`
+  to `write`.
 - **CI** — repin the shared `pr-approve` gate to `devin-powerups` `@v1.9`
   (self-cancel fix so a successful approval no longer renders as a
   failed check; fresh-head recheck + paginated dedup).
