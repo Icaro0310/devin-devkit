@@ -1,7 +1,7 @@
 """Static assertions for .github/workflows/auto-approve.yml.
 
 The caller is thin by design: triggers plus a pin to the reusable
-``pr-approve`` gate in devin-powerups. These tests pin the v1.12 caller
+``pr-approve`` gate in devin-powerups. These tests pin the v1.14 caller
 contract — the gate version, the ``pull_request_review_comment``
 trigger that re-evaluates the gate when a fix-commit reply lands, and
 the scoped job permissions — without running the workflow.
@@ -27,13 +27,12 @@ def _load() -> dict:
     return wf
 
 
-def test_gate_pin_is_v1_12() -> None:
-    """v1.12 adds the Judge verdict gate (devin-judge/review must be success before approve) on top of v1.9's self-cancel fix (a successful approval no
-    longer renders as a failed check) and adds a fresh-head recheck
-    plus paginated dedup; the pin must be exact so a silent downgrade
-    is caught here."""
+def test_gate_pin_is_v1_14() -> None:
+    """v1.14 arms auto-merge via ``gh pr merge --auto`` after approval,
+    which requires ``contents: write`` in the caller job; the pin must
+    be exact so a silent downgrade is caught here."""
     uses = _load()["jobs"]["approve"]["uses"]
-    assert uses == GATE_PIN + "v1.12"
+    assert uses == GATE_PIN + "v1.14"
 
 
 def test_review_comment_trigger_re_evaluates_gate() -> None:
@@ -43,4 +42,4 @@ def test_review_comment_trigger_re_evaluates_gate() -> None:
 
 def test_gate_permissions_stay_scoped() -> None:
     perms = _load()["jobs"]["approve"]["permissions"]
-    assert perms == {"contents": "read", "pull-requests": "write"}
+    assert perms == {"contents": "write", "pull-requests": "write"}
