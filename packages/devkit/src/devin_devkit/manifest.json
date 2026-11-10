@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 32,
-  "generated": "2026-10-20",
+  "registry_version": 33,
+  "generated": "2026-11-02",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -247,7 +247,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-internals-spec",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "commands": [
         "devin-inspect"
       ],
@@ -260,7 +260,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-internals-spec==0.3.2"
+      "install_spec": "devin-internals-spec==0.3.3"
     },
     {
       "id": "devin-history",
@@ -299,7 +299,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-history",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-history"
       ],
@@ -312,7 +312,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-history==0.1.0"
+      "install_spec": "devin-history==0.1.2"
     },
     {
       "id": "devin-pm",
@@ -351,7 +351,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-pm",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-pm"
       ],
@@ -364,7 +364,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-pm==0.1.0"
+      "install_spec": "devin-pm==0.1.2"
     },
     {
       "id": "devin-metrics",
@@ -456,7 +456,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-backup",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "commands": [
         "devin-backup"
       ],
@@ -469,7 +469,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-backup==0.1.0"
+      "install_spec": "devin-backup==0.1.1"
     },
     {
       "id": "devin-search",
@@ -561,7 +561,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-graph",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-graph"
       ],
@@ -574,7 +574,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-graph==0.1.0"
+      "install_spec": "devin-graph==0.1.2"
     },
     {
       "id": "devin-evals",
@@ -665,7 +665,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-janitor",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-janitor"
       ],
@@ -678,7 +678,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-janitor==0.1.0"
+      "install_spec": "devin-janitor==0.1.2"
     },
     {
       "id": "devin-control",
@@ -891,7 +891,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-switch",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "commands": [
         "devin-switch"
       ],
@@ -904,7 +904,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-switch==0.1.0"
+      "install_spec": "devin-switch==0.1.1"
     },
     {
       "id": "devin-skill-catalog",
@@ -944,7 +944,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-skill-catalog",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "commands": [
         "devin-skill-catalog"
       ],
@@ -957,7 +957,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-skill-catalog==0.1.0"
+      "install_spec": "devin-skill-catalog==0.1.2"
     },
     {
       "id": "devin-brain",
@@ -999,7 +999,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-memory",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "commands": [
         "devin-memory",
         "devin-learning",
@@ -1016,7 +1016,7 @@
         "mcp"
       ],
       "manual_note": null,
-      "install_spec": "devin-memory[mcp]==0.3.1"
+      "install_spec": "devin-memory[mcp]==0.3.2"
     },
     {
       "id": "devin-judge",
@@ -1114,7 +1114,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-redact",
-      "version": "0.2.2",
+      "version": "0.2.6",
       "commands": [
         "devin-redact"
       ],
@@ -1127,7 +1127,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-redact==0.2.2"
+      "install_spec": "devin-redact==0.2.6"
     },
     {
       "id": "devin-assure",
@@ -1165,7 +1165,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-qa-pack",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "commands": [
         "devin-qa-pack"
       ],
@@ -1178,7 +1178,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-qa-pack==0.2.1"
+      "install_spec": "devin-qa-pack==0.3.0"
     },
     {
       "id": "devin-explore",
