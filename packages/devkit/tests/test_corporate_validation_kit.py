@@ -134,6 +134,68 @@ def test_pins_come_from_bundled_manifest_when_present():
     assert "manifest" in doc
 
 
+# $PyPackages entries whose standalone fallback has no manifest
+# counterpart. poordjaevin ships inside the devin-judge distribution
+# (manifest install_spec devin-judge[local,mcp]==…), so the kit's
+# name-based matcher never overrides it — its fallback is standalone-only
+# by design. Anything else landing here must be a conscious decision.
+FALLBACK_WITHOUT_MANIFEST_COUNTERPART = {"poordjaevin"}
+
+
+def _fallback_py_packages() -> dict[str, tuple[str, str]]:
+    """Parse the standalone-fallback ``$PyPackages`` block: name -> (Want, Spec)."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    block = re.search(r"\$PyPackages = @\((.*?)\)\s*\n\$BridgeSpec", src, re.S)
+    assert block, "$PyPackages fallback block not found in the kit script"
+    pkgs = {}
+    for m in re.finditer(
+        r"Name = '([^']+)';\s*Want = '([^']+)';\s*Spec = '([^']+)'",
+        block.group(1),
+    ):
+        pkgs[m.group(1)] = (m.group(2), m.group(3))
+    return pkgs
+
+
+def test_fallback_pins_match_bundled_manifest_specs():
+    """Standalone-fallback pins must equal the manifest install_specs they
+    shadow — drift means the ZIP kit validates versions the devkit no
+    longer ships (CONTRIBUTING test policy: changed behaviour needs a
+    test)."""
+    manifest = json.loads(
+        (REPO / "src" / "devin_devkit" / "manifest.json").read_text(encoding="utf-8")
+    )
+    specs = [t["install_spec"] for t in manifest["tools"]]
+
+    src = SCRIPT.read_text(encoding="utf-8")
+    bridge = re.search(r"\$BridgeSpec = '([^']+)'", src)
+    assert bridge, "$BridgeSpec fallback not found"
+    assert bridge.group(1) in specs, (
+        f"bridge fallback {bridge.group(1)!r} not in manifest install_specs"
+    )
+
+    fallback = _fallback_py_packages()
+    assert fallback, "no $PyPackages fallback entries parsed"
+    unmatched = set()
+    for name, (want, spec) in fallback.items():
+        # same shape the kit's PowerShell matcher uses:
+        # ^<name>(\[[^\]]*\])?==(\S+)$ against each install_spec
+        pat = re.compile(rf"^{re.escape(name)}(\[[^\]]*\])?==(\S+)$")
+        match = next((s for s in specs if pat.match(s)), None)
+        if match is None:
+            unmatched.add(name)
+            continue
+        assert spec == match, (
+            f"{name}: fallback Spec {spec!r} drifted from manifest {match!r}"
+        )
+        assert want == match.rsplit("==", 1)[1], (
+            f"{name}: fallback Want {want!r} != manifest version"
+        )
+    assert unmatched == FALLBACK_WITHOUT_MANIFEST_COUNTERPART, (
+        f"unexpected fallback pins without manifest counterpart: "
+        f"{sorted(unmatched ^ FALLBACK_WITHOUT_MANIFEST_COUNTERPART)}"
+    )
+
+
 def test_documented_invocation_exists():
     doc = README.read_text(encoding="utf-8")
     assert "Invoke-CorporateValidation.ps1" in doc

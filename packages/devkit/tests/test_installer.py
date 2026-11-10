@@ -330,10 +330,10 @@ def test_agent_tools_plans_an_install_for_each_tool(system, environment):
 # Expected pins are written out literally on purpose — deriving them from
 # the manifest under test would make a wrong pin self-consistent.
 AGENT_TOOLS_PINS = {
-    "devin-assure": "devin-qa-pack==0.2.1",
+    "devin-assure": "devin-qa-pack==0.3.0",
     "devin-explore": "devin-doctor==0.3.1",
     "devin-search": "devin-search==0.2.1",
-    "devin-brain": "devin-memory[mcp]==0.3.1",
+    "devin-brain": "devin-memory[mcp]==0.3.2",
     "devin-judge": "devin-judge[local,mcp]==0.1.3",
 }
 

@@ -1,7 +1,7 @@
 """Static assertions for .github/workflows/auto-approve.yml.
 
 The caller is thin by design: triggers plus a pin to the reusable
-``pr-approve`` gate in devin-powerups. These tests pin the v1.14 caller
+``pr-approve`` gate in devin-powerups. These tests pin the v1.16 caller
 contract — the gate version, the ``pull_request_review_comment``
 trigger that re-evaluates the gate when a fix-commit reply lands, and
 the scoped job permissions — without running the workflow.
@@ -27,12 +27,13 @@ def _load() -> dict:
     return wf
 
 
-def test_gate_pin_is_v1_14() -> None:
-    """v1.14 arms auto-merge via ``gh pr merge --auto`` after approval,
-    which requires ``contents: write`` in the caller job; the pin must
-    be exact so a silent downgrade is caught here."""
+def test_gate_pin_is_v1_16() -> None:
+    """v1.16 splits the auto-merge arm into a dedicated job so approve
+    runs read-only again; the arm still needs ``contents: write`` in
+    the caller job; the pin must be exact so a silent downgrade is
+    caught here."""
     uses = _load()["jobs"]["approve"]["uses"]
-    assert uses == GATE_PIN + "v1.14"
+    assert uses == GATE_PIN + "v1.16"
 
 
 def test_review_comment_trigger_re_evaluates_gate() -> None:
@@ -41,5 +42,9 @@ def test_review_comment_trigger_re_evaluates_gate() -> None:
 
 
 def test_gate_permissions_stay_scoped() -> None:
+    """contents:write backs the arm-auto-merge job; statuses:read backs
+    the judge gate + arm re-verification (403 on private repos without
+    it). Anything broader is the regression this guards."""
     perms = _load()["jobs"]["approve"]["permissions"]
-    assert perms == {"contents": "write", "pull-requests": "write"}
+    assert perms == {"contents": "write", "pull-requests": "write",
+                     "statuses": "read"}

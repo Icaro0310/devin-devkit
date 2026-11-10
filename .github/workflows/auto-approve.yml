@@ -25,6 +25,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # v1.15+: the reusable's judge gate and arm re-verification read the
+  # devin-judge/review commit status — 403 without statuses:read on
+  # private repos.
+  statuses: read
 
 jobs:
   approve:
@@ -38,4 +42,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: Icaro0310/devin-powerups/.github/workflows/pr-approve.yml@v1.14
+      statuses: read
+    # v1.16: the auto-merge arm lives in a dedicated arm-auto-merge job
+    # inside the reusable — approve itself runs read-only again; the arm
+    # still needs contents:write on this caller job (granted above) or
+    # it warns and waits.
+    uses: Icaro0310/devin-powerups/.github/workflows/pr-approve.yml@v1.16
