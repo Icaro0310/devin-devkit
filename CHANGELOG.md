@@ -3,6 +3,10 @@
 ## Unreleased
 
 - **CI** — repin the shared `pr-approve` gate to `devin-powerups`
+  `@v1.16`: the auto-merge arm moved into a dedicated
+  `arm-auto-merge` job inside the reusable so approve runs read-only
+  again; `contents: write` stays on the caller for the arm.
+- **CI** — repin the shared `pr-approve` gate to `devin-powerups`
   `@v1.14`: the gate arms auto-merge (`gh pr merge --auto`) after
   approval, which requires `contents: write` in the caller — both
   workflow- and job-level `contents` permissions raised from `read`
