@@ -42,5 +42,9 @@ def test_review_comment_trigger_re_evaluates_gate() -> None:
 
 
 def test_gate_permissions_stay_scoped() -> None:
+    """contents:write backs the arm-auto-merge job; statuses:read backs
+    the judge gate + arm re-verification (403 on private repos without
+    it). Anything broader is the regression this guards."""
     perms = _load()["jobs"]["approve"]["permissions"]
-    assert perms == {"contents": "write", "pull-requests": "write"}
+    assert perms == {"contents": "write", "pull-requests": "write",
+                     "statuses": "read"}

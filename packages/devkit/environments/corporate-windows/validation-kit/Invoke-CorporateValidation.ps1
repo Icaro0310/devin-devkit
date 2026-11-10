@@ -389,9 +389,9 @@ if (-not $kitDir) { $kitDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
 $PyPackages = @(
     @{ Name = 'devin-search';  Want = '0.2.1'; Spec = 'devin-search==0.2.1';      Cmd = 'devin-search' },
     @{ Name = 'devin-doctor';  Want = '0.3.1'; Spec = 'devin-doctor==0.3.1';      Cmd = 'devin-doctor' },
-    @{ Name = 'devin-qa-pack'; Want = '0.2.1'; Spec = 'devin-qa-pack==0.2.1';     Cmd = 'devin-qa-pack' },
+    @{ Name = 'devin-qa-pack'; Want = '0.3.0'; Spec = 'devin-qa-pack==0.3.0';     Cmd = 'devin-qa-pack' },
     @{ Name = 'poordjaevin';   Want = '0.1.3'; Spec = 'poordjaevin==0.1.3';       Cmd = 'poordjaevin' },
-    @{ Name = 'devin-memory';  Want = '0.3.1'; Spec = 'devin-memory[mcp]==0.3.1'; Cmd = 'devin-memory' }
+    @{ Name = 'devin-memory';  Want = '0.3.2'; Spec = 'devin-memory[mcp]==0.3.2'; Cmd = 'devin-memory' }
 )
 $BridgeSpec = '@icaro0310/devin-bridge@0.2.0'
 $PinSource = 'latest published (standalone kit)'
