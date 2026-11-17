@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Manifest regenerated from registry v34: `devin-qa-pack` 0.3.0 → 0.5.0,
+  `devin-doctor` 0.3.1 → 0.4.0, `devin-search` 0.2.1 → 0.2.2,
+  `devin-memory` 0.3.2 → 0.4.0, `devin-internals-spec` 0.3.3 → 0.3.4,
+  `devin-graph` 0.1.2 → 0.1.3; `devin-judge` description now notes that
+  bridge mutations are CLI-only (MCP/Skill/Plugin surfaces are read-only).
+  `AGENT_TOOLS_PINS` in `test_installer.py` repinned to match.
+
 ## [0.1.2] - 2026-10-28
 
 ### Added
