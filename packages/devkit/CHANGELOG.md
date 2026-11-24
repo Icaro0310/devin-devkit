@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Manifest sync (registry v34): bump `devin-qa-pack` 0.3.0 → 0.5.0,
+  `devin-doctor` 0.3.1 → 0.4.0, `devin-search` 0.2.1 → 0.2.2,
+  `devin-memory[mcp]` 0.3.2 → 0.4.0, `devin-graph` 0.1.2 → 0.1.3,
+  `devin-internals-spec` 0.3.3 → 0.3.4.
+
 ## [0.1.2] - 2026-10-28
 
 ### Added
