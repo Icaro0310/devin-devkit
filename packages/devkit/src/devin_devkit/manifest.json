@@ -1,7 +1,7 @@
 {
   "schema": "devin-devkit-manifest/0.1",
-  "registry_version": 33,
-  "generated": "2026-11-02",
+  "registry_version": 34,
+  "generated": "2026-11-16",
   "installer": "uv",
   "supported_platforms": [
     "windows",
@@ -247,7 +247,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-internals-spec",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "commands": [
         "devin-inspect"
       ],
@@ -260,7 +260,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-internals-spec==0.3.3"
+      "install_spec": "devin-internals-spec==0.3.4"
     },
     {
       "id": "devin-history",
@@ -508,7 +508,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-search",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "commands": [
         "devin-search"
       ],
@@ -521,7 +521,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-search==0.2.1"
+      "install_spec": "devin-search==0.2.2"
     },
     {
       "id": "devin-graph",
@@ -561,7 +561,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-graph",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "commands": [
         "devin-graph"
       ],
@@ -574,7 +574,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-graph==0.1.2"
+      "install_spec": "devin-graph==0.1.3"
     },
     {
       "id": "devin-evals",
@@ -999,7 +999,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-memory",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "commands": [
         "devin-memory",
         "devin-learning",
@@ -1016,12 +1016,12 @@
         "mcp"
       ],
       "manual_note": null,
-      "install_spec": "devin-memory[mcp]==0.3.2"
+      "install_spec": "devin-memory[mcp]==0.4.0"
     },
     {
       "id": "devin-judge",
       "label": "devin-judge",
-      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback.",
+      "description": "Djævin: calibrated local-first decision layer with typed questions and honest confidence. The Devin ACP backend reuses the model your Devin CLI already runs (no extra download, no API key); the local NLI backend stays as a fully-offline fallback. Bridge mutations (hidden flags, janitor_managed) are CLI-only. MCP/Skill/Plugin surfaces expose only judgment (read).",
       "category": "governance",
       "artifact": "tool",
       "interfaces": [
@@ -1165,7 +1165,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-qa-pack",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "commands": [
         "devin-qa-pack"
       ],
@@ -1178,7 +1178,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-qa-pack==0.3.0"
+      "install_spec": "devin-qa-pack==0.5.0"
     },
     {
       "id": "devin-explore",
@@ -1217,7 +1217,7 @@
       "manager": "uv",
       "source": "pypi",
       "package": "devin-doctor",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "commands": [
         "devin-doctor"
       ],
@@ -1230,7 +1230,7 @@
       "status": "published",
       "extras": [],
       "manual_note": null,
-      "install_spec": "devin-doctor==0.3.1"
+      "install_spec": "devin-doctor==0.4.0"
     }
   ]
 }
