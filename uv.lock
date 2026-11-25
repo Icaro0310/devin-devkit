@@ -381,11 +381,11 @@ dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "devin-internals-spec"
-version = "0.3.1"
+version = "0.3.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8b/1d/ccc8f048c6e1733e65fd29b2397983f53002aa5ac85e04ef139d9652d255/devin_internals_spec-0.3.1.tar.gz", hash = "sha256:c290dfa9153942a598e79d69f8bce3ce1b695a7fb915186e6381370ccfd44bcf", size = 52655, upload-time = "2026-10-13T07:40:20.44Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/93/e0efb019fbf13f80a6406a6603d747641c5bab9653778242adf57ea0c501/devin_internals_spec-0.3.4.tar.gz", hash = "sha256:c1410e2264f1b10a00466782d131236e71b180acc1d9269a1068fe9d9f945d71", size = 179294, upload-time = "2026-11-11T10:50:46.576Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/6b/09e2e1ffabbcefad275786d629f5bc6e94764f4a1020f0c1c0ca4ef7932c/devin_internals_spec-0.3.1-py3-none-any.whl", hash = "sha256:c230ed871f88c27ee34d12cd3b5cc80b9a0d3d079c03cffa0217b69d94747420", size = 41426, upload-time = "2026-10-13T07:40:19.081Z" },
+    { url = "https://files.pythonhosted.org/packages/50/1c/9120e6f2d9af6236d0f2797c1ddecc566cae65323dbf16dea93a78a10f5a/devin_internals_spec-0.3.4-py3-none-any.whl", hash = "sha256:211b3ffff7ea28e4b3de987046af511a26768aa369f7a6453fbbdb9840fffa3c", size = 168388, upload-time = "2026-11-11T10:50:45.012Z" },
 ]
 
 [[package]]
